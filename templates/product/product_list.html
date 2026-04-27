@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Inventory – Products{% endblock %}
+
+{% block topbar_search %}
+<input type="search"
+       id="search-desktop"
+       placeholder="Search inventory..."
+       class="search-input w-52"
+       aria-label="Search inventory"/>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+  <a href="{% url 'dashboard' %}" class="hover:text-slate-700 transition-colors">Dashboard</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <span class="text-slate-700 font-semibold">Inventory</span>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div>
+    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Inventory Management</h1>
+    <p class="text-sm text-slate-500 mt-0.5">Manage products, stock, and branch locations.</p>
+  </div>
+  {# Page-level sub-nav tabs #}
+  <div class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto shrink-0" role="tablist" aria-label="Inventory sections">
+    <a href="{% url 'product_list' %}"
+       class="page-tab active whitespace-nowrap" role="tab" aria-selected="true">
+      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+      Products
+    </a>
+    <a href="{% url 'branch_list' %}"
+       class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
+      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Branches
+    </a>
+    <a href="{% url 'product_add' %}"
+       class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
+      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Add Product
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{# ── STAT CARDS ── #}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+
+  <div class="stat-card-dark rounded-xl p-4 sm:p-5 fade-up fade-up-1">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Total SKUs</p>
+      <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      </div>
+    </div>
+    <p class="text-4xl font-extrabold text-white mb-2">{{ stat_skus|default:"48" }}</p>
+    <div class="stat-badge inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full">
+      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      +6 this month
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-100 shadow-card fade-up fade-up-2">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Inventory Value</p>
+      <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-1">Rp {{ stat_value|default:"148M" }}</p>
+    <p class="text-xs text-slate-400">Across all branches</p>
+  </div>
+
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-amber-100 shadow-card fade-up fade-up-3">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-amber-600 uppercase tracking-wide">Low Stock</p>
+      <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-amber-600 mb-1">{{ stat_low|default:"8" }}</p>
+    <p class="text-xs text-slate-400">Below minimum level</p>
+  </div>
+
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-red-100 shadow-card fade-up fade-up-4">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-red-600 uppercase tracking-wide">Out of Stock</p>
+      <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-red-600 mb-1">{{ stat_out|default:"3" }}</p>
+    <p class="text-xs text-slate-400">Needs restocking now</p>
+  </div>
+</div>
+
+{# ── FILTER / CONTROL BAR ── #}
+<div class="bg-white rounded-xl border border-slate-100 shadow-card p-3 sm:p-4">
+  <form method="GET" class="flex flex-col sm:flex-row gap-3">
+
+    <div class="relative flex-1 min-w-0">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input type="search" name="q" value="{{ request.GET.q }}"
+             placeholder="Search by name or SKU..."
+             class="search-input w-full" aria-label="Search products" style="width:100%;"/>
+    </div>
+
+    <select name="category" class="filter-select" aria-label="Filter by category" onchange="this.form.submit()">
+      <option value="">All Categories</option>
+      {% for cat in categories %}
+      <option value="{{ cat }}" {% if request.GET.category == cat %}selected{% endif %}>{{ cat }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="stock_status" class="filter-select" aria-label="Filter by stock status" onchange="this.form.submit()">
+      <option value="">All Stock Status</option>
+      <option value="ok"  {% if request.GET.stock_status == 'ok'  %}selected{% endif %}>In Stock</option>
+      <option value="low" {% if request.GET.stock_status == 'low' %}selected{% endif %}>Low Stock</option>
+      <option value="out" {% if request.GET.stock_status == 'out' %}selected{% endif %}>Out of Stock</option>
+    </select>
+
+    <div class="flex gap-2">
+      <a href="{% url 'product_add' %}"
+         class="flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-navy transition-colors whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+        <span class="hidden sm:inline">Add Product</span>
+      </a>
+      <a href="{% url 'product_export' %}?{{ request.GET.urlencode }}"
+         class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 transition-colors"
+         aria-label="Export CSV">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        CSV
+      </a>
+    </div>
+  </form>
+</div>
+
+{# ── PRODUCT TABLE — Desktop / Tablet ── #}
+<div class="table-wrapper bg-white rounded-xl border border-slate-100 shadow-card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full" aria-label="Product list">
+      <thead>
+        <tr>
+          <th class="w-10">
+            <input type="checkbox" id="select-all-prod" class="w-4 h-4 rounded accent-navy-900" aria-label="Select all"/>
+          </th>
+          <th>Product</th>
+          <th>SKU</th>
+          <th>Category</th>
+          <th>Base Price</th>
+          <th>Sell Price</th>
+          <th>Stock</th>
+          <th>Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in products %}
+        {% with pct=product.stock_pct|default:70 %}
+        <tr class="data-row">
+          <td>
+            <input type="checkbox" class="w-4 h-4 rounded accent-navy-900 row-cb-prod" aria-label="Select {{ product.name }}"/>
+          </td>
+          <td>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 text-lg">
+                {{ product.emoji|default:"📦" }}
+              </div>
+              <div>
+                <a href="{% url 'product_detail' product.pk %}"
+                   class="font-semibold text-slate-800 text-sm hover:text-navy-700 transition-colors leading-tight">
+                  {{ product.name }}
+                </a>
+                <p class="text-xs text-slate-400 leading-tight">{{ product.brand|default:"—" }}</p>
+              </div>
+            </div>
+          </td>
+          <td><span class="font-mono text-xs text-slate-500 bg-slate-50 px-2 py-0.5 rounded-lg">{{ product.sku }}</span></td>
+          <td><span class="text-sm text-slate-600">{{ product.category }}</span></td>
+          <td class="text-sm text-slate-600">Rp {{ product.base_price|floatformat:0 }}</td>
+          <td class="font-semibold text-slate-800 text-sm">Rp {{ product.sell_price|floatformat:0 }}</td>
+          <td>
+            <div>
+              <p class="text-sm font-semibold text-slate-800">{{ product.stock }} <span class="text-xs text-slate-400 font-normal">units</span></p>
+              <div class="stock-bar w-20 mt-1">
+                <div class="stock-bar-fill
+                  {% if product.stock == 0 %}bg-red-400
+                  {% elif product.stock <= product.min_stock %}bg-amber-400
+                  {% else %}bg-green-500{% endif %}"
+                  style="width:{{ pct }}%"></div>
+              </div>
+            </div>
+          </td>
+          <td>
+            {% if product.stock == 0 %}
+            <span class="badge-out inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold">Out of Stock</span>
+            {% elif product.stock <= product.min_stock %}
+            <span class="badge-low inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold">Low Stock</span>
+            {% else %}
+            <span class="badge-ok inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold">In Stock</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="flex items-center justify-center gap-1">
+              <a href="{% url 'product_detail' product.pk %}"
+                 class="icon-btn icon-btn-view" title="View detail"
+                 aria-label="View {{ product.name }}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </a>
+              <a href="{% url 'product_edit' product.pk %}"
+                 class="icon-btn icon-btn-edit" title="Edit"
+                 aria-label="Edit {{ product.name }}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </a>
+              <button type="button"
+                      onclick="openDelModal('{{ product.pk }}','{{ product.name|escapejs }}')"
+                      class="icon-btn icon-btn-delete" title="Delete"
+                      aria-label="Delete {{ product.name }}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endwith %}
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center py-16">
+            <svg class="w-12 h-12 text-slate-200 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <p class="font-bold text-slate-600 mb-1">No products found</p>
+            <p class="text-sm text-slate-400 mb-4">Try adjusting your search or filters.</p>
+            <a href="{% url 'product_add' %}" class="bg-navy-900 text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-navy hover:bg-navy-800 transition-colors">+ Add Product</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# Pagination #}
+  {% if products.has_other_pages %}
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4 border-t border-slate-100">
+    <p class="text-xs text-slate-500">
+      Showing {{ products.start_index }}–{{ products.end_index }} of {{ products.paginator.count }} products
+    </p>
+    <div class="flex items-center gap-1.5" role="navigation" aria-label="Pagination">
+      {% if products.has_previous %}
+      <a href="?{{ request.GET.urlencode }}&page={{ products.previous_page_number }}" class="page-btn" aria-label="Previous">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </a>
+      {% endif %}
+      {% for num in products.paginator.page_range %}
+      <a href="?{{ request.GET.urlencode }}&page={{ num }}"
+         class="page-btn {% if products.number == num %}active{% endif %}"
+         {% if products.number == num %}aria-current="page"{% endif %}>{{ num }}</a>
+      {% endfor %}
+      {% if products.has_next %}
+      <a href="?{{ request.GET.urlencode }}&page={{ products.next_page_number }}" class="page-btn" aria-label="Next">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{# ── MOBILE: Card-based table ── #}
+<div class="card-table" role="list" aria-label="Product cards">
+  {% for product in products %}
+  <div class="bg-white border border-slate-100 rounded-xl shadow-card p-4" role="listitem">
+    <div class="flex items-start justify-between mb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 text-xl">{{ product.emoji|default:"📦" }}</div>
+        <div>
+          <p class="font-bold text-slate-800 text-sm leading-tight">{{ product.name }}</p>
+          <p class="font-mono text-xs text-slate-400 mt-0.5">{{ product.sku }}</p>
+        </div>
+      </div>
+      {% if product.stock == 0 %}
+      <span class="badge-out inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold">Out</span>
+      {% elif product.stock <= product.min_stock %}
+      <span class="badge-low inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold">Low</span>
+      {% else %}
+      <span class="badge-ok inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold">In Stock</span>
+      {% endif %}
+    </div>
+    <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+      <div><p class="text-slate-400 mb-0.5">Category</p><p class="font-semibold text-slate-700">{{ product.category }}</p></div>
+      <div><p class="text-slate-400 mb-0.5">Stock</p><p class="font-semibold text-slate-700">{{ product.stock }} units</p></div>
+      <div><p class="text-slate-400 mb-0.5">Sell Price</p><p class="font-bold text-slate-800">Rp {{ product.sell_price|floatformat:0 }}</p></div>
+      <div><p class="text-slate-400 mb-0.5">Base Price</p><p class="text-slate-600">Rp {{ product.base_price|floatformat:0 }}</p></div>
+    </div>
+    <div class="flex gap-2 pt-3 border-t border-slate-100">
+      <a href="{% url 'product_detail' product.pk %}"
+         class="flex-1 flex items-center justify-center gap-1.5 border border-green-200 text-green-700 font-bold text-xs py-2.5 rounded-xl hover:bg-green-50 transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        Detail
+      </a>
+      <a href="{% url 'product_edit' product.pk %}"
+         class="flex-1 flex items-center justify-center gap-1.5 border border-navy-200 text-navy-900 font-bold text-xs py-2.5 rounded-xl hover:bg-navy-50 transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Edit
+      </a>
+      <button type="button"
+              onclick="openDelModal('{{ product.pk }}','{{ product.name|escapejs }}')"
+              class="flex-1 flex items-center justify-center gap-1.5 border border-red-200 text-red-500 font-bold text-xs py-2.5 rounded-xl hover:bg-red-50 transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        Delete
+      </button>
+    </div>
+  </div>
+  {% empty %}
+  <div class="bg-white rounded-xl border border-slate-100 shadow-card py-12 text-center">
+    <p class="font-bold text-slate-600 mb-2">No products found</p>
+    <a href="{% url 'product_add' %}" class="text-navy-900 font-bold text-sm underline">+ Add Product</a>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
+
+{# ── DELETE CONFIRM MODAL ── #}
+{% block modals %}
+<div id="del-modal"
+     class="modal-overlay hidden"
+     role="alertdialog" aria-modal="true" aria-labelledby="del-modal-title"
+     onclick="if(event.target===this)closeDelModal()">
+  <div class="modal-box p-6 max-w-sm">
+    <div class="flex items-center justify-center w-12 h-12 bg-red-50 rounded-xl mx-auto mb-4">
+      <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+    </div>
+    <h3 id="del-modal-title" class="font-extrabold text-lg text-slate-900 text-center mb-2">Delete Product?</h3>
+    <p class="text-sm text-slate-500 text-center mb-6">
+      Are you sure you want to delete <strong id="del-product-name" class="text-slate-700"></strong>?
+      This action cannot be undone.
+    </p>
+    <form id="del-form" method="POST" action="">
+      {% csrf_token %}
+      <div class="flex gap-3">
+        <button type="button" onclick="closeDelModal()"
+                class="flex-1 border border-slate-200 text-slate-600 font-semibold text-sm py-2.5 rounded-xl hover:bg-slate-50 transition-colors">Cancel</button>
+        <button type="submit"
+                class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold text-sm py-2.5 rounded-xl transition-colors">Delete</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const mq = window.matchMedia('(max-width:639px)');
+function applyLayout(){
+  document.querySelectorAll('.table-wrapper').forEach(el => el.style.display = mq.matches ? 'none' : '');
+  document.querySelectorAll('.card-table').forEach(el => el.style.display = mq.matches ? 'flex' : 'none');
+}
+mq.addEventListener('change', applyLayout);
+applyLayout();
+
+document.getElementById('select-all-prod')?.addEventListener('change', function(){
+  document.querySelectorAll('.row-cb-prod').forEach(cb => cb.checked = this.checked);
+});
+
+let _delPk = null;
+function openDelModal(pk, name){
+  _delPk = pk;
+  document.getElementById('del-product-name').textContent = name;
+  document.getElementById('del-form').action = `/inventory/products/${pk}/delete/`;
+  document.getElementById('del-modal').classList.remove('hidden');
+}
+function closeDelModal(){
+  document.getElementById('del-modal').classList.add('hidden');
+  _delPk = null;
+}
+</script>
+{% endblock %}

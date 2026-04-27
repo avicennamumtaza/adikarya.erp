@@ -26,11 +26,34 @@ class Product(TimeStampedModel):
 
     def __str__(self):
         return self.name
+    
+    @property
+    def total_stock(self):
+        """Menghitung total stok dari seluruh cabang."""
+        return sum(s.quantity for s in self.branch_stocks.all())
+
+    def needs_restock(self):
+        """Mengecek apakah stok sudah di bawah batas minimum."""
+        return self.total_stock <= self.min_stock
+
+    class Meta:
+        verbose_name = "Produk & Jasa"
 
 class Stock(TimeStampedModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='branch_stocks')
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='stock_levels')
     quantity = models.IntegerField(default=0)
+    
+    def add_stock(self, amount):
+        self.quantity += amount
+        self.save()
+
+    def reduce_stock(self, amount):
+        if self.quantity >= amount:
+            self.quantity -= amount
+            self.save()
+            return True
+        return False # Stok tidak cukup
 
     class Meta:
         unique_together = ('product', 'branch')

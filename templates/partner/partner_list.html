@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Partner Management{% endblock %}
+
+{# ── Override topbar search with partner-specific search ── #}
+{% block topbar_search %}
+<input type="search"
+       id="search-desktop"
+       placeholder="Search partner..."
+       class="search-input w-52"
+       aria-label="Search partners"
+       oninput="filterTable()"/>
+{% endblock %}
+
+{# ── Breadcrumb ── #}
+{% block breadcrumb %}
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+  <a href="{% url 'dashboard' %}" class="hover:text-slate-700 transition-colors">Dashboard</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <span class="text-slate-700 font-semibold">Partners</span>
+</nav>
+{% endblock %}
+
+{# ── Page Header ── #}
+{% block page_header %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div>
+    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Partner Management</h1>
+    <p class="text-sm text-slate-500 mt-0.5">Plan, prioritize and manage your business partners.</p>
+  </div>
+  <div class="flex items-center gap-2">
+    <a href="{% url 'partner_add' %}"
+       class="flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-navy transition-colors"
+       aria-label="Add new partner">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+      Add New Partner
+    </a>
+    <a href="{% url 'partner_export' %}"
+       class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 transition-colors"
+       aria-label="Export data">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      Export
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{# ── STAT CARDS ── #}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+
+  {# Total Partners #}
+  <div class="stat-card-dark rounded-xl p-4 sm:p-5 fade-up fade-up-1">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Total Partners</p>
+      <a href="{% url 'partner_list' %}"
+         class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+         aria-label="View total partners">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+      </a>
+    </div>
+    <p class="text-4xl font-extrabold text-white mb-2">{{ stat_total|default:"24" }}</p>
+    <div class="stat-badge inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full">
+      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      Increased from last month
+    </div>
+  </div>
+
+  {# Customer Receivables #}
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-100 shadow-card fade-up fade-up-2">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Receivables</p>
+      <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ stat_receivable|default:"48M" }}</p>
+    <div class="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      Increased from last month
+    </div>
+  </div>
+
+  {# Supplier Payables #}
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-100 shadow-card fade-up fade-up-3">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Payables</p>
+      <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ stat_payable|default:"21M" }}</p>
+    <div class="inline-flex items-center gap-1 bg-red-50 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full">
+      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 17H5m0 0v-8m0 8l8-8 4 4 6-6"/></svg>
+      On Discuss
+    </div>
+  </div>
+
+  {# Active Members #}
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-100 shadow-card fade-up fade-up-4">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Active Members</p>
+      <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">{{ stat_active|default:"18" }}</p>
+    <div class="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      Increased from last month
+    </div>
+  </div>
+</div>
+
+{# ── ACTION / FILTER BAR ── #}
+<div class="bg-white border border-slate-100 rounded-xl p-3 sm:p-4 shadow-card">
+  <form method="GET" id="filter-form" class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+
+    {# Mobile search #}
+    <div class="relative flex-1 min-w-0 sm:hidden">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search partner..." class="search-input w-full" style="width:100%;" aria-label="Search partner"/>
+    </div>
+
+    {# Desktop search #}
+    <div class="relative hidden sm:block">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search partner..." class="search-input" style="width:220px;" aria-label="Search partner"/>
+    </div>
+
+    {# Type filter #}
+    <select name="type" class="filter-select" aria-label="Filter by type" onchange="this.form.submit()">
+      <option value="">All Types</option>
+      <option value="Customer" {% if request.GET.type == 'Customer' %}selected{% endif %}>Customer</option>
+      <option value="Supplier" {% if request.GET.type == 'Supplier' %}selected{% endif %}>Supplier</option>
+      <option value="Both"     {% if request.GET.type == 'Both'     %}selected{% endif %}>Both</option>
+    </select>
+
+    {# Status filter #}
+    <select name="status" class="filter-select" aria-label="Filter by status" onchange="this.form.submit()">
+      <option value="">All Status</option>
+      <option value="Active"   {% if request.GET.status == 'Active'   %}selected{% endif %}>Active</option>
+      <option value="Inactive" {% if request.GET.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+    </select>
+
+    <button type="submit" class="hidden" aria-hidden="true">Search</button>
+
+    {# Spacer #}
+    <div class="flex-1 hidden sm:block"></div>
+
+    {# Export #}
+    <a href="{% url 'partner_export' %}?{{ request.GET.urlencode }}"
+       class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-2 rounded-xl bg-white hover:bg-slate-50 transition-colors whitespace-nowrap">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      Export
+    </a>
+
+    {# Add #}
+    <a href="{% url 'partner_add' %}"
+       class="flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-white text-sm font-bold px-4 py-2 rounded-xl shadow-navy transition-colors whitespace-nowrap">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+      <span class="hidden sm:inline">Add Partner</span>
+    </a>
+  </form>
+</div>
+
+{# ── DATA TABLE — Desktop / Tablet ── #}
+<div class="table-wrapper bg-white border border-slate-100 rounded-xl shadow-card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full" aria-label="Partner data table">
+      <thead>
+        <tr>
+          <th class="w-10">
+            <input type="checkbox" id="select-all" class="w-4 h-4 rounded accent-navy-900" aria-label="Select all partners"/>
+          </th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Phone Number</th>
+          <th>Current Balance</th>
+          <th>Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for partner in partners %}
+        <tr class="data-row">
+          <td>
+            <input type="checkbox" class="w-4 h-4 rounded accent-navy-900 row-cb" aria-label="Select {{ partner.name }}"/>
+          </td>
+          <td>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                   style="background: {{ partner.avatar_color|default:'#1e293b' }};">
+                {{ partner.name|first|upper }}
+              </div>
+              <div>
+                <p class="font-semibold text-slate-800 text-sm leading-tight">{{ partner.name }}</p>
+                <p class="text-xs text-slate-400 leading-tight">{{ partner.email }}</p>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
+              {% if partner.type == 'Customer' %}badge-customer
+              {% elif partner.type == 'Supplier' %}badge-supplier
+              {% else %}badge-both{% endif %}">
+              {{ partner.type }}
+            </span>
+          </td>
+          <td class="whitespace-nowrap">{{ partner.phone }}</td>
+          <td class="whitespace-nowrap font-semibold
+              {% if partner.balance >= 0 %}text-green-600{% else %}text-red-500{% endif %}">
+            {% if partner.balance >= 0 %}+{% endif %}Rp {{ partner.balance|floatformat:0 }}
+          </td>
+          <td>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold
+              {% if partner.status == 'Active' %}text-green-700{% else %}text-slate-400{% endif %}">
+              <span class="w-1.5 h-1.5 rounded-full {% if partner.status == 'Active' %}bg-green-400{% else %}bg-slate-300{% endif %}"></span>
+              {{ partner.status }}
+            </span>
+          </td>
+          <td>
+            <div class="flex items-center justify-center gap-1.5">
+              <a href="{% url 'partner_edit' partner.pk %}"
+                 class="icon-btn icon-btn-edit"
+                 aria-label="Edit {{ partner.name }}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </a>
+              <button type="button"
+                      onclick="openDeleteModal('{{ partner.pk }}','{{ partner.name|escapejs }}')"
+                      class="icon-btn icon-btn-delete"
+                      aria-label="Delete {{ partner.name }}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center py-16">
+            <svg class="w-12 h-12 text-slate-200 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <p class="font-bold text-slate-600 mb-1">No partners found</p>
+            <p class="text-sm text-slate-400 mb-4">Try adjusting your search or filters.</p>
+            <a href="{% url 'partner_add' %}" class="bg-navy-900 text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-navy hover:bg-navy-800 transition-colors">+ Add New Partner</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# Pagination #}
+  {% if partners.has_other_pages %}
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4 border-t border-slate-100">
+    <p class="text-xs text-slate-500">
+      Showing {{ partners.start_index }}–{{ partners.end_index }} of {{ partners.paginator.count }} partners
+    </p>
+    <div class="flex items-center gap-1.5" role="navigation" aria-label="Pagination">
+      {% if partners.has_previous %}
+      <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.type %}type={{ request.GET.type }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}page={{ partners.previous_page_number }}"
+         class="page-btn" aria-label="Previous page">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </a>
+      {% endif %}
+      {% for num in partners.paginator.page_range %}
+      <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.type %}type={{ request.GET.type }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}page={{ num }}"
+         class="page-btn {% if partners.number == num %}active{% endif %}"
+         aria-label="Page {{ num }}" {% if partners.number == num %}aria-current="page"{% endif %}>
+        {{ num }}
+      </a>
+      {% endfor %}
+      {% if partners.has_next %}
+      <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.type %}type={{ request.GET.type }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}page={{ partners.next_page_number }}"
+         class="page-btn" aria-label="Next page">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{# ── MOBILE: Card-based table ── #}
+<div class="card-table" role="list" aria-label="Partner list">
+  {% for partner in partners %}
+  <div class="bg-white border border-slate-100 rounded-xl shadow-card p-4" role="listitem">
+    <div class="flex items-start justify-between mb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0"
+             style="background: {{ partner.avatar_color|default:'#1e293b' }};">
+          {{ partner.name|first|upper }}
+        </div>
+        <div>
+          <p class="font-bold text-slate-800 text-sm leading-tight">{{ partner.name }}</p>
+          <p class="text-xs text-slate-400">{{ partner.email }}</p>
+        </div>
+      </div>
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
+        {% if partner.type == 'Customer' %}badge-customer
+        {% elif partner.type == 'Supplier' %}badge-supplier
+        {% else %}badge-both{% endif %}">
+        {{ partner.type }}
+      </span>
+    </div>
+    <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+      <div>
+        <p class="text-slate-400 font-medium mb-0.5">Phone</p>
+        <p class="text-slate-700 font-semibold">{{ partner.phone }}</p>
+      </div>
+      <div>
+        <p class="text-slate-400 font-medium mb-0.5">Balance</p>
+        <p class="font-bold {% if partner.balance >= 0 %}text-green-600{% else %}text-red-500{% endif %}">
+          {% if partner.balance >= 0 %}+{% endif %}Rp {{ partner.balance|floatformat:0 }}
+        </p>
+      </div>
+      <div>
+        <p class="text-slate-400 font-medium mb-0.5">Status</p>
+        <span class="inline-flex items-center gap-1.5 text-xs font-semibold
+          {% if partner.status == 'Active' %}text-green-700{% else %}text-slate-400{% endif %}">
+          <span class="w-1.5 h-1.5 rounded-full {% if partner.status == 'Active' %}bg-green-400{% else %}bg-slate-300{% endif %}"></span>
+          {{ partner.status }}
+        </span>
+      </div>
+    </div>
+    <div class="flex gap-2 pt-3 border-t border-slate-100">
+      <a href="{% url 'partner_edit' partner.pk %}"
+         class="flex-1 flex items-center justify-center gap-2 border border-navy-900 text-navy-900 font-bold text-sm py-2.5 rounded-xl hover:bg-navy-50 transition-colors"
+         aria-label="Edit {{ partner.name }}">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Edit
+      </a>
+      <button type="button"
+              onclick="openDeleteModal('{{ partner.pk }}','{{ partner.name|escapejs }}')"
+              class="flex-1 flex items-center justify-center gap-2 border border-red-200 text-red-500 font-bold text-sm py-2.5 rounded-xl hover:bg-red-50 transition-colors"
+              aria-label="Delete {{ partner.name }}">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        Delete
+      </button>
+    </div>
+  </div>
+  {% empty %}
+  <div class="bg-white rounded-xl border border-slate-100 shadow-card py-12 text-center">
+    <p class="font-bold text-slate-600 mb-2">No partners found</p>
+    <a href="{% url 'partner_add' %}" class="text-navy-900 font-bold text-sm underline">+ Add Partner</a>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
+
+{# ── DELETE CONFIRM MODAL ── #}
+{% block modals %}
+<div id="delete-overlay"
+     class="modal-overlay hidden"
+     role="alertdialog" aria-modal="true" aria-labelledby="delete-title"
+     onclick="if(event.target===this)closeDeleteModal()">
+  <div class="modal-box p-6 max-w-sm">
+    <div class="flex items-center justify-center w-12 h-12 bg-red-50 rounded-xl mx-auto mb-4">
+      <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+    </div>
+    <h3 id="delete-title" class="font-extrabold text-lg text-slate-900 text-center mb-2">Delete Partner</h3>
+    <p class="text-sm text-slate-500 text-center mb-6">
+      Are you sure you want to delete <strong id="delete-name" class="text-slate-700"></strong>? This action cannot be undone.
+    </p>
+    <form id="delete-form" method="POST" action="">
+      {% csrf_token %}
+      <input type="hidden" name="_method" value="DELETE"/>
+      <div class="flex gap-3">
+        <button type="button" onclick="closeDeleteModal()"
+                class="flex-1 border border-slate-200 text-slate-600 font-semibold text-sm py-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+          Cancel
+        </button>
+        <button type="submit"
+                class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold text-sm py-2.5 rounded-xl transition-colors">
+          Delete
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Mobile card table toggle ── */
+const mq = window.matchMedia('(max-width:639px)');
+function applyLayout(){
+  document.querySelectorAll('.table-wrapper').forEach(el => el.style.display = mq.matches ? 'none' : '');
+  document.querySelectorAll('.card-table').forEach(el => el.style.display = mq.matches ? 'flex' : 'none');
+}
+mq.addEventListener('change', applyLayout);
+applyLayout();
+
+/* ── Select all ── */
+document.getElementById('select-all')?.addEventListener('change', function(){
+  document.querySelectorAll('.row-cb').forEach(cb => cb.checked = this.checked);
+});
+
+/* ── Delete modal ── */
+let _deletePk = null;
+function openDeleteModal(pk, name){
+  _deletePk = pk;
+  document.getElementById('delete-name').textContent = name;
+  document.getElementById('delete-form').action = `/partners/${pk}/delete/`;
+  document.getElementById('delete-overlay').classList.remove('hidden');
+}
+function closeDeleteModal(){
+  document.getElementById('delete-overlay').classList.add('hidden');
+  _deletePk = null;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Inventory – Product Detail{% endblock %}
+{% block nav_inventory %}active{% endblock %}
+
+{% block topbar_search %}
+<input type="search"
+       id="search-desktop"
+       placeholder="Search inventory..."
+       class="search-input w-52"
+       aria-label="Search inventory"/>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+  <a href="{% url 'dashboard' %}" class="hover:text-slate-700 transition-colors">Dashboard</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <a href="{% url 'product_list' %}" class="hover:text-slate-700 transition-colors">Inventory</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <span class="text-slate-700 font-semibold">{{ product.name|default:"Wireless Headphone Pro" }}</span>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div>
+    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Product Detail</h1>
+    <p class="text-sm text-slate-500 mt-0.5">Full product information and stock levels across branches.</p>
+  </div>
+  {# Sub-nav tabs consistent with product_list #}
+  <div class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto shrink-0" role="tablist" aria-label="Inventory sections">
+    <a href="{% url 'product_list' %}"
+       class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
+      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+      Products
+    </a>
+    <a href="{% url 'branch_list' %}"
+       class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
+      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Branches
+    </a>
+    <a href="{% url 'product_add' %}"
+       class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
+      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Add Product
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{# ── BACK LINK + ACTION BUTTONS ── #}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <a href="{% url 'product_list' %}"
+     class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+    Back to Products
+  </a>
+  <div class="flex gap-2">
+    <a href="{% url 'product_edit' product.pk|default:1 %}"
+       class="icon-btn icon-btn-edit px-4 gap-2 text-xs font-bold"
+       aria-label="Edit product">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+      Edit Product
+    </a>
+    <a href="{% url 'product_stock_adjust' product.pk|default:1 %}"
+       class="icon-btn icon-btn-adj px-4 gap-2 text-xs font-bold"
+       aria-label="Stock adjustment">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
+      Adjust Stock
+    </a>
+  </div>
+</div>
+
+{# ── PRODUCT HEADER CARD ── #}
+<div class="bg-white rounded-xl border border-slate-100 shadow-card p-5 sm:p-6 fade-up fade-up-1">
+  <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+    {# Product image placeholder #}
+    <div class="w-20 h-20 rounded-xl bg-navy-50 border border-navy-100 flex items-center justify-center flex-shrink-0">
+      <svg class="w-10 h-10 text-navy-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="flex flex-wrap items-center gap-2 mb-1">
+        <h2 class="text-xl font-extrabold text-slate-900">
+          {{ product.name|default:"Wireless Headphone Pro" }}
+        </h2>
+        <span class="badge-active text-xs font-bold px-2.5 py-1 rounded-full">
+          {{ product.status|default:"Active" }}
+        </span>
+      </div>
+      <p class="text-sm text-slate-400 font-mono mb-2">SKU: {{ product.sku|default:"WHF-PRO-BLK-001" }}</p>
+      <div class="flex flex-wrap gap-2">
+        <span class="inline-flex items-center gap-1 text-xs font-semibold bg-blue-50 text-blue-600 px-2.5 py-1 rounded-lg">
+          {{ product.category|default:"Electronics" }}
+        </span>
+        <span class="inline-flex items-center gap-1 text-xs font-semibold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">
+          {{ product.type|default:"Goods" }}
+        </span>
+        <span class="inline-flex items-center gap-1 text-xs font-semibold bg-purple-50 text-purple-600 px-2.5 py-1 rounded-lg">
+          {{ product.brand|default:"Sony" }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── INFO GRID ── #}
+<div class="grid lg:grid-cols-2 gap-4">
+
+  {# Technical Specs #}
+  <div class="bg-white rounded-xl border border-slate-100 shadow-card p-5 fade-up fade-up-2">
+    <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+      <svg class="w-4 h-4 text-navy-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      Technical Specifications
+    </h3>
+    <div>
+      <div class="spec-row">
+        <span class="spec-label">Brand</span>
+        <span class="spec-value">{{ product.brand|default:"Sony" }}</span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Product Type</span>
+        <span class="spec-value">{{ product.type|default:"Goods" }}</span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Category</span>
+        <span class="spec-value">{{ product.category|default:"Electronics" }}</span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Min. Stock Level</span>
+        <span class="spec-value">{{ product.min_stock|default:"10" }} units</span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Base Price (Moving Avg.)</span>
+        <span class="spec-value">Rp {{ product.base_price|default:"850,000" }}</span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Selling Price</span>
+        <span class="spec-value font-extrabold">Rp {{ product.sell_price|default:"1,250,000" }}</span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Margin</span>
+        <span class="spec-value text-green-600 font-extrabold">{{ product.margin|default:"47.1%" }}</span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Created</span>
+        <span class="spec-value">{{ product.created_at|date:"d M Y"|default:"12 Jan 2025" }}</span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Last Updated</span>
+        <span class="spec-value">{{ product.updated_at|date:"d M Y"|default:"24 Jun 2025" }}</span>
+      </div>
+    </div>
+  </div>
+
+  {# Stock Overview #}
+  <div class="bg-white rounded-xl border border-slate-100 shadow-card p-5 fade-up fade-up-3">
+    <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+      <svg class="w-4 h-4 text-navy-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Stock Overview
+    </h3>
+
+    {# Summary pills #}
+    <div class="grid grid-cols-3 gap-3 mb-5">
+      <div class="bg-slate-50 rounded-xl p-3 text-center">
+        <p class="text-3xl font-extrabold text-slate-900">142</p>
+        <p class="text-xs text-slate-400 mt-1">Total Units</p>
+      </div>
+      <div class="bg-amber-50 rounded-xl p-3 text-center">
+        <p class="text-3xl font-extrabold text-amber-600">2</p>
+        <p class="text-xs text-slate-400 mt-1">Low Branches</p>
+      </div>
+      <div class="bg-red-50 rounded-xl p-3 text-center">
+        <p class="text-3xl font-extrabold text-red-600">0</p>
+        <p class="text-xs text-slate-400 mt-1">Out of Stock</p>
+      </div>
+    </div>
+
+    {# Mini progress #}
+    <div class="space-y-2 mb-5">
+      <div class="flex justify-between text-xs text-slate-500 mb-1">
+        <span>Stock vs minimum level</span>
+        <span>142 / 50 min</span>
+      </div>
+      <div class="stock-bar">
+        <div class="stock-bar-fill bg-green-500" style="width:85%"></div>
+      </div>
+    </div>
+
+    {# Notes #}
+    {% if product.notes %}
+    <div class="bg-slate-50 rounded-xl p-4 text-sm text-slate-600">
+      <p class="font-semibold text-slate-700 mb-1">Notes</p>
+      <p>{{ product.notes }}</p>
+    </div>
+    {% else %}
+    <div class="bg-slate-50 rounded-xl p-4 text-sm text-slate-400 italic">
+      No additional notes.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ── STOCK PER BRANCH TABLE ── #}
+<div class="bg-white rounded-xl border border-slate-100 shadow-card overflow-hidden fade-up fade-up-4">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-5 py-4 border-b border-slate-100">
+    <h3 class="text-base font-bold text-slate-900">Stock Per Branch</h3>
+    <a href="{% url 'product_stock_adjust' product.pk|default:1 %}"
+       class="inline-flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-bold px-3 py-2 rounded-lg transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Stock Adjustment
+    </a>
+  </div>
+
+  {# Desktop table #}
+  <div class="table-wrapper overflow-x-auto">
+    <table class="w-full" aria-label="Stock per branch">
+      <thead>
+        <tr>
+          <th>Branch Name</th>
+          <th class="text-right">Current Stock</th>
+          <th class="text-right">Min Stock</th>
+          <th>Status</th>
+          <th>Last Restock</th>
+          <th class="text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {# Dummy data — replace with: {% for bs in branch_stocks %} #}
+        <tr class="data-row">
+          <td>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl bg-navy-50 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-navy-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-800 text-sm">Cabang Jakarta Pusat</p>
+                <p class="text-xs text-slate-400">Jl. Thamrin No. 12</p>
+              </div>
+            </div>
+          </td>
+          <td class="text-right">
+            <span class="font-bold text-slate-900">52 <span class="text-slate-400 font-normal text-xs">units</span></span>
+          </td>
+          <td class="text-right text-sm text-slate-500">10</td>
+          <td><span class="badge-ok text-xs font-bold px-2.5 py-1 rounded-full">In Stock</span></td>
+          <td class="text-sm text-slate-500">20 Jun 2025</td>
+          <td class="text-center">
+            <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=1"
+               class="icon-btn icon-btn-adj text-xs px-3" aria-label="Adjust stock for Jakarta">Adjust</a>
+          </td>
+        </tr>
+        <tr class="data-row">
+          <td>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl bg-navy-50 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-navy-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-800 text-sm">Cabang Surabaya</p>
+                <p class="text-xs text-slate-400">Jl. Pemuda No. 5</p>
+              </div>
+            </div>
+          </td>
+          <td class="text-right">
+            <span class="font-bold text-slate-900">35 <span class="text-slate-400 font-normal text-xs">units</span></span>
+          </td>
+          <td class="text-right text-sm text-slate-500">10</td>
+          <td><span class="badge-ok text-xs font-bold px-2.5 py-1 rounded-full">In Stock</span></td>
+          <td class="text-sm text-slate-500">15 Jun 2025</td>
+          <td class="text-center">
+            <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=2"
+               class="icon-btn icon-btn-adj text-xs px-3" aria-label="Adjust stock for Surabaya">Adjust</a>
+          </td>
+        </tr>
+        <tr class="data-row">
+          <td>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-800 text-sm">Cabang Bandung</p>
+                <p class="text-xs text-slate-400">Jl. Braga No. 8</p>
+              </div>
+            </div>
+          </td>
+          <td class="text-right">
+            <span class="font-bold text-amber-600">8 <span class="text-slate-400 font-normal text-xs">units</span></span>
+          </td>
+          <td class="text-right text-sm text-slate-500">10</td>
+          <td><span class="badge-low text-xs font-bold px-2.5 py-1 rounded-full">Low Stock</span></td>
+          <td class="text-sm text-slate-500">30 May 2025</td>
+          <td class="text-center">
+            <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=3"
+               class="icon-btn icon-btn-adj text-xs px-3" aria-label="Adjust stock for Bandung">Adjust</a>
+          </td>
+        </tr>
+        <tr class="data-row">
+          <td>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl bg-navy-50 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-navy-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-800 text-sm">Cabang Medan</p>
+                <p class="text-xs text-slate-400">Jl. Sudirman No. 22</p>
+              </div>
+            </div>
+          </td>
+          <td class="text-right">
+            <span class="font-bold text-slate-900">22 <span class="text-slate-400 font-normal text-xs">units</span></span>
+          </td>
+          <td class="text-right text-sm text-slate-500">10</td>
+          <td><span class="badge-ok text-xs font-bold px-2.5 py-1 rounded-full">In Stock</span></td>
+          <td class="text-sm text-slate-500">10 Jun 2025</td>
+          <td class="text-center">
+            <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=4"
+               class="icon-btn icon-btn-adj text-xs px-3" aria-label="Adjust stock for Medan">Adjust</a>
+          </td>
+        </tr>
+        <tr class="data-row">
+          <td>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl bg-navy-50 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-navy-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-800 text-sm">Cabang Makassar</p>
+                <p class="text-xs text-slate-400">Jl. Penghibur No. 7</p>
+              </div>
+            </div>
+          </td>
+          <td class="text-right">
+            <span class="font-bold text-slate-900">25 <span class="text-slate-400 font-normal text-xs">units</span></span>
+          </td>
+          <td class="text-right text-sm text-slate-500">10</td>
+          <td><span class="badge-ok text-xs font-bold px-2.5 py-1 rounded-full">In Stock</span></td>
+          <td class="text-sm text-slate-500">18 Jun 2025</td>
+          <td class="text-center">
+            <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=5"
+               class="icon-btn icon-btn-adj text-xs px-3" aria-label="Adjust stock for Makassar">Adjust</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  {# Mobile branch cards #}
+  <div class="card-table p-4" role="list" aria-label="Branch stock cards">
+
+    <div class="bg-white border border-slate-100 rounded-xl p-4" role="listitem">
+      <div class="flex items-start justify-between mb-3">
+        <div>
+          <p class="font-bold text-slate-800 text-sm">Cabang Jakarta Pusat</p>
+          <p class="text-xs text-slate-400">Jl. Thamrin No. 12</p>
+        </div>
+        <span class="badge-ok text-xs font-bold px-2.5 py-1 rounded-full">In Stock</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-xs mb-3">
+        <div><p class="text-slate-400">Stock</p><p class="font-bold text-slate-800">52 units</p></div>
+        <div><p class="text-slate-400">Min</p><p class="font-semibold text-slate-600">10</p></div>
+        <div><p class="text-slate-400">Restock</p><p class="font-semibold text-slate-600">20 Jun</p></div>
+      </div>
+      <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=1"
+         class="flex items-center justify-center gap-1.5 w-full border border-amber-200 text-amber-700 font-bold text-xs py-2.5 rounded-xl hover:bg-amber-50 transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
+        Adjust Stock
+      </a>
+    </div>
+
+    <div class="bg-white border border-slate-100 rounded-xl p-4" role="listitem">
+      <div class="flex items-start justify-between mb-3">
+        <div>
+          <p class="font-bold text-slate-800 text-sm">Cabang Surabaya</p>
+          <p class="text-xs text-slate-400">Jl. Pemuda No. 5</p>
+        </div>
+        <span class="badge-ok text-xs font-bold px-2.5 py-1 rounded-full">In Stock</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-xs mb-3">
+        <div><p class="text-slate-400">Stock</p><p class="font-bold text-slate-800">35 units</p></div>
+        <div><p class="text-slate-400">Min</p><p class="font-semibold text-slate-600">10</p></div>
+        <div><p class="text-slate-400">Restock</p><p class="font-semibold text-slate-600">15 Jun</p></div>
+      </div>
+      <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=2"
+         class="flex items-center justify-center gap-1.5 w-full border border-amber-200 text-amber-700 font-bold text-xs py-2.5 rounded-xl hover:bg-amber-50 transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
+        Adjust Stock
+      </a>
+    </div>
+
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4" role="listitem">
+      <div class="flex items-start justify-between mb-3">
+        <div>
+          <p class="font-bold text-slate-800 text-sm">Cabang Bandung</p>
+          <p class="text-xs text-slate-400">Jl. Braga No. 8</p>
+        </div>
+        <span class="badge-low text-xs font-bold px-2.5 py-1 rounded-full">Low Stock</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-xs mb-3">
+        <div><p class="text-slate-400">Stock</p><p class="font-bold text-amber-600">8 units</p></div>
+        <div><p class="text-slate-400">Min</p><p class="font-semibold text-slate-600">10</p></div>
+        <div><p class="text-slate-400">Restock</p><p class="font-semibold text-slate-600">30 May</p></div>
+      </div>
+      <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=3"
+         class="flex items-center justify-center gap-1.5 w-full border border-amber-400 text-amber-700 bg-amber-100 font-bold text-xs py-2.5 rounded-xl hover:bg-amber-200 transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
+        Restock Needed
+      </a>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

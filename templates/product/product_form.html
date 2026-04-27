@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+{% load static %}
+
+{# ── Rendered for both "Add" (no product) and "Edit" (product exists) ── #}
+{% block title %}{% if product %}Edit Product{% else %}Add Product{% endif %} – Inventory{% endblock %}
+{% block nav_inventory %}active{% endblock %}
+
+{% block topbar_search %}
+<input type="search"
+       id="search-desktop"
+       placeholder="Search inventory..."
+       class="search-input w-52"
+       aria-label="Search inventory"/>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+  <a href="{% url 'dashboard' %}" class="hover:text-slate-700 transition-colors">Dashboard</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <a href="{% url 'product_list' %}" class="hover:text-slate-700 transition-colors">Inventory</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <span class="text-slate-700 font-semibold">
+    {% if product %}Edit: {{ product.name }}{% else %}Add Product{% endif %}
+  </span>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div>
+    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">
+      {% if product %}Edit Product{% else %}Add New Product{% endif %}
+    </h1>
+    <p class="text-sm text-slate-500 mt-0.5">Fill in all required fields marked with <span class="text-red-500">*</span></p>
+  </div>
+  <div class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto shrink-0" role="tablist" aria-label="Inventory sections">
+    <a href="{% url 'product_list' %}"
+       class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
+      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+      Products
+    </a>
+    <a href="{% url 'branch_list' %}"
+       class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
+      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Branches
+    </a>
+    <a href="{% url 'product_add' %}"
+       class="page-tab active whitespace-nowrap" role="tab" aria-selected="true">
+      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Add Product
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{# Back link #}
+<a href="{% url 'product_list' %}"
+   class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors">
+  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+  Back to Products
+</a>
+
+<form method="POST"
+      action="{% if product %}{% url 'product_edit' product.pk %}{% else %}{% url 'product_add' %}{% endif %}"
+      enctype="multipart/form-data"
+      novalidate
+      class="max-w-4xl">
+  {% csrf_token %}
+
+  <div class="grid lg:grid-cols-2 gap-5">
+
+    {# ══════════════════════════════════
+       LEFT: General Information
+    ══════════════════════════════════ #}
+    <div class="bg-white rounded-xl border border-slate-100 shadow-card p-5 sm:p-6 space-y-4 fade-up fade-up-1">
+      <h3 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+        <svg class="w-4 h-4 text-navy-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        General Information
+      </h3>
+
+      {# Product Name #}
+      <div>
+        <label class="form-label" for="id_name">
+          Product Name <span class="text-red-500">*</span>
+        </label>
+        <input id="id_name"
+               name="name"
+               type="text"
+               value="{{ form.name.value|default:'' }}"
+               placeholder="e.g. Wireless Headphone Pro"
+               class="form-input {% if form.name.errors %}error{% endif %}"
+               aria-required="true"
+               autocomplete="off"/>
+        {% if form.name.errors %}
+          <p class="form-error visible">{{ form.name.errors.0 }}</p>
+        {% else %}
+          <p class="form-error" id="err-name">Product name is required.</p>
+        {% endif %}
+      </div>
+
+      {# SKU #}
+      <div>
+        <label class="form-label" for="id_sku">
+          SKU Code <span class="text-red-500">*</span>
+        </label>
+        <input id="id_sku"
+               name="sku"
+               type="text"
+               value="{{ form.sku.value|default:'' }}"
+               placeholder="e.g. WHF-PRO-BLK-001"
+               class="form-input {% if form.sku.errors %}error{% endif %}"
+               aria-required="true"
+               autocomplete="off"/>
+        {% if form.sku.errors %}
+          <p class="form-error visible">{{ form.sku.errors.0 }}</p>
+        {% else %}
+          <p class="form-error" id="err-sku">SKU code is required.</p>
+        {% endif %}
+      </div>
+
+      {# Category #}
+      <div>
+        <label class="form-label" for="id_category">
+          Category <span class="text-red-500">*</span>
+        </label>
+        <select id="id_category"
+                name="category"
+                class="form-input {% if form.category.errors %}error{% endif %}"
+                aria-required="true">
+          <option value="">— Select Category —</option>
+          {% for cat in categories %}
+            <option value="{{ cat }}"
+              {% if form.category.value == cat or product.category == cat %}selected{% endif %}>
+              {{ cat }}
+            </option>
+          {% empty %}
+            {# Dummy options for preview #}
+            <option value="Electronics"   {% if form.category.value == "Electronics"   %}selected{% endif %}>Electronics</option>
+            <option value="Clothing"      {% if form.category.value == "Clothing"      %}selected{% endif %}>Clothing</option>
+            <option value="Food & Beverage" {% if form.category.value == "Food & Beverage" %}selected{% endif %}>Food &amp; Beverage</option>
+            <option value="Stationery"    {% if form.category.value == "Stationery"    %}selected{% endif %}>Stationery</option>
+            <option value="Home Goods"    {% if form.category.value == "Home Goods"    %}selected{% endif %}>Home Goods</option>
+          {% endfor %}
+        </select>
+        {% if form.category.errors %}
+          <p class="form-error visible">{{ form.category.errors.0 }}</p>
+        {% else %}
+          <p class="form-error" id="err-cat">Please select a category.</p>
+        {% endif %}
+      </div>
+
+      {# Brand #}
+      <div>
+        <label class="form-label" for="id_brand">Brand</label>
+        <input id="id_brand"
+               name="brand"
+               type="text"
+               value="{{ form.brand.value|default:product.brand|default:'' }}"
+               placeholder="e.g. Sony, Samsung, Generic"
+               class="form-input"/>
+      </div>
+
+      {# Product Type – radio card pair #}
+      <div>
+        <label class="form-label">Product Type <span class="text-red-500">*</span></label>
+        <div class="flex gap-3">
+          <label class="flex-1 flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors
+            {% if form.product_type.value == 'Goods' or not form.product_type.value %}border-navy-900 bg-navy-50{% else %}border-slate-200 hover:border-navy-300{% endif %}">
+            <input type="radio"
+                   name="product_type"
+                   value="Goods"
+                   class="w-4 h-4 accent-slate-900"
+                   {% if form.product_type.value == 'Goods' or not form.product_type.value %}checked{% endif %}/>
+            <div>
+              <p class="text-sm font-bold text-slate-800">Goods</p>
+              <p class="text-xs text-slate-400">Physical product</p>
+            </div>
+          </label>
+          <label class="flex-1 flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors
+            {% if form.product_type.value == 'Service' %}border-navy-900 bg-navy-50{% else %}border-slate-200 hover:border-navy-300{% endif %}">
+            <input type="radio"
+                   name="product_type"
+                   value="Service"
+                   class="w-4 h-4 accent-slate-900"
+                   {% if form.product_type.value == 'Service' %}checked{% endif %}/>
+            <div>
+              <p class="text-sm font-bold text-slate-800">Service</p>
+              <p class="text-xs text-slate-400">No stock tracking</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {# Notes #}
+      <div>
+        <label class="form-label" for="id_notes">Notes / Description</label>
+        <textarea id="id_notes"
+                  name="notes"
+                  class="form-input"
+                  rows="3"
+                  placeholder="Additional product notes..."
+                  style="resize:vertical;">{{ form.notes.value|default:product.notes|default:'' }}</textarea>
+      </div>
+    </div>
+
+    {# ══════════════════════════════════
+       RIGHT: Pricing + Inventory Policy
+    ══════════════════════════════════ #}
+    <div class="space-y-5">
+
+      {# Pricing Card #}
+      <div class="bg-white rounded-xl border border-slate-100 shadow-card p-5 sm:p-6 space-y-4 fade-up fade-up-2">
+        <h3 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+          <svg class="w-4 h-4 text-navy-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Pricing
+        </h3>
+
+        {# Base price – read-only, system computed #}
+        <div>
+          <label class="form-label" for="id_base_price">
+            Base Price / Moving Average
+            <span class="ml-1 text-xs text-slate-400 font-normal">(auto-calculated, read only)</span>
+          </label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold pointer-events-none">Rp</span>
+            <input id="id_base_price"
+                   name="base_price"
+                   type="text"
+                   value="{{ product.base_price|default:'850,000' }}"
+                   class="form-input pl-9"
+                   readonly
+                   aria-readonly="true"/>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Automatically computed from purchase transactions (Moving Average).</p>
+        </div>
+
+        {# Selling price #}
+        <div>
+          <label class="form-label" for="id_sell_price">
+            Selling Price <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold pointer-events-none">Rp</span>
+            <input id="id_sell_price"
+                   name="sell_price"
+                   type="number"
+                   value="{{ form.sell_price.value|default:product.sell_price|default:'' }}"
+                   placeholder="0"
+                   class="form-input pl-9 {% if form.sell_price.errors %}error{% endif %}"
+                   aria-required="true"
+                   min="0"/>
+          </div>
+          {% if form.sell_price.errors %}
+            <p class="form-error visible">{{ form.sell_price.errors.0 }}</p>
+          {% else %}
+            <p class="form-error" id="err-price">Selling price must be greater than 0.</p>
+          {% endif %}
+        </div>
+
+        {# Margin preview (static – JS would update this live) #}
+        <div class="bg-green-50 border border-green-100 rounded-xl p-3 flex items-center justify-between">
+          <span class="text-sm font-semibold text-green-700">Estimated Margin</span>
+          <span class="text-lg font-extrabold text-green-700">
+            {{ product.margin|default:"—" }}
+          </span>
+        </div>
+      </div>
+
+      {# Inventory Policy Card #}
+      <div class="bg-white rounded-xl border border-slate-100 shadow-card p-5 sm:p-6 space-y-4 fade-up fade-up-3">
+        <h3 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+          <svg class="w-4 h-4 text-navy-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          Inventory Policy
+        </h3>
+
+        {# Min stock #}
+        <div>
+          <label class="form-label" for="id_min_stock">
+            Minimum Stock Level <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <input id="id_min_stock"
+                   name="min_stock"
+                   type="number"
+                   value="{{ form.min_stock.value|default:product.min_stock|default:'' }}"
+                   placeholder="e.g. 10"
+                   class="form-input pr-16 {% if form.min_stock.errors %}error{% endif %}"
+                   min="0"
+                   aria-required="true"/>
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">units</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">System will alert when stock falls below this level.</p>
+          {% if form.min_stock.errors %}
+            <p class="form-error visible">{{ form.min_stock.errors.0 }}</p>
+          {% else %}
+            <p class="form-error" id="err-min">Minimum stock level is required.</p>
+          {% endif %}
+        </div>
+
+        {# Initial stock – only shown for Add mode #}
+        {% if not product %}
+        <div>
+          <label class="form-label" for="id_init_stock">
+            Initial Stock <span class="text-xs text-slate-400 font-normal">(Opening Balance)</span>
+          </label>
+          <div class="relative">
+            <input id="id_init_stock"
+                   name="init_stock"
+                   type="number"
+                   value="{{ form.init_stock.value|default:'0' }}"
+                   placeholder="0"
+                   class="form-input pr-16"
+                   min="0"/>
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">units</span>
+          </div>
+        </div>
+
+        {# Branch assignment for initial stock #}
+        <div>
+          <label class="form-label" for="id_branch_assign">Assign Initial Stock To</label>
+          <select id="id_branch_assign"
+                  name="branch_assign"
+                  class="form-input">
+            <option value="">— Select Branch —</option>
+            {% for branch in branches %}
+              <option value="{{ branch.pk }}">{{ branch.name }}</option>
+            {% empty %}
+              {# Dummy options for preview #}
+              <option value="1">Cabang Jakarta Pusat</option>
+              <option value="2">Cabang Surabaya</option>
+              <option value="3">Cabang Bandung</option>
+              <option value="4">Cabang Medan</option>
+              <option value="5">Cabang Makassar</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+      </div>
+
+      {# ── Submit buttons ── #}
+      <div class="flex gap-3 fade-up fade-up-4">
+        <a href="{% url 'product_list' %}"
+           class="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors text-center">
+          Cancel
+        </a>
+        <button type="submit"
+                class="flex-1 py-3 rounded-xl bg-navy-900 hover:bg-navy-800 text-white font-bold text-sm shadow-navy transition-colors">
+          {% if product %}Save Changes{% else %}Save Product{% endif %}
+        </button>
+      </div>
+
+      {# Danger zone for edit mode #}
+      {% if product %}
+      <div class="border border-red-100 rounded-xl p-4 bg-red-50 fade-up fade-up-4">
+        <p class="text-sm font-bold text-red-700 mb-1">Danger Zone</p>
+        <p class="text-xs text-red-500 mb-3">
+          Deleting this product will also remove all related stock records across branches. This action cannot be undone.
+        </p>
+        <a href="{% url 'product_delete' product.pk %}"
+           class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          Delete This Product
+        </a>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>{# /grid #}
+
+</form>
+
+{% endblock %}

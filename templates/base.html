@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  {# ── PAGE TITLE ── #}
+  <title>{% block title %}Donezo{% endblock %} – Donezo</title>
+
+  {# ── TAILWIND ── #}
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  {# ── ALPINE.JS ── #}
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  {# ── FONTS ── #}
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+  {# ── TAILWIND CONFIG ── #}
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              50:'#f0f4ff', 100:'#e0e9ff', 200:'#c3d3ff', 300:'#96b3ff',
+              400:'#6188ff', 500:'#3a63ff', 600:'#1e3fdd', 700:'#1730b3',
+              800:'#1a2855', 900:'#0f172a', 950:'#060d1f'
+            }
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans','sans-serif'] },
+          boxShadow: {
+            'card':    '0 1px 3px rgba(0,0,0,.06),0 1px 2px -1px rgba(0,0,0,.06)',
+            'card-md': '0 4px 12px rgba(0,0,0,.08)',
+            'card-lg': '0 8px 24px rgba(0,0,0,.10)',
+            'navy':    '0 4px 14px rgba(15,23,42,.25)',
+          }
+        }
+      }
+    }
+  </script>
+
+  {# ── GLOBAL STYLES ── #}
+  <style>
+    /* ── RESET & BASE ── */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #0f172a; font-size: 14px; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+
+    /* ── SIDEBAR ── */
+    #sidebar { transition: transform .25s cubic-bezier(.4,0,.2,1), width .25s cubic-bezier(.4,0,.2,1); }
+    #sidebar.collapsed { width: 72px; }
+    #sidebar.collapsed .sidebar-label,
+    #sidebar.collapsed .sidebar-logo-text,
+    #sidebar.collapsed .sidebar-section-label,
+    #sidebar.collapsed .sidebar-cta { display: none; }
+    #sidebar.collapsed .nav-item { justify-content: center; padding: 10px 0; }
+
+    /* ── NAV ITEM ── */
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; border-radius: 10px;
+      cursor: pointer; color: #64748b;
+      font-size: .875rem; font-weight: 500;
+      text-decoration: none;
+      transition: background .15s, color .15s;
+      white-space: nowrap;
+    }
+    .nav-item:hover { background: #f1f5f9; color: #1e293b; }
+    .nav-item.active { background: #0f172a; color: #fff; }
+    .nav-item.active svg { color: #fff; }
+
+    /* ── TABLE ── */
+    .data-row:hover td { background: #f0f4ff; }
+    .data-row td { transition: background .12s; }
+    thead th {
+      font-size: .75rem; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: .05em;
+      padding: 10px 14px; background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0; white-space: nowrap;
+    }
+    tbody td {
+      padding: 12px 14px; border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle; color: #1e293b; font-size: .875rem;
+    }
+
+    /* ── FORM INPUTS ── */
+    .form-label { display: block; font-size: .8125rem; font-weight: 600; color: #475569; margin-bottom: 5px; }
+    .form-input {
+      width: 100%; padding: 10px 13px;
+      border: 1.5px solid #e2e8f0; border-radius: 10px;
+      font-size: .9rem; color: #1e293b; outline: none;
+      font-family: inherit; background: #fff;
+      transition: border .15s, box-shadow .15s;
+    }
+    .form-input:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.1); }
+    .form-input:read-only { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+    .form-input.error { border-color: #dc2626; }
+    .form-error { color: #dc2626; font-size: .75rem; margin-top: 3px; display: none; }
+    .form-error.visible { display: block; }
+
+    /* ── SEARCH INPUT ── */
+    .search-input {
+      background: #f1f5f9; border: 1.5px solid #e2e8f0; border-radius: 10px;
+      padding: 9px 14px 9px 38px; font-size: .875rem; color: #1e293b;
+      outline: none; transition: border .15s, box-shadow .15s; min-width: 0;
+    }
+    .search-input:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.1); background: #fff; }
+
+    /* ── FILTER SELECT ── */
+    .filter-select {
+      appearance: none;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;
+      border: 1.5px solid #e2e8f0; border-radius: 10px;
+      padding: 9px 30px 9px 12px; font-size: .875rem;
+      color: #1e293b; outline: none; cursor: pointer; font-family: inherit;
+    }
+    .filter-select:focus { border-color: #0f172a; }
+
+    /* ── PAGINATION ── */
+    .page-btn {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .82rem; font-weight: 600; cursor: pointer;
+      border: 1.5px solid #e2e8f0; color: #475569; transition: all .15s;
+      background: #fff;
+    }
+    .page-btn:hover { border-color: #0f172a; color: #0f172a; }
+    .page-btn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+    .page-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ── ICON BUTTONS (44px min touch target) ── */
+    .icon-btn {
+      min-width: 44px; min-height: 44px; border-radius: 10px;
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background .15s, transform .1s;
+      border: none; font-size: .75rem; font-weight: 600; gap: 4px;
+    }
+    .icon-btn:hover  { transform: scale(1.04); }
+    .icon-btn:active { transform: scale(.96); }
+    .icon-btn-edit   { background: #f0f4ff; color: #1730b3; }
+    .icon-btn-delete { background: #fef2f2; color: #dc2626; }
+    .icon-btn-view   { background: #f0fdf4; color: #15803d; }
+    .icon-btn-adj    { background: #fefce8; color: #a16207; }
+    .icon-btn-edit:hover   { background: #e0e9ff; }
+    .icon-btn-delete:hover { background: #fee2e2; }
+    .icon-btn-view:hover   { background: #dcfce7; }
+    .icon-btn-adj:hover    { background: #fef9c3; }
+
+    /* ── STAT CARD ── */
+    .stat-card-dark  { background: linear-gradient(135deg, #0f172a 60%, #1e293b); }
+    .stat-badge      { background: rgba(255,255,255,.12); color: #86efac; }
+
+    /* ── STATUS BADGES ── */
+    .badge-active   { background: #dcfce7; color: #15803d; }
+    .badge-inactive { background: #fee2e2; color: #b91c1c; }
+    .badge-low      { background: #fef9c3; color: #a16207; }
+    .badge-out      { background: #fee2e2; color: #b91c1c; }
+    .badge-ok       { background: #dcfce7; color: #15803d; }
+    .badge-customer { background: #dbeafe; color: #1e40af; }
+    .badge-supplier { background: #dcfce7; color: #15803d; }
+    .badge-both     { background: #fef9c3; color: #a16207; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45);
+      z-index: 60; display: flex; align-items: center;
+      justify-content: center; padding: 1rem;
+      transition: opacity .2s;
+    }
+    .modal-box {
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.15);
+      width: 100%; max-width: 680px; max-height: 90vh;
+      overflow-y: auto; animation: modal-in .2s cubic-bezier(.22,1,.36,1);
+    }
+    @keyframes modal-in { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform: translateY(0); } }
+
+    /* ── STOCK BAR ── */
+    .stock-bar { height: 6px; border-radius: 99px; background: #e2e8f0; overflow: hidden; margin-top: 4px; }
+    .stock-bar-fill { height: 100%; border-radius: 99px; transition: width .6s cubic-bezier(.34,1.56,.64,1); }
+
+    /* ── SPEC ROW ── */
+    .spec-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f1f5f9; font-size: .875rem; }
+    .spec-row:last-child { border-bottom: none; }
+    .spec-label { color: #64748b; font-weight: 500; }
+    .spec-value { color: #1e293b; font-weight: 600; text-align: right; }
+
+    /* ── BRANCH CARD ── */
+    .branch-card { background: #fff; border: 1.5px solid #e2e8f0; border-radius: 14px; transition: border-color .15s, box-shadow .15s; }
+    .branch-card:hover { border-color: #c3d3ff; box-shadow: 0 4px 12px rgba(15,23,42,.08); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fade-up { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+    .fade-up   { animation: fade-up .4s cubic-bezier(.22,1,.36,1) both; }
+    .fade-up-1 { animation-delay: .05s; }
+    .fade-up-2 { animation-delay: .10s; }
+    .fade-up-3 { animation-delay: .15s; }
+    .fade-up-4 { animation-delay: .20s; }
+
+    /* ── MOBILE CARD / TABLE SWAP ── */
+    @media (max-width: 639px) {
+      .table-wrapper { display: none; }
+      .card-table    { display: flex; flex-direction: column; gap: 12px; }
+    }
+    @media (min-width: 640px) {
+      .table-wrapper { display: block; }
+      .card-table    { display: none; }
+    }
+
+    /* ── TOAST ── */
+    #toast { transition: opacity .3s, transform .3s; pointer-events: none; }
+    #toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    #toast.hide { opacity: 0; transform: translateY(20px); }
+  </style>
+
+  {# ── EXTRA HEAD per-page ── #}
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="bg-slate-50 text-slate-900" x-data="appShell()">
+
+<!-- ════════════════════════════════════════
+     MOBILE SIDEBAR OVERLAY
+════════════════════════════════════════ -->
+<div id="mobile-overlay"
+     class="fixed inset-0 bg-black/40 z-30 hidden lg:hidden"
+     @click="closeMobileSidebar()"></div>
+
+<!-- ════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════ -->
+<aside id="sidebar"
+       class="fixed top-0 left-0 h-screen w-64 bg-white border-r border-slate-100 shadow-card flex flex-col z-40 -translate-x-full lg:translate-x-0"
+       aria-label="Main navigation"
+       role="navigation">
+
+  <!-- Brand -->
+  <div class="flex items-center justify-between px-5 py-5 border-b border-slate-100 flex-shrink-0">
+    <a href="{% url 'dashboard' %}" class="flex items-center gap-2.5 no-underline">
+      <div class="w-8 h-8 bg-navy-900 rounded-xl flex items-center justify-center flex-shrink-0">
+        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+      <span class="sidebar-logo-text font-extrabold text-navy-900 text-lg tracking-tight">Donezo</span>
+    </a>
+    <button onclick="toggleSidebar()"
+            class="hidden lg:flex w-7 h-7 rounded-lg hover:bg-slate-100 items-center justify-center text-slate-400"
+            aria-label="Toggle sidebar">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Nav links -->
+  <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto" aria-label="Primary">
+    <p class="sidebar-section-label font-semibold text-xs text-slate-400 uppercase tracking-widest px-3 mb-2">Menu</p>
+
+    <a href="{% url 'dashboard' %}"
+       class="nav-item {% block nav_dashboard %}{% endblock %}"
+       aria-label="Dashboard">
+      <svg style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+      </svg>
+      <span class="sidebar-label">Dashboard</span>
+    </a>
+
+    <a href="{% url 'task_list' %}"
+       class="nav-item {% block nav_tasks %}{% endblock %}"
+       aria-label="Tasks">
+      <svg style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+      </svg>
+      <span class="sidebar-label">Tasks</span>
+    </a>
+
+    <a href="{% url 'product_list' %}"
+       class="nav-item {% block nav_inventory %}{% endblock %}"
+       aria-label="Inventory">
+      <svg style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+      </svg>
+      <span class="sidebar-label">Inventory</span>
+    </a>
+
+    <a href="{% url 'partner_list' %}"
+       class="nav-item {% block nav_partners %}{% endblock %}"
+       aria-label="Partners">
+      <svg style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+      </svg>
+      <span class="sidebar-label">Partners</span>
+    </a>
+
+    <a href="{% url 'analytics' %}"
+       class="nav-item {% block nav_analytics %}{% endblock %}"
+       aria-label="Analytics">
+      <svg style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      <span class="sidebar-label">Analytics</span>
+    </a>
+
+    <a href="{% url 'team_list' %}"
+       class="nav-item {% block nav_team %}{% endblock %}"
+       aria-label="Team">
+      <svg style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+      </svg>
+      <span class="sidebar-label">Team</span>
+    </a>
+
+    <div class="my-3 border-t border-slate-100"></div>
+    <p class="sidebar-section-label font-semibold text-xs text-slate-400 uppercase tracking-widest px-3 mb-2">General</p>
+
+    <a href="{% url 'settings' %}" class="nav-item {% block nav_settings %}{% endblock %}" aria-label="Settings">
+      <svg style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      <span class="sidebar-label">Settings</span>
+    </a>
+
+    <a href="{% url 'help' %}" class="nav-item {% block nav_help %}{% endblock %}" aria-label="Help">
+      <svg style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span class="sidebar-label">Help</span>
+    </a>
+
+    <a href="{% url 'logout' %}" class="nav-item" aria-label="Logout">
+      <svg style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+      </svg>
+      <span class="sidebar-label">Logout</span>
+    </a>
+  </nav>
+
+  <!-- CTA Download -->
+  <div class="sidebar-cta mx-3 mb-4 bg-navy-900 rounded-xl p-4 text-white flex-shrink-0">
+    <p class="font-bold text-sm leading-snug mb-1">Download our Mobile App</p>
+    <p class="text-xs text-slate-300 mb-3">Get easy in another way</p>
+    <button class="w-full bg-white text-navy-900 text-xs font-bold rounded-lg py-2 hover:bg-slate-100 transition-colors">
+      Download
+    </button>
+  </div>
+</aside>
+
+<!-- ════════════════════════════════════════
+     MAIN WRAPPER
+════════════════════════════════════════ -->
+<div id="main-content" class="lg:ml-64 min-h-screen flex flex-col transition-all duration-300">
+
+  <!-- ═══ TOPBAR ═══ -->
+  <header class="sticky top-0 z-20 bg-white border-b border-slate-100 shadow-card" role="banner">
+    <div class="flex items-center justify-between px-4 sm:px-6 h-16 gap-3">
+
+      <!-- Left: hamburger + optional search -->
+      <div class="flex items-center gap-3">
+        <!-- Mobile hamburger -->
+        <button onclick="openMobileSidebar()"
+                class="lg:hidden w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600"
+                aria-label="Open menu">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+        <!-- Desktop collapse -->
+        <button onclick="toggleSidebar()"
+                class="hidden lg:flex w-9 h-9 rounded-xl hover:bg-slate-100 items-center justify-center text-slate-400"
+                aria-label="Collapse sidebar">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
+          </svg>
+        </button>
+        <!-- Global search slot (hidden on mobile, pages can override) -->
+        <div class="relative hidden sm:block">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          {% block topbar_search %}
+          <input type="search"
+                 id="search-desktop"
+                 placeholder="Search..."
+                 class="search-input w-52"
+                 aria-label="Global search"/>
+          {% endblock %}
+        </div>
+      </div>
+
+      <!-- Right: breadcrumb slot + actions -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Breadcrumb area -->
+        {% block topbar_breadcrumb %}{% endblock %}
+
+        <!-- Notifications -->
+        <button class="relative w-10 h-10 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-500"
+                aria-label="Notifications">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+          </svg>
+          <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" aria-hidden="true"></span>
+        </button>
+        <!-- Messages -->
+        <button class="w-10 h-10 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-500"
+                aria-label="Messages">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </button>
+        <!-- Profile -->
+        <div class="flex items-center gap-2 cursor-pointer" role="button" aria-label="User profile">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+               aria-hidden="true">
+            {{ request.user.first_name|first|default:"T" }}{{ request.user.last_name|first|default:"M" }}
+          </div>
+          <div class="hidden sm:block">
+            <p class="text-xs font-bold text-slate-800 leading-tight">
+              {{ request.user.get_full_name|default:"Totok Michael" }}
+            </p>
+            <p class="text-xs text-slate-400 leading-tight">
+              {{ request.user.email|default:"michael37@email.com" }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ PAGE CONTENT ═══ -->
+  <main class="flex-1 p-4 sm:p-6 space-y-5" role="main" id="page-main">
+
+    {# ── BREADCRUMB ── #}
+    {% block breadcrumb %}{% endblock %}
+
+    {# ── PAGE HEADER ── #}
+    {% block page_header %}{% endblock %}
+
+    {# ── DJANGO MESSAGES ── #}
+    {% if messages %}
+      <div role="alert" aria-live="polite">
+        {% for message in messages %}
+          <div class="flex items-center gap-3 p-3 rounded-xl mb-2 text-sm font-semibold
+            {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200
+            {% elif message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200
+            {% elif message.tags == 'warning' %}bg-amber-50 text-amber-700 border border-amber-200
+            {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {# ── MAIN CONTENT BLOCK ── #}
+    {% block content %}{% endblock %}
+
+  </main>
+</div>
+
+<!-- ════════════════════════════════════════
+     TOAST NOTIFICATION (global)
+════════════════════════════════════════ -->
+<div id="toast"
+     role="alert"
+     aria-live="polite"
+     class="hide fixed bottom-5 right-5 z-50 flex items-center gap-3
+            bg-slate-900 text-white text-sm font-semibold
+            px-4 py-3 rounded-xl shadow-card-lg opacity-0 translate-y-5">
+  <svg class="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+  </svg>
+  <span id="toast-msg">Action completed.</span>
+</div>
+
+{# ── EXTRA MODALS per-page ── #}
+{% block modals %}{% endblock %}
+
+<!-- ════════════════════════════════════════
+     GLOBAL JS
+════════════════════════════════════════ -->
+<script>
+/* ── SIDEBAR FUNCTIONS ── */
+function toggleSidebar(){
+  const s = document.getElementById('sidebar');
+  const m = document.getElementById('main-content');
+  const isCollapsed = s.classList.toggle('collapsed');
+  if(isCollapsed){
+    m.classList.remove('lg:ml-64');
+    m.classList.add('lg:ml-[72px]');
+  } else {
+    m.classList.remove('lg:ml-[72px]');
+    m.classList.add('lg:ml-64');
+  }
+}
+function openMobileSidebar(){
+  document.getElementById('sidebar').style.transform = 'translateX(0)';
+  document.getElementById('mobile-overlay').classList.remove('hidden');
+}
+function closeMobileSidebar(){
+  document.getElementById('sidebar').style.transform = '';
+  document.getElementById('mobile-overlay').classList.add('hidden');
+}
+
+/* ── TOAST ── */
+let _toastTimer;
+function showToast(msg, type='success'){
+  const t = document.getElementById('toast');
+  const icon = t.querySelector('svg');
+  document.getElementById('toast-msg').textContent = msg;
+  // color variants
+  t.className = t.className.replace(/bg-\S+/g,'');
+  t.classList.add(type === 'error' ? 'bg-red-700' : type === 'warning' ? 'bg-amber-700' : 'bg-slate-900');
+  clearTimeout(_toastTimer);
+  t.classList.remove('hide','opacity-0','translate-y-5');
+  t.classList.add('show','opacity-100','translate-y-0');
+  _toastTimer = setTimeout(() => {
+    t.classList.remove('show','opacity-100','translate-y-0');
+    t.classList.add('hide','opacity-0','translate-y-5');
+  }, 3500);
+}
+
+/* ── ESCAPE HTML ── */
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── KEYBOARD ESC ── */
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+    closeMobileSidebar();
+  }
+});
+
+/* ── ALPINE APP SHELL ── */
+function appShell(){
+  return {};
+}
+</script>
+
+{# ── EXTRA SCRIPTS per-page ── #}
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>
