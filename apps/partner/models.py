@@ -1,7 +1,7 @@
 # partner/models.py
 from django.db import models
 # Asumsi Anda buat Base Model di core
-from common.models import TimeStampedModel
+from apps.common.models import TimeStampedModel
 
 
 class Contact(TimeStampedModel):
