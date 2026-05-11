@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
@@ -24,6 +25,17 @@ UI_TO_DB_PRODUCT_TYPE = {value: key for key,
 
 DEFAULT_CATEGORIES = ["Electronics", "Clothing",
                       "Food & Beverage", "Stationery", "Home Goods"]
+
+
+def product_categories() -> list[str]:
+    db_categories = list(
+        Product.objects.exclude(category="")
+        .values_list("category", flat=True)
+        .distinct()
+    )
+    merged = {c for c in (DEFAULT_CATEGORIES + db_categories)
+              if (c or "").strip()}
+    return sorted(merged)
 
 
 class ProductForm(forms.Form):
@@ -51,7 +63,7 @@ class ProductForm(forms.Form):
 class BranchForm(forms.Form):
     name = forms.CharField(max_length=100, required=True)
     address = forms.CharField(required=True)
-    manager = forms.CharField(required=False, max_length=100)
+    manager = forms.CharField(required=True, max_length=100)
     phone = forms.CharField(required=False, max_length=30)
     email = forms.EmailField(required=False)
     status = forms.ChoiceField(
@@ -75,11 +87,15 @@ def _safe_pct(stock: int, min_stock: int) -> int:
 
 
 def _derive_category(product: Product) -> str:
+    stored = (getattr(product, "category", "") or "").strip()
+    if stored:
+        return stored
     return "Electronics" if product.product_type == "PRODUCT" else "Services"
 
 
 def _derive_brand(product: Product) -> str:
-    return "Generic"
+    stored = (getattr(product, "brand", "") or "").strip()
+    return stored or "Generic"
 
 
 def _derive_emoji(product: Product) -> str:
@@ -87,18 +103,21 @@ def _derive_emoji(product: Product) -> str:
 
 
 def _derive_status(product: Product) -> str:
-    return "Active" if product.total_stock > 0 else "Inactive"
+    # Use annotated value if present, otherwise property
+    stock = getattr(product, "total_stock_count", product.total_stock)
+    return "Active" if stock > 0 else "Inactive"
 
 
 def attach_product_ui_fields(product: Product) -> Product:
-    product.stock = int(getattr(product, "total_stock", 0) or 0)
+    product.stock = int(
+        getattr(product, "total_stock_count", product.total_stock) or 0)
     product.sell_price = product.selling_price
     product.type = DB_TO_UI_PRODUCT_TYPE.get(product.product_type, "Goods")
     product.category = _derive_category(product)
     product.brand = _derive_brand(product)
     product.emoji = _derive_emoji(product)
     product.status = _derive_status(product)
-    product.notes = ""
+    product.notes = getattr(product, "notes", "") or ""
 
     if product.base_price and product.selling_price:
         margin = ((product.selling_price - product.base_price) /
@@ -112,7 +131,7 @@ def attach_product_ui_fields(product: Product) -> Product:
 
 
 def product_queryset_with_stock():
-    return Product.objects.annotate(total_stock=Coalesce(Sum("branch_stocks__quantity"), 0))
+    return Product.objects.annotate(total_stock_count=Coalesce(Sum("branch_stocks__quantity"), 0))
 
 
 def apply_product_filters(base_qs, query_params):
@@ -122,18 +141,17 @@ def apply_product_filters(base_qs, query_params):
         qs = qs.filter(Q(name__icontains=keyword) | Q(sku__icontains=keyword))
 
     category = (query_params.get("category") or "").strip()
-    if category == "Electronics":
-        qs = qs.filter(product_type="PRODUCT")
-    elif category == "Services":
-        qs = qs.filter(product_type="SERVICE")
+    if category:
+        qs = qs.filter(category=category)
 
     stock_status = (query_params.get("stock_status") or "").strip()
     if stock_status == "out":
-        qs = qs.filter(total_stock=0)
+        qs = qs.filter(total_stock_count=0)
     elif stock_status == "low":
-        qs = qs.filter(total_stock__gt=0, total_stock__lte=F("min_stock"))
+        qs = qs.filter(total_stock_count__gt=0,
+                       total_stock_count__lte=F("min_stock"))
     elif stock_status == "ok":
-        qs = qs.filter(total_stock__gt=F("min_stock"))
+        qs = qs.filter(total_stock_count__gt=F("min_stock"))
 
     return qs
 
@@ -155,7 +173,8 @@ def product_stats() -> dict[str, Any]:
     stat_out = 0
     stat_value = Decimal("0")
     for product in products:
-        stock = int(product.total_stock or 0)
+        stock = int(getattr(product, "total_stock_count",
+                    product.total_stock) or 0)
         if stock == 0:
             stat_out += 1
         elif stock <= product.min_stock:
@@ -172,7 +191,16 @@ def product_stats() -> dict[str, Any]:
 
 def initialize_product_form(product: Product | None = None) -> ProductForm:
     if product is None:
-        return ProductForm(initial={"product_type": "Goods", "min_stock": 10, "init_stock": 0})
+        return ProductForm(
+            initial={
+                "product_type": "Goods",
+                "min_stock": 10,
+                "init_stock": 0,
+                "category": "",
+                "brand": "",
+                "notes": "",
+            }
+        )
 
     return ProductForm(
         initial={
@@ -181,7 +209,7 @@ def initialize_product_form(product: Product | None = None) -> ProductForm:
             "category": _derive_category(product),
             "brand": _derive_brand(product),
             "product_type": DB_TO_UI_PRODUCT_TYPE.get(product.product_type, "Goods"),
-            "notes": "",
+            "notes": getattr(product, "notes", "") or "",
             "sell_price": product.selling_price,
             "min_stock": product.min_stock,
         }
@@ -193,6 +221,9 @@ def save_product_form(form: ProductForm, product: Product | None = None) -> Prod
     instance.name = form.cleaned_data["name"]
     instance.sku = form.cleaned_data["sku"]
     instance.product_type = UI_TO_DB_PRODUCT_TYPE[form.cleaned_data["product_type"]]
+    instance.category = form.cleaned_data.get("category", "")
+    instance.brand = form.cleaned_data.get("brand", "")
+    instance.notes = form.cleaned_data.get("notes", "")
     instance.selling_price = form.cleaned_data["sell_price"]
     instance.min_stock = form.cleaned_data["min_stock"]
     instance.save()
@@ -271,9 +302,9 @@ def initialize_branch_form(branch: Branch | None = None) -> BranchForm:
         initial={
             "name": branch.name,
             "address": branch.address,
-            "manager": "",
-            "phone": "",
-            "email": "",
+            "manager": branch.manager,
+            "phone": branch.phone,
+            "email": branch.email,
             "status": "active" if branch.is_active else "inactive",
         }
     )
@@ -283,54 +314,95 @@ def save_branch_form(form: BranchForm, branch: Branch | None = None) -> Branch:
     instance = branch or Branch()
     instance.name = form.cleaned_data["name"]
     instance.address = form.cleaned_data["address"]
+    instance.manager = form.cleaned_data.get("manager", "")
+    instance.phone = form.cleaned_data.get("phone", "")
+    instance.email = form.cleaned_data.get("email", "")
     instance.is_active = form.cleaned_data.get(
         "status", "active") != "inactive"
     instance.save()
 
-    instance.manager = form.cleaned_data.get("manager", "")
-    instance.phone = form.cleaned_data.get("phone", "")
-    instance.email = form.cleaned_data.get("email", "")
     instance.status = "active" if instance.is_active else "inactive"
     return instance
 
 
 def enrich_branches_for_ui(branches):
     for branch in branches:
-        branch.manager = ""
-        branch.phone = ""
-        branch.email = ""
         branch.status = "active" if branch.is_active else "inactive"
-        branch.sku_count = branch.stock_levels.values(
-            "product").distinct().count()
+
+        name_parts = [p for p in (branch.name or "").strip().split() if p]
+        initials = "".join([p[0].upper() for p in name_parts[:2]])
+        branch.initials = initials or (
+            branch.name[:2].upper() if branch.name else "BR")
+
+        stocks = list(branch.stock_levels.all())
+
+        product_ids = set()
+        low_product_ids = set()
+        for stock in stocks:
+            product_id = getattr(stock, "product_id", None)
+            if product_id is None:
+                continue
+            product_ids.add(product_id)
+
+            qty = int(stock.quantity or 0)
+            min_stock = int(
+                getattr(getattr(stock, "product", None), "min_stock", 0) or 0)
+            if qty > 0 and qty <= min_stock:
+                low_product_ids.add(product_id)
+
+        branch.sku_count = len(product_ids)
+        branch.low_skus_count = len(low_product_ids)
     return branches
 
 
 def get_product_branch_stocks(product: Product):
-    branch_stocks = list(
-        Stock.objects.filter(product=product)
+    branches = list(Branch.objects.filter(is_active=True).order_by("name"))
+    existing_stocks = list(
+        Stock.objects.filter(product=product, branch__in=branches)
         .select_related("branch")
-        .order_by("branch__name")
     )
+    stock_by_branch_id = {s.branch_id: s for s in existing_stocks}
+
+    @dataclass
+    class ProductBranchStockRow:
+        branch: Branch
+        quantity: int
+        min_stock: int
+        status: str
+        last_restock_at: datetime | None
 
     total_units = 0
     low_branches = 0
     out_branches = 0
-    for stock in branch_stocks:
-        qty = int(stock.quantity or 0)
+    rows: list[ProductBranchStockRow] = []
+    for branch in branches:
+        stock = stock_by_branch_id.get(branch.id)
+        qty = int(getattr(stock, "quantity", 0) or 0)
         total_units += qty
+
         if qty == 0:
             out_branches += 1
+            status = "Out of Stock"
         elif qty <= product.min_stock:
             low_branches += 1
+            status = "Low Stock"
+        else:
+            status = "In Stock"
 
-        stock.min_stock = product.min_stock
-        stock.status = "Out" if qty == 0 else (
-            "Low" if qty <= product.min_stock else "In Stock")
+        rows.append(
+            ProductBranchStockRow(
+                branch=branch,
+                quantity=qty,
+                min_stock=int(product.min_stock or 0),
+                status=status,
+                last_restock_at=getattr(stock, "updated_at", None),
+            )
+        )
 
-    min_total = product.min_stock * max(len(branch_stocks), 1)
+    min_total = int(product.min_stock or 0) * max(len(branches), 1)
     progress_pct = _safe_pct(total_units, min_total)
 
-    return branch_stocks, ProductDetailSummary(
+    return rows, ProductDetailSummary(
         total_units=total_units,
         low_branches=low_branches,
         out_branches=out_branches,

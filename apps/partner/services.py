@@ -14,31 +14,32 @@ from django.http import HttpResponse
 from .models import Contact
 
 
-DB_TO_UI_TYPE = {
-    "CUSTOMER": "Customer",
-    "SUPPLIER": "Supplier",
-    "BOTH": "Both",
-}
+class PartnerForm(forms.ModelForm):
+    class Meta:
+        model = Contact
+        fields = [
+            "name",
+            "contact_type",
+            "whatsapp",
+            "instagram",
+            "facebook",
+            "email",
+            "address",
+            "current_balance",
+        ]
+        widgets = {
+            "address": forms.Textarea(attrs={"rows": 3}),
+        }
 
-UI_TO_DB_TYPE = {value: key for key, value in DB_TO_UI_TYPE.items()}
-
-
-class PartnerForm(forms.Form):
-    name = forms.CharField(max_length=150, required=True)
-    type = forms.ChoiceField(
-        choices=[("Customer", "Customer"), ("Supplier", "Supplier"), ("Both", "Both")])
-    phone = forms.CharField(max_length=30, required=True)
-    email = forms.EmailField(required=False)
-    balance = forms.DecimalField(
-        required=False, decimal_places=2, max_digits=15)
-    status = forms.ChoiceField(
-        choices=[("Active", "Active"), ("Inactive", "Inactive")], required=False)
-    address = forms.CharField(required=False)
-    notes = forms.CharField(required=False, max_length=50)
-
-    def clean_balance(self) -> Decimal:
-        value = self.cleaned_data.get("balance")
-        return value if value is not None else Decimal("0")
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({"class": "form-input"})
+            field.required = False
+        
+        self.fields["name"].required = True
+        self.fields["contact_type"].required = True
+        self.fields["whatsapp"].required = True
 
 
 def _compute_status(contact: Contact) -> str:
@@ -74,10 +75,9 @@ def apply_filters(base_qs, query_params):
             | Q(address__icontains=keyword)
         )
 
-    ui_type = (query_params.get("type") or "").strip()
-    db_type = UI_TO_DB_TYPE.get(ui_type)
-    if db_type:
-        qs = qs.filter(contact_type=db_type)
+    contact_type = (query_params.get("type") or "").strip()
+    if contact_type:
+        qs = qs.filter(contact_type=contact_type)
 
     status = (query_params.get("status") or "").strip()
     if status == "Active":
@@ -89,11 +89,7 @@ def apply_filters(base_qs, query_params):
 
 
 def attach_ui_fields(contact: Contact) -> Contact:
-    contact.type = DB_TO_UI_TYPE.get(contact.contact_type, "Both")
-    contact.phone = contact.whatsapp
-    contact.balance = contact.current_balance
-    contact.status = _compute_status(contact)
-    contact.notes = contact.instagram or ""
+    contact.status_label = _compute_status(contact)
     contact.avatar_color = _avatar_color_from_name(contact.name)
     return contact
 
@@ -123,35 +119,8 @@ def partner_stats() -> dict[str, Any]:
     }
 
 
-def initialize_form(contact: Contact | None = None) -> PartnerForm:
-    if contact is None:
-        return PartnerForm(initial={"status": "Active"})
-
-    return PartnerForm(
-        initial={
-            "name": contact.name,
-            "type": DB_TO_UI_TYPE.get(contact.contact_type, "Both"),
-            "phone": contact.whatsapp,
-            "email": contact.email,
-            "balance": contact.current_balance,
-            "status": _compute_status(contact),
-            "address": contact.address,
-            "notes": contact.instagram or "",
-        }
-    )
-
-
-def save_form(form: PartnerForm, contact: Contact | None = None) -> Contact:
-    instance = contact or Contact()
-    instance.name = form.cleaned_data["name"]
-    instance.contact_type = UI_TO_DB_TYPE[form.cleaned_data["type"]]
-    instance.whatsapp = form.cleaned_data["phone"]
-    instance.email = form.cleaned_data.get("email") or None
-    instance.current_balance = form.cleaned_data.get("balance") or Decimal("0")
-    instance.address = form.cleaned_data.get("address") or ""
-    # Reuse optional social field as short internal note until a dedicated column exists.
-    instance.instagram = form.cleaned_data.get("notes") or None
-    instance.save()
+def save_form(form: PartnerForm) -> Contact:
+    instance = form.save()
     return attach_ui_fields(instance)
 
 
@@ -160,20 +129,21 @@ def build_export_response(qs) -> HttpResponse:
     response["Content-Disposition"] = 'attachment; filename="partners.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(["Name", "Type", "Phone", "Email",
-                    "Address", "Balance", "Status"])
+    writer.writerow(
+        ["Name", "Type", "WhatsApp", "Email", "Address", "Balance", "Status"]
+    )
 
     for contact in qs:
-        attach_ui_fields(contact)
+        status = _compute_status(contact)
         writer.writerow(
             [
                 contact.name,
-                contact.type,
-                contact.phone,
+                contact.get_contact_type_display(),
+                contact.whatsapp,
                 contact.email or "",
                 contact.address,
-                contact.balance,
-                contact.status,
+                contact.current_balance,
+                status,
             ]
         )
 
