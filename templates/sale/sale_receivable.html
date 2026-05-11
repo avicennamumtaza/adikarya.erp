@@ -1,0 +1,487 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Manajemen Piutang – Sales{% endblock %}
+{% block nav_sales %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── PAGE-TAB ── */
+  .page-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 9px;
+    font-size: .8125rem; font-weight: 600; color: #64748b;
+    text-decoration: none; transition: background .15s, color .15s;
+    white-space: nowrap;
+  }
+  .page-tab:hover  { background: #fff; color: #1e293b; }
+  .page-tab.active { background: #fff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+  /* ── STATUS BADGES ── */
+  .badge-paid     { background: #dcfce7; color: #15803d; }
+  .badge-partial  { background: #dbeafe; color: #1e40af; }
+  .badge-unpaid   { background: #fef9c3; color: #a16207; }
+  .badge-overdue  { background: #fee2e2; color: #b91c1c; }
+
+  /* ── PIUTANG PROGRESS BAR ── */
+  .piutang-bar { height: 6px; border-radius: 99px; background: #e2e8f0; overflow: hidden; }
+  .piutang-bar-fill { height: 100%; border-radius: 99px; background: #f59e0b; }
+  .piutang-bar-fill.paid { background: #22c55e; }
+
+  /* ── CUSTOMER AVATAR ── */
+  .cust-avatar {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; font-weight: 800; flex-shrink: 0;
+  }
+
+  /* ── MOBILE PIUTANG CARD ── */
+  .piutang-card {
+    background: #fff; border: 1.5px solid #e2e8f0; border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06); padding: 16px;
+  }
+  .piutang-card.overdue  { border-color: #fca5a5; }
+  .piutang-card.due-soon { border-color: #fde68a; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-overlay.hidden { display: none; }
+  .modal-box { background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.15); width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; animation: modal-in .2s cubic-bezier(.22,1,.36,1); }
+  @keyframes modal-in { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform: translateY(0); } }
+
+  /* ── MODAL INPUTS (big touch targets) ── */
+  .modal-input {
+    width: 100%; min-height: 48px; padding: 11px 13px;
+    border: 1.5px solid #e2e8f0; border-radius: 10px;
+    font-size: .9375rem; color: #1e293b; outline: none;
+    font-family: inherit; background: #fff;
+    transition: border .15s, box-shadow .15s;
+  }
+  .modal-input:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.1); }
+
+  /* ── COLLECT BUTTON ── */
+  .collect-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 16px; border-radius: 10px;
+    font-size: .8125rem; font-weight: 700;
+    background: #f59e0b; color: #fff;
+    border: none; cursor: pointer; white-space: nowrap;
+    transition: background .15s, transform .1s;
+    min-height: 44px;
+  }
+  .collect-btn:hover  { background: #d97706; }
+  .collect-btn:active { transform: scale(.97); }
+</style>
+{% endblock %}
+
+{% block topbar_search %}
+<input type="search"
+       id="search-desktop"
+       placeholder="Cari customer, invoice..."
+       class="search-input w-52"
+       aria-label="Search receivables"/>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+  <a href="{% url 'dashboard' %}"  class="hover:text-slate-700 transition-colors">Dashboard</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <a href="{% url 'transaction:sales_list' %}" class="hover:text-slate-700 transition-colors">Sales</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <span class="text-slate-700 font-semibold">Piutang Customer</span>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div>
+    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Manajemen Piutang Customer</h1>
+    <p class="text-sm text-slate-500 mt-0.5">Pantau dan tagih piutang pelanggan secara parsial maupun penuh.</p>
+  </div>
+  <div class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto shrink-0" role="tablist" aria-label="Sales sections">
+    <a href="{% url 'transaction:sales_list' %}"         class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Transaksi
+    </a>
+    <a href="{% url 'transaction:sales_pos' %}"          class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      New Sale
+    </a>
+    <a href="{% url 'transaction:sales_receivables' %}"  class="page-tab active whitespace-nowrap" role="tab" aria-selected="true">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      Piutang
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{% comment %} ══════════════════════════════════════════
+   STAT CARDS
+══════════════════════════════════════════ {% endcomment %}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+
+  {% load humanize %}
+  {# Total Piutang – dark #}
+  <div class="stat-card-dark rounded-xl p-4 sm:p-5 fade-up fade-up-1">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Total Piutang</p>
+      <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Rp {{ total_receivable|intcomma|default:"0" }}</p>
+    <div class="stat-badge inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full">
+      Semua piutang aktif
+    </div>
+  </div>
+
+  {# Overdue #}
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-red-100 shadow-card fade-up fade-up-2">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-red-600 uppercase tracking-wide">Overdue</p>
+      <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-600 flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ overdue_total|intcomma|default:"0" }}</p>
+    <div class="inline-flex items-center gap-1 bg-red-50 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+      Melewati jatuh tempo
+    </div>
+  </div>
+
+  {# Jatuh Tempo Minggu Ini #}
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-amber-100 shadow-card fade-up fade-up-3">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-amber-600 uppercase tracking-wide">Minggu Ini</p>
+      <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ week_due|intcomma|default:"0" }}</p>
+    <div class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+      Jatuh tempo dlm 7 hr
+    </div>
+  </div>
+
+  {# Diterima Bulan Ini #}
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-100 shadow-card fade-up fade-up-4">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Diterima Bulan Ini</p>
+      <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ collected_month|intcomma|default:"0" }}</p>
+    <div class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+      Pembayaran piutang
+    </div>
+  </div>
+</div>
+
+{% comment %} ══════════════════════════════════════════
+   FILTER BAR
+══════════════════════════════════════════ {% endcomment %}
+<div class="bg-white border border-slate-100 rounded-xl p-3 sm:p-4 shadow-card">
+  <form method="GET" class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+    {# Mobile search #}
+    <div class="relative sm:hidden">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input type="search" name="q" placeholder="Cari customer / invoice..." class="search-input w-full" style="width:100%" aria-label="Cari piutang"/>
+    </div>
+    <select name="status" class="filter-select" aria-label="Filter status">
+      <option value="">Semua Status</option>
+      <option value="overdue" {% if request.GET.status == 'overdue' %}selected{% endif %}>Overdue</option>
+      <option value="partial" {% if request.GET.status == 'partial' %}selected{% endif %}>Sebagian</option>
+      <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Belum Bayar</option>
+    </select>
+    <select name="customer" class="filter-select" aria-label="Filter customer">
+      <option value="">Semua Customer</option>
+      {% for c in customers %}
+      <option value="{{ c.id }}" {% if request.GET.customer == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <input type="date" name="due_before" value="{{ request.GET.due_before }}" class="filter-select" title="Jatuh tempo sebelum" aria-label="Jatuh tempo sebelum"/>
+    <button type="submit" class="flex items-center gap-1.5 bg-navy-900 hover:bg-navy-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors shadow-navy">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
+      Filter
+    </button>
+    <a href="{% url 'transaction:sales_receivables' %}" class="text-xs text-slate-400 hover:text-slate-700 transition-colors">Reset</a>
+    <span class="sm:ml-auto text-xs text-slate-400">
+      Menampilkan <strong class="text-slate-700">{{ receivables.start_index|default:"0" }}–{{ receivables.end_index|default:"0" }}</strong> dari {{ receivables.paginator.count|default:"0" }} piutang
+    </span>
+  </form>
+</div>
+
+{% comment %} ══════════════════════════════════════════
+   DESKTOP TABLE
+══════════════════════════════════════════ {% endcomment %}
+<div class="table-wrapper bg-white border border-slate-100 rounded-xl shadow-card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full" aria-label="Piutang customer table">
+      <thead>
+        <tr>
+          <th class="text-left pl-5">Customer</th>
+          <th class="text-left">Invoice</th>
+          <th class="text-right">Total Invoice</th>
+          <th class="text-right">Sisa Piutang</th>
+          <th class="text-center" style="min-width:120px">Progress Bayar</th>
+          <th class="text-center">Jatuh Tempo</th>
+          <th class="text-center">Status</th>
+          <th class="text-center pr-5">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        {% for trx in receivables %}
+        <tr class="data-row" {% if trx.status == 'overdue' %}style="background:#fff9f9"{% elif trx.status == 'partial' %}style="background:#fffef0"{% endif %}>
+          <td class="pl-5">
+            <div class="flex items-center gap-2.5">
+              <div class="cust-avatar bg-{{ trx.ui_color|default:'blue' }}-100 text-{{ trx.ui_color|default:'blue' }}-800">{{ trx.customer_initials|default:"?" }}</div>
+              <div>
+                <p class="font-semibold text-slate-800 text-sm">{{ trx.contact.name|default:"Walk-in Customer" }}</p>
+                <p class="text-xs text-slate-400">{{ trx.contact.whatsapp|default:"" }}</p>
+              </div>
+            </div>
+          </td>
+          <td>
+            <a href="{% url 'transaction:sales_detail' trx.pk %}"
+               class="font-mono text-xs font-bold text-navy-700 hover:underline bg-slate-100 px-2 py-0.5 rounded-lg">
+              {{ trx.invoice_number }}
+            </a>
+          </td>
+          <td class="text-right font-semibold text-slate-800">Rp {{ trx.total_amount|intcomma }}</td>
+          <td class="text-right">
+            <span class="font-extrabold {% if trx.status == 'overdue' %}text-red-600{% else %}text-amber-600{% endif %}">Rp {{ trx.outstanding|intcomma }}</span>
+            {% if trx.amount_paid > 0 %}
+            <p class="text-xs text-slate-400 mt-0.5">Bayar: Rp {{ trx.amount_paid|intcomma }}</p>
+            {% else %}
+            <p class="text-xs text-red-400 font-semibold mt-0.5">Belum ada pembayaran</p>
+            {% endif %}
+          </td>
+          <td class="text-center px-4">
+            {% widthratio trx.amount_paid trx.total_amount 100 as pay_pct %}
+            <div class="piutang-bar">
+              <div class="piutang-bar-fill" style="width:{{ pay_pct }}%"></div>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">{{ pay_pct }}% terbayar</p>
+          </td>
+          <td class="text-center">
+            <div class="inline-flex items-center gap-1.5 {% if trx.status == 'overdue' %}bg-red-50 border border-red-200 text-red-700{% elif trx.status == 'partial' %}bg-amber-50 border border-amber-200 text-amber-700{% else %}text-slate-600 border border-slate-200{% endif %} text-xs font-bold px-2.5 py-1.5 rounded-lg">
+              {% if trx.status == 'overdue' or trx.status == 'partial' %}
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{% if trx.status == 'overdue' %}M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z{% else %}M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z{% endif %}"/></svg>
+              {% endif %}
+              {{ trx.due_date|date:"d M Y"|default:"-" }}
+            </div>
+          </td>
+          <td class="text-center">
+            <span class="{{ trx.status_badge }} inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold">
+              <span class="w-1.5 h-1.5 rounded-full {% if trx.status == 'paid' %}bg-emerald-500{% elif trx.status == 'partial' %}bg-blue-500{% elif trx.status == 'overdue' %}bg-red-500{% else %}bg-amber-500{% endif %}"></span> {{ trx.status_label }}
+            </span>
+          </td>
+          <td class="text-center pr-5">
+            <div class="flex items-center justify-center gap-1.5">
+              <a href="{% url 'transaction:sales_detail' trx.pk %}" class="icon-btn icon-btn-view" aria-label="Lihat detail {{ trx.invoice_number }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </a>
+              <button
+                type="button"
+                onclick="document.getElementById('pay-modal-{{ trx.pk }}').classList.remove('hidden')"
+                class="collect-btn"
+                aria-label="Terima pembayaran {{ trx.contact.name }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                Tagih
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center py-8 text-slate-500">Tidak ada piutang pelanggan saat ini.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# Pagination #}
+  {% if receivables.has_other_pages %}
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4 border-t border-slate-100">
+    <p class="text-xs text-slate-500">Menampilkan {{ receivables.start_index }}–{{ receivables.end_index }} dari <strong>{{ receivables.paginator.count }}</strong> piutang</p>
+    <div class="flex items-center gap-1.5">
+      {% if receivables.has_previous %}
+      <a href="?page={{ receivables.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="page-btn" aria-label="Previous page">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </a>
+      {% else %}
+      <button disabled class="page-btn" aria-label="Previous page">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      {% endif %}
+      <span class="px-3 text-sm font-semibold text-slate-700">Halaman {{ receivables.number }} / {{ receivables.paginator.num_pages }}</span>
+      {% if receivables.has_next %}
+      <a href="?page={{ receivables.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="page-btn" aria-label="Next page">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </a>
+      {% else %}
+      <button disabled class="page-btn" aria-label="Next page">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </button>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% comment %} ══════════════════════════════════════════
+   MOBILE CARD TABLE
+══════════════════════════════════════════ {% endcomment %}
+<div class="card-table sm:hidden space-y-3" role="list" aria-label="Piutang customer cards">
+
+  {% for trx in receivables %}
+  {% widthratio trx.amount_paid trx.total_amount 100 as pay_pct %}
+  <div class="piutang-card {% if trx.status == 'overdue' %}overdue{% elif trx.status == 'partial' %}due-soon{% endif %}" role="listitem">
+    <div class="flex items-start justify-between mb-3">
+      <div class="flex items-center gap-2.5">
+        <div class="cust-avatar bg-{{ trx.ui_color|default:'blue' }}-100 text-{{ trx.ui_color|default:'blue' }}-800">{{ trx.customer_initials|default:"?" }}</div>
+        <div>
+          <p class="font-bold text-slate-800">{{ trx.contact.name|default:"Walk-in Customer" }}</p>
+          <a href="{% url 'transaction:sales_detail' trx.pk %}" class="font-mono text-xs text-navy-700 hover:underline">{{ trx.invoice_number }}</a>
+        </div>
+      </div>
+      <span class="{{ trx.status_badge }} inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shrink-0">
+        <span class="w-1.5 h-1.5 rounded-full {% if trx.status == 'paid' %}bg-emerald-500{% elif trx.status == 'partial' %}bg-blue-500{% elif trx.status == 'overdue' %}bg-red-500{% else %}bg-amber-500{% endif %}"></span> {{ trx.status_label }}
+      </span>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mb-3 text-sm">
+      <div>
+        <p class="text-xs text-slate-400 font-semibold">Total Invoice</p>
+        <p class="font-bold text-slate-800">Rp {{ trx.total_amount|intcomma }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-slate-400 font-semibold">Sisa Piutang</p>
+        <p class="font-extrabold {% if trx.status == 'overdue' %}text-red-600{% else %}text-amber-600{% endif %}">Rp {{ trx.outstanding|intcomma }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-slate-400 font-semibold">Jatuh Tempo</p>
+        <p class="font-bold {% if trx.status == 'overdue' %}text-red-600{% elif trx.status == 'partial' %}text-amber-600{% else %}text-slate-700{% endif %} text-xs">{{ trx.due_date|date:"d M Y"|default:"-" }}{% if trx.status == 'overdue' %} ⚠{% endif %}</p>
+      </div>
+      <div>
+        <p class="text-xs text-slate-400 font-semibold">Progress</p>
+        <div class="piutang-bar mt-1"><div class="piutang-bar-fill" style="width:{{ pay_pct }}%"></div></div>
+        <p class="text-xs text-slate-400 mt-1">{{ pay_pct }}% terbayar</p>
+      </div>
+    </div>
+    <button
+      type="button"
+      onclick="document.getElementById('pay-modal-{{ trx.pk }}').classList.remove('hidden')"
+      class="flex items-center justify-center gap-2 w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm py-3 rounded-xl transition-colors"
+      aria-label="Tagih piutang {{ trx.contact.name }}">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+      Tagih Sekarang
+    </button>
+  </div>
+  {% empty %}
+  <div class="text-center py-6 text-slate-500 text-sm">Tidak ada piutang saat ini.</div>
+  {% endfor %}
+
+</div>{# /card-table #}
+
+
+{% comment %} ══════════════════════════════════════════
+   PAY NOW MODALS (one per invoice)
+══════════════════════════════════════════ {% endcomment %}
+
+{% for trx in receivables %}
+{# ── Modal: {{ trx.invoice_number }} ── #}
+<div id="pay-modal-{{ trx.pk }}" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="pm{{ trx.pk }}-title">
+  <div class="modal-box">
+    {# Header #}
+    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+      <div>
+        <h2 id="pm{{ trx.pk }}-title" class="font-extrabold text-lg text-slate-900">Catat Pembayaran Piutang</h2>
+        <p class="text-sm text-slate-400 mt-0.5">{{ trx.invoice_number }} · {{ trx.contact.name|default:"Walk-in Customer" }}</p>
+      </div>
+      <button
+        type="button"
+        onclick="document.getElementById('pay-modal-{{ trx.pk }}').classList.add('hidden')"
+        class="w-9 h-9 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors flex-shrink-0"
+        aria-label="Tutup modal">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    {# Debt summary #}
+    <div class="mx-6 mt-5 {% if trx.status == 'overdue' %}bg-red-50 border-red-200{% else %}bg-amber-50 border-amber-200{% endif %} border rounded-xl p-4 flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold {% if trx.status == 'overdue' %}text-red-600{% else %}text-amber-600{% endif %} uppercase tracking-wide">Sisa Piutang {% if trx.status == 'overdue' %}(OVERDUE){% endif %}</p>
+        <p class="text-2xl font-extrabold {% if trx.status == 'overdue' %}text-red-700{% else %}text-amber-700{% endif %} mt-1">Rp {{ trx.outstanding|intcomma }}</p>
+        {% if trx.amount_paid > 0 %}
+        <p class="text-xs text-slate-400 mt-1">Sudah dibayar: Rp {{ trx.amount_paid|intcomma }}</p>
+        {% endif %}
+      </div>
+      {% if trx.status == 'overdue' %}
+      <span class="badge-overdue inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold">
+        <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Overdue: {{ trx.due_date|date:"d M"|default:"-" }}
+      </span>
+      {% else %}
+      <span class="badge-partial inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold">
+        Jatuh tempo: {{ trx.due_date|date:"d M"|default:"-" }}
+      </span>
+      {% endif %}
+    </div>
+
+    {# Form #}
+    <form method="POST" action="{% url 'transaction:sales_pay' %}" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="invoice_number" value="{{ trx.invoice_number }}">
+      
+      <div class="px-6 py-5 space-y-4">
+
+        <div>
+          <label class="form-label" for="pay{{ trx.pk }}-amount">
+            Jumlah Diterima <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm pointer-events-none">Rp</span>
+            <input type="number" id="pay{{ trx.pk }}-amount" name="amount"
+                   placeholder="0" min="1" max="{{ trx.outstanding|stringformat:'f'|slice:':-3'|default:0 }}" required
+                   class="modal-input" style="padding-left:2.75rem;font-size:1.0625rem;font-weight:700;"
+                   aria-label="Jumlah pembayaran diterima"/>
+          </div>
+          {# Quick fill buttons #}
+          <div class="flex gap-2 flex-wrap mt-2">
+            <button type="button" onclick="document.getElementById('pay{{ trx.pk }}-amount').value = Math.floor({{ trx.outstanding|stringformat:'f'|slice:':-3'|default:0 }} / 2)" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-navy-100 hover:text-navy-900 text-slate-600 transition-colors">50%</button>
+            <button type="button" onclick="document.getElementById('pay{{ trx.pk }}-amount').value = {{ trx.outstanding|stringformat:'f'|slice:':-3'|default:0 }}" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors">Lunas (100%)</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label" for="pay{{ trx.pk }}-notes">Catatan</label>
+          <textarea id="pay{{ trx.pk }}-notes" name="notes" rows="2"
+                    placeholder="Catatan pembayaran (mis. metode bayar, referensi, dll)"
+                    class="modal-input resize-none"></textarea>
+        </div>
+      </div>
+
+      {# Footer actions #}
+      <div class="flex gap-3 px-6 pb-6">
+        <button
+          type="button"
+          onclick="document.getElementById('pay-modal-{{ trx.pk }}').classList.add('hidden')"
+          class="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors">
+          Batal
+        </button>
+        <button type="submit"
+                class="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          Simpan Pembayaran
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}

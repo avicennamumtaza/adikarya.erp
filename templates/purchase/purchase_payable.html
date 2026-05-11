@@ -1,0 +1,546 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Manajemen Hutang – Purchase{% endblock %}
+
+{% block nav_purchase %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── PAGE-TAB ── */
+  .page-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 9px;
+    font-size: .8125rem; font-weight: 600; color: #64748b;
+    text-decoration: none; transition: background .15s, color .15s;
+    white-space: nowrap;
+  }
+  .page-tab:hover  { background: #fff; color: #1e293b; }
+  .page-tab.active { background: #fff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+  /* ── PAYMENT STATUS BADGES ── */
+  .badge-paid    { background: #dcfce7; color: #15803d; }
+  .badge-pending { background: #fef9c3; color: #a16207; }
+  .badge-partial { background: #dbeafe; color: #1e40af; }
+  .badge-overdue { background: #fee2e2; color: #b91c1c; }
+
+  /* ── DEBT PROGRESS BAR ── */
+  .debt-bar { height: 6px; border-radius: 99px; background: #e2e8f0; overflow: hidden; }
+  .debt-bar-fill { height: 100%; border-radius: 99px; background: #f59e0b; transition: width .6s; }
+  .debt-bar-fill.paid { background: #22c55e; }
+
+  /* ── SUPPLIER AVATAR ── */
+  .sup-avatar {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; font-weight: 800; flex-shrink: 0;
+  }
+
+  /* ── MOBILE DEBT CARD ── */
+  .debt-card {
+    background: #fff; border: 1.5px solid #e2e8f0; border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06); padding: 16px;
+  }
+  .debt-card.overdue { border-color: #fca5a5; }
+
+  /* ── PAY MODAL OVERLAY ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45);
+    z-index: 60; display: flex; align-items: center;
+    justify-content: center; padding: 1rem;
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal-box {
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.15);
+    width: 100%; max-width: 520px; max-height: 90vh;
+    overflow-y: auto; animation: modal-in .2s cubic-bezier(.22,1,.36,1);
+  }
+  @keyframes modal-in { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform: translateY(0); } }
+
+  /* ── FORM FIELDS in modal ── */
+  .modal-input {
+    width: 100%; min-height: 48px; padding: 11px 13px;
+    border: 1.5px solid #e2e8f0; border-radius: 10px;
+    font-size: .9375rem; color: #1e293b; outline: none;
+    font-family: inherit; background: #fff;
+    transition: border .15s, box-shadow .15s;
+  }
+  .modal-input:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.1); }
+</style>
+{% endblock %}
+
+{% block topbar_search %}
+<input type="search"
+       id="search-desktop"
+       placeholder="Cari supplier hutang..."
+       class="search-input w-52"
+       aria-label="Search payables"/>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+  <a href="{% url 'dashboard' %}"     class="hover:text-slate-700 transition-colors">Dashboard</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <a href="{% url 'transaction:purchase_list' %}" class="hover:text-slate-700 transition-colors">Purchase</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <span class="text-slate-700 font-semibold">Hutang Supplier</span>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div>
+    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Manajemen Hutang Supplier</h1>
+    <p class="text-sm text-slate-500 mt-0.5">Pantau dan lunasi hutang kepada supplier secara parsial maupun penuh.</p>
+  </div>
+  <div class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto shrink-0" role="tablist">
+    <a href="{% url 'transaction:purchase_list' %}"    class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Orders
+    </a>
+    <a href="{% url 'transaction:purchase_create' %}"  class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      New PO
+    </a>
+    <a href="{% url 'transaction:purchase_payables' %}" class="page-tab active whitespace-nowrap" role="tab" aria-selected="true">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      Hutang
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{% comment %} ══════════════════════════════════════════
+   SUMMARY STAT CARDS
+══════════════════════════════════════════ {% endcomment %}
+{% load humanize %}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+
+  {# Total Hutang #}
+  <div class="stat-card-dark rounded-xl p-4 sm:p-5 fade-up fade-up-1">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Total Hutang</p>
+      <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Rp {{ total_outstanding|intcomma|default:"0" }}</p>
+    <div class="stat-badge inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full">
+      {{ outstanding_count }} invoice outstanding
+    </div>
+  </div>
+
+  {# Overdue #}
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-red-100 shadow-card fade-up fade-up-2">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-red-600 uppercase tracking-wide">Overdue</p>
+      <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-600 flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ overdue_total|intcomma|default:"0" }}</p>
+  </div>
+
+  {# Jatuh Tempo Minggu Ini #}
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-amber-100 shadow-card fade-up fade-up-3">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-amber-600 uppercase tracking-wide">Minggu Ini</p>
+      <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ week_due|intcomma|default:"0" }}</p>
+  </div>
+
+  {# Lunas Bulan Ini #}
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-100 shadow-card fade-up fade-up-4">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Dilunasi Bulan Ini</p>
+      <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ paid_month|intcomma|default:"0" }}</p>
+  </div>
+</div>
+
+{% comment %} ══════════════════════════════════════════
+   FILTER BAR
+══════════════════════════════════════════ {% endcomment %}
+<div class="bg-white border border-slate-100 rounded-xl p-3 sm:p-4 shadow-card">
+  <form method="GET" class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+    <div class="relative sm:hidden">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input type="search" name="q" placeholder="Cari supplier / invoice..." class="search-input w-full" style="width:100%;"/>
+    </div>
+    <select name="status" class="filter-select" onchange="this.form.submit()">
+      <option value="">Semua Status</option>
+      <option value="overdue"  {% if request.GET.status == 'overdue'  %}selected{% endif %}>Overdue</option>
+      <option value="pending"  {% if request.GET.status == 'pending'  %}selected{% endif %}>Pending</option>
+      <option value="partial"  {% if request.GET.status == 'partial'  %}selected{% endif %}>Sebagian</option>
+    </select>
+    <select name="supplier" class="filter-select" onchange="this.form.submit()">
+      <option value="">Semua Supplier</option>
+      {% for sup in suppliers %}
+      <option value="{{ sup.id }}" {% if request.GET.supplier == sup.id|stringformat:"s" %}selected{% endif %}>{{ sup.name }}</option>
+      {% endfor %}
+    </select>
+    <input type="date" name="due_before" value="{{ request.GET.due_before }}"
+           class="filter-select" aria-label="Jatuh tempo sebelum"/>
+    <div class="flex-1 hidden sm:block"></div>
+    <a href="{% url 'transaction:purchase_payables_export' %}?{{ request.GET.urlencode }}"
+       class="flex items-center gap-2 border border-slate-200 text-slate-600 text-sm font-semibold px-3 py-2 rounded-xl bg-white hover:bg-slate-50 transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      Export
+    </a>
+  </form>
+</div>
+
+{% comment %} ══════════════════════════════════════════
+   DESKTOP TABLE
+══════════════════════════════════════════ {% endcomment %}
+<div class="table-wrapper bg-white border border-slate-100 rounded-xl shadow-card overflow-hidden fade-up fade-up-1">
+  <div class="overflow-x-auto">
+    <table class="w-full" aria-label="Daftar hutang supplier">
+      <thead>
+        <tr>
+          <th class="text-left">Supplier</th>
+          <th class="text-left">Invoice</th>
+          <th class="text-left">Jatuh Tempo</th>
+          <th class="text-right">Total</th>
+          <th class="text-right">Dibayar</th>
+          <th class="text-right">Sisa</th>
+          <th class="text-center">Progress</th>
+          <th class="text-center">Status</th>
+          <th class="text-center">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% load humanize %}
+        {% for payable in payables %}
+        <tr class="data-row">
+          <td>
+            <div class="flex items-center gap-2.5">
+              <div class="sup-avatar bg-{{ payable.ui_color|default:'slate' }}-100 text-{{ payable.ui_color|default:'slate' }}-700">{{ payable.supplier_initials|default:"?" }}</div>
+              <div>
+                <p class="font-semibold text-slate-800 text-sm leading-tight">{{ payable.contact.name|default:"-" }}</p>
+                <p class="text-xs text-slate-400">{{ payable.supplier_tag|default:"Supplier" }}</p>
+              </div>
+            </div>
+          </td>
+          <td>
+            <a href="{% url 'transaction:purchase_detail' payable.pk %}"
+               class="font-mono text-xs font-bold text-navy-700 hover:text-navy-900 bg-slate-100 px-2 py-0.5 rounded-lg transition-colors">
+              {{ payable.invoice_number }}
+            </a>
+          </td>
+          <td>
+            <p class="text-xs text-slate-500">{{ payable.created_at|date:"d M Y" }}</p>
+            <p class="text-xs font-semibold {% if payable.status == 'overdue' %}text-red-600 font-bold{% else %}text-amber-600{% endif %} mt-0.5">{% if payable.status == 'overdue' %}⚠ {% endif %}Jatuh tempo: {{ payable.due_date|date:"d M Y" }}</p>
+          </td>
+          <td class="text-right font-semibold text-slate-800">Rp {{ payable.total_amount|intcomma }}</td>
+          <td class="text-right text-emerald-700 font-semibold">Rp {{ payable.amount_paid|intcomma }}</td>
+          <td class="text-right font-bold {% if payable.status == 'overdue' %}text-red-600{% else %}text-amber-600{% endif %}">Rp {{ payable.outstanding|intcomma }}</td>
+          <td class="text-center" style="min-width:100px;">
+            <div class="debt-bar mx-auto" style="max-width:80px;">
+              <div class="debt-bar-fill {% if payable.status == 'paid' %}paid{% endif %}" style="width:{{ payable.progress_pct }}%"></div>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">{{ payable.progress_pct }}%</p>
+          </td>
+          <td class="text-center">
+            <span class="{{ payable.status_badge }} inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold">
+              <span class="w-1.5 h-1.5 rounded-full {% if payable.status == 'overdue' %}bg-red-500{% elif payable.status == 'partial' %}bg-blue-500{% else %}bg-amber-500{% endif %}"></span> {{ payable.status_label }}
+            </span>
+          </td>
+          <td class="text-center">
+            <button type="button"
+                    onclick="openPayModal('{{ payable.invoice_number }}','{{ payable.contact.name|escapejs }}','{{ payable.total_amount }}','{{ payable.amount_paid }}','{{ payable.outstanding }}')"
+                    class="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-3 rounded-xl transition-colors mx-auto"
+                    style="min-height:38px;"
+                    aria-label="Bayar hutang {{ payable.invoice_number }}">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+              Bayar
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center py-6 text-slate-500">Tidak ada hutang yang belum lunas.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="bg-slate-50">
+          <td colspan="5" class="px-4 py-3 font-bold text-slate-700 text-sm">TOTAL</td>
+          <td class="px-4 py-3 text-right font-extrabold text-red-600">Rp {{ total_outstanding|intcomma|default:"0" }}</td>
+          <td colspan="3"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+{% comment %} ══════════════════════════════════════════
+   MOBILE CARD TABLE
+══════════════════════════════════════════ {% endcomment %}
+<div class="card-table space-y-3" role="list" aria-label="Hutang supplier">
+
+  {% for payable in payables %}
+  <div class="debt-card {% if payable.status == 'overdue' %}overdue{% endif %}" role="listitem">
+    <div class="flex items-start justify-between mb-3">
+      <div class="flex items-center gap-2.5">
+        <div class="sup-avatar bg-{{ payable.ui_color|default:'slate' }}-100 text-{{ payable.ui_color|default:'slate' }}-700">{{ payable.supplier_initials|default:"?" }}</div>
+        <div>
+          <p class="font-bold text-slate-800">{{ payable.contact.name|default:"-" }}</p>
+          <p class="font-mono text-xs text-slate-400">{{ payable.invoice_number }}</p>
+        </div>
+      </div>
+      <span class="{{ payable.status_badge }} inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shrink-0">
+        <span class="w-1.5 h-1.5 rounded-full {% if payable.status == 'overdue' %}bg-red-500{% elif payable.status == 'partial' %}bg-blue-500{% else %}bg-amber-500{% endif %}"></span> {{ payable.status_label }}
+      </span>
+    </div>
+    <div class="grid grid-cols-3 gap-2 mb-3 text-center">
+      <div class="bg-slate-50 rounded-xl p-2.5">
+        <p class="text-xs text-slate-400 mb-0.5">Total</p>
+        <p class="font-bold text-slate-800 text-sm">Rp {{ payable.total_amount|intcomma }}</p>
+      </div>
+      <div class="bg-emerald-50 rounded-xl p-2.5">
+        <p class="text-xs text-slate-400 mb-0.5">Dibayar</p>
+        <p class="font-bold text-emerald-700 text-sm">Rp {{ payable.amount_paid|intcomma }}</p>
+      </div>
+      <div class="bg-{% if payable.status == 'overdue' %}red{% else %}amber{% endif %}-50 rounded-xl p-2.5">
+        <p class="text-xs text-slate-400 mb-0.5">Sisa</p>
+        <p class="font-bold text-{% if payable.status == 'overdue' %}red-600{% else %}amber-600{% endif %} text-sm">Rp {{ payable.outstanding|intcomma }}</p>
+      </div>
+    </div>
+    <div class="debt-bar mb-1"><div class="debt-bar-fill" style="width:{{ payable.progress_pct }}%"></div></div>
+    <p class="text-xs {% if payable.status == 'overdue' %}text-red-600{% else %}text-amber-600{% endif %} font-semibold mb-3">{% if payable.status == 'overdue' %}⚠ {% endif %}Jatuh tempo: {{ payable.due_date|date:"d M Y" }}</p>
+    <div class="flex gap-2">
+      <a href="{% url 'transaction:purchase_detail' payable.pk %}"
+         class="flex-1 flex items-center justify-center gap-1.5 border border-slate-200 text-slate-600 font-semibold text-xs py-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        Detail
+      </a>
+      <button type="button"
+              onclick="openPayModal('{{ payable.invoice_number }}','{{ payable.contact.name|escapejs }}','{{ payable.total_amount }}','{{ payable.amount_paid }}','{{ payable.outstanding }}')"
+              class="flex-1 flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs py-2.5 rounded-xl transition-colors"
+              aria-label="Bayar hutang">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+        Bayar Sekarang
+      </button>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% if payables.has_other_pages %}
+  <div class="flex justify-center mt-6">
+    <nav class="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+      {% if payables.has_previous %}
+      <a href="?page={{ payables.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+        Previous
+      </a>
+      {% endif %}
+      <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+        Page {{ payables.number }} of {{ payables.paginator.num_pages }}
+      </span>
+      {% if payables.has_next %}
+      <a href="?page={{ payables.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+        Next
+      </a>
+      {% endif %}
+    </nav>
+  </div>
+  {% endif %}
+
+</div>{# /card-table #}
+
+{% endblock %}
+
+
+{% comment %} ══════════════════════════════════════════
+   PAY NOW MODAL
+══════════════════════════════════════════ {% endcomment %}
+{% block modals %}
+<div id="pay-modal"
+     class="modal-overlay hidden"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="pay-modal-title"
+     onclick="if(event.target===this)closePayModal()">
+
+  <div class="modal-box">
+
+    {# Header #}
+    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+      <div>
+        <h3 class="text-xl font-extrabold text-slate-900" id="pay-modal-title">Bayar Hutang</h3>
+        <p class="text-sm text-slate-500 mt-0.5" id="modal-po-label">—</p>
+      </div>
+      <button onclick="closePayModal()"
+              class="w-9 h-9 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors"
+              aria-label="Tutup modal">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    {# Debt Summary Banner #}
+    <div class="mx-6 mt-5 bg-amber-50 border border-amber-200 rounded-xl p-4">
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div>
+          <p class="text-xs text-amber-600 font-semibold mb-1">Total Invoice</p>
+          <p class="font-extrabold text-slate-900 text-base" id="modal-total">Rp 0</p>
+        </div>
+        <div>
+          <p class="text-xs text-amber-600 font-semibold mb-1">Sudah Dibayar</p>
+          <p class="font-extrabold text-emerald-700 text-base" id="modal-paid">Rp 0</p>
+        </div>
+        <div>
+          <p class="text-xs text-amber-600 font-semibold mb-1">Sisa Hutang</p>
+          <p class="font-extrabold text-red-600 text-base" id="modal-remaining">Rp 0</p>
+        </div>
+      </div>
+    </div>
+
+    {# Form #}
+    <form method="POST" action="{% url 'transaction:purchase_pay' %}" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="po_number" id="modal-po-input"/>
+
+      <div class="px-6 py-5 space-y-4">
+
+        {# Payment Amount #}
+        <div>
+          <label class="form-label" for="modal-amount">
+            Jumlah Pembayaran <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold pointer-events-none">Rp</span>
+            <input type="number"
+                   id="modal-amount" name="amount"
+                   placeholder="0"
+                   min="1"
+                   class="modal-input" style="padding-left:2.5rem; font-size:1.125rem; font-weight:700;"
+                   aria-label="Jumlah pembayaran"
+                   required/>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Bisa bayar sebagian (parsial) — masukkan jumlah yang ingin dibayarkan.</p>
+        </div>
+
+        {# Quick fill buttons (pay full) #}
+        <div class="flex flex-wrap gap-2">
+          <button type="button"
+                  onclick="fillFullPayment()"
+                  class="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-xs px-3 py-2 rounded-lg transition-colors"
+                  style="min-height:38px;">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            Bayar Penuh (<span id="btn-full-label">Rp 0</span>)
+          </button>
+          <button type="button"
+                  onclick="fillHalfPayment()"
+                  class="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 font-bold text-xs px-3 py-2 rounded-lg transition-colors"
+                  style="min-height:38px;">
+            ½ Bayar (<span id="btn-half-label">Rp 0</span>)
+          </button>
+        </div>
+
+        {# Payment Method #}
+        <div>
+          <label class="form-label" for="modal-method">
+            Metode Pembayaran <span class="text-red-500">*</span>
+          </label>
+          <select id="modal-method" name="method"
+                  class="modal-input" required>
+            <option value="transfer_bca">Transfer BCA</option>
+            <option value="transfer_mandiri">Transfer Mandiri</option>
+            <option value="transfer_bri">Transfer BRI</option>
+            <option value="giro">Giro</option>
+            <option value="tunai">Tunai</option>
+            <option value="cheque">Cek</option>
+          </select>
+        </div>
+
+        {# Reference #}
+        <div>
+          <label class="form-label" for="modal-ref">No. Bukti / Referensi</label>
+          <input type="text" id="modal-ref" name="reference"
+                 placeholder="e.g. TRF-BCA-9988"
+                 class="modal-input"/>
+        </div>
+
+        {# Notes #}
+        <div>
+          <label class="form-label" for="modal-notes">Catatan</label>
+          <textarea id="modal-notes" name="notes" rows="2"
+                    placeholder="Catatan tambahan (opsional)"
+                    class="modal-input resize-none"></textarea>
+        </div>
+
+      </div>
+
+      {# Footer buttons #}
+      <div class="flex flex-col sm:flex-row gap-3 px-6 py-5 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
+        <button type="button"
+                onclick="closePayModal()"
+                class="flex-1 sm:flex-none py-3 px-6 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-white transition-colors"
+                style="min-height:48px;">
+          Batal
+        </button>
+        <button type="submit"
+                class="flex-1 flex items-center justify-center gap-2 bg-navy-900 hover:bg-navy-800 text-white font-bold text-sm py-3 px-8 rounded-xl shadow-navy transition-colors"
+                style="min-height:48px;">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          Konfirmasi Pembayaran
+        </button>
+      </div>
+    </form>
+
+  </div>{# /modal-box #}
+</div>{# /modal-overlay #}
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+/* ── PAY MODAL ── */
+let _remaining = 0;
+
+function fmt(n){
+  return 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+}
+
+function openPayModal(poNum, supplier, total, paid, remaining){
+  _remaining = Number(remaining || 0);
+
+  document.getElementById('modal-po-label').textContent   = poNum + ' · ' + supplier;
+  document.getElementById('modal-po-input').value         = poNum;
+  document.getElementById('modal-total').textContent      = fmt(total);
+  document.getElementById('modal-paid').textContent       = fmt(paid);
+  document.getElementById('modal-remaining').textContent  = fmt(remaining);
+  document.getElementById('btn-full-label').textContent   = fmt(remaining);
+  document.getElementById('btn-half-label').textContent   = fmt(Math.ceil(_remaining / 2));
+  document.getElementById('modal-amount').value           = '';
+
+  document.getElementById('pay-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('modal-amount').focus(), 100);
+}
+
+function closePayModal(){
+  document.getElementById('pay-modal').classList.add('hidden');
+}
+
+function fillFullPayment(){
+  document.getElementById('modal-amount').value = _remaining;
+}
+
+function fillHalfPayment(){
+  document.getElementById('modal-amount').value = Math.ceil(_remaining / 2);
+}
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closePayModal();
+});
+</script>
+{% endblock %}

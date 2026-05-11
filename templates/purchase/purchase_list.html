@@ -1,0 +1,823 @@
+{% extends "base.html" %} {% load static humanize %} {% block title %}Purchase
+Management{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_head %}
+<style>
+  /* ── PAGE-TAB (shared with inventory) ── */
+  .page-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 9px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #64748b;
+    text-decoration: none;
+    transition:
+      background 0.15s,
+      color 0.15s;
+    white-space: nowrap;
+  }
+  .page-tab:hover {
+    background: #fff;
+    color: #1e293b;
+  }
+  .page-tab.active {
+    background: #fff;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  /* ── PAYMENT STATUS BADGES ── */
+  .badge-paid {
+    background: #dcfce7;
+    color: #15803d;
+  }
+  .badge-pending {
+    background: #fef9c3;
+    color: #a16207;
+  }
+  .badge-partial {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .badge-overdue {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+</style>
+{% endblock %} {% block topbar_search %}
+<input
+  type="search"
+  id="search-desktop"
+  placeholder="Search purchase..."
+  class="search-input w-52"
+  aria-label="Search purchases"
+/>
+{% endblock %} {% block breadcrumb %}
+<nav
+  aria-label="Breadcrumb"
+  class="flex items-center gap-2 text-xs text-slate-400 mb-1"
+>
+  <a href="{% url 'dashboard' %}" class="hover:text-slate-700 transition-colors"
+    >Dashboard</a
+  >
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M9 5l7 7-7 7"
+    />
+  </svg>
+  <span class="text-slate-700 font-semibold">Purchase</span>
+</nav>
+{% endblock %} {% block page_header %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div>
+    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">
+      Purchase Management
+    </h1>
+    <p class="text-sm text-slate-500 mt-0.5">
+      Manage incoming stock, invoices, and supplier payments.
+    </p>
+  </div>
+  {# Sub-nav tabs #}
+  <div
+    class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto shrink-0"
+    role="tablist"
+    aria-label="Purchase sections"
+  >
+    <a
+      href="{% url 'transaction:purchase_list' %}"
+      class="page-tab active whitespace-nowrap"
+      role="tab"
+      aria-selected="true"
+    >
+      <svg
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+        />
+      </svg>
+      Orders
+    </a>
+    <a
+      href="{% url 'transaction:purchase_create' %}"
+      class="page-tab whitespace-nowrap"
+      role="tab"
+      aria-selected="false"
+    >
+      <svg
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 4v16m8-8H4"
+        />
+      </svg>
+      New PO
+    </a>
+    <a
+      href="{% url 'transaction:purchase_payables' %}"
+      class="page-tab whitespace-nowrap"
+      role="tab"
+      aria-selected="false"
+    >
+      <svg
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+        />
+      </svg>
+      Hutang
+    </a>
+  </div>
+</div>
+{% endblock %} {% block content %} 
+{% comment %} STAT CARDS {% endcomment %}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+  {# Card 1 – Total Purchases MTD (dark) #}
+  <div class="stat-card-dark rounded-xl p-4 sm:p-5 fade-up fade-up-1">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-300 uppercase tracking-wide">
+        Total Purchases MTD
+      </p>
+      <div
+        class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white flex-shrink-0"
+      >
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+          />
+        </svg>
+      </div>
+    </div>
+    <p class="text-3xl font-extrabold text-white mb-2">Rp {{ stat_purchase_mtd|default:0|intcomma }}</p>
+    <div
+      class="stat-badge inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
+    >
+      <svg
+        class="w-3 h-3"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2.5"
+          d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+        />
+      </svg>
+      Total bulan ini
+    </div>
+  </div>
+
+  {# Card 2 – Outstanding / Hutang #}
+  <div
+    class="bg-white rounded-xl p-4 sm:p-5 border border-amber-100 shadow-card fade-up fade-up-2"
+  >
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-amber-600 uppercase tracking-wide">
+        Outstanding / Hutang
+      </p>
+      <div
+        class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 flex-shrink-0"
+      >
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">
+      Rp {{ stat_outstanding|default:0|intcomma }}
+    </p>
+    <div
+      class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full"
+    >
+      <svg
+        class="w-3 h-3"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+        />
+      </svg>
+      Menunggu pembayaran
+    </div>
+  </div>
+
+  {# Card 3 – Items Received Today #}
+  <div
+    class="bg-white rounded-xl p-4 sm:p-5 border border-slate-100 shadow-card fade-up fade-up-3"
+  >
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        Transaksi Hari Ini
+      </p>
+      <div
+        class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 flex-shrink-0"
+      >
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+          />
+        </svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">{{ stat_received_today|default:0 }} PO</p>
+    <div
+      class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2 py-0.5 rounded-full"
+    >
+      <svg
+        class="w-3 h-3"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2.5"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      Diterima hari ini
+    </div>
+  </div>
+
+  {# Card 4 – Active Suppliers #}
+  <div
+    class="bg-white rounded-xl p-4 sm:p-5 border border-slate-100 shadow-card fade-up fade-up-4"
+  >
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        Supplier Aktif
+      </p>
+      <div
+        class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0"
+      >
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+          />
+        </svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">{{ stat_active_suppliers|default:0 }}</p>
+    <div
+      class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded-full"
+    >
+      <svg
+        class="w-3 h-3"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2.5"
+          d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+        />
+      </svg>
+      Seluruh waktu
+    </div>
+  </div>
+</div>
+
+{% comment %} FILTER BAR {% endcomment %}
+<div class="bg-white border border-slate-100 rounded-xl p-3 sm:p-4 shadow-card">
+  <form
+    method="GET"
+    class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap"
+  >
+    {# Mobile search #}
+    <div class="relative flex-1 min-w-0 sm:hidden">
+      <svg
+        class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+        />
+      </svg>
+      <input
+        type="search"
+        name="q"
+        value="{{ request.GET.q }}"
+        placeholder="Cari invoice / supplier..."
+        class="search-input w-full"
+        style="width: 100%"
+        aria-label="Search purchases"
+      />
+    </div>
+
+    {# Desktop search #}
+    <div class="relative hidden sm:block">
+      <svg
+        class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+        />
+      </svg>
+      <input
+        type="search"
+        name="q"
+        value="{{ request.GET.q }}"
+        placeholder="Cari invoice / supplier..."
+        class="search-input"
+        style="width: 240px"
+        aria-label="Search purchases"
+      />
+    </div>
+
+    {# Status filter #}
+    <select
+      name="status"
+      class="filter-select"
+      aria-label="Filter by status"
+      onchange="this.form.submit()"
+    >
+      <option value="">All Status</option>
+      <option
+        value="paid"
+        {% if request.GET.status == "paid" %}selected{% endif %}
+      >
+        Lunas
+      </option>
+      <option
+        value="pending"
+        {% if request.GET.status == "pending" %}selected{% endif %}
+      >
+        Pending
+      </option>
+      <option
+        value="partial"
+        {% if request.GET.status == "partial" %}selected{% endif %}
+      >
+        Sebagian
+      </option>
+      <option
+        value="overdue"
+        {% if request.GET.status == "overdue" %}selected{% endif %}
+      >
+        Overdue
+      </option>
+    </select>
+
+    {# Supplier filter #}
+    <select
+      name="supplier"
+      class="filter-select"
+      aria-label="Filter by supplier"
+      onchange="this.form.submit()"
+    >
+      <option value="">All Suppliers</option>
+      {% for s in suppliers %}
+      <option
+        value="{{ s.pk }}"
+        {% if request.GET.supplier == s.pk|stringformat:"s" %}selected{% endif %}
+      >
+        {{ s.name }}
+      </option>
+      {% endfor %}
+    </select>
+
+    {# Date range #}
+    <input
+      type="date"
+      name="date_from"
+      value="{{ request.GET.date_from }}"
+      class="filter-select"
+      aria-label="From date"
+    />
+    <input
+      type="date"
+      name="date_to"
+      value="{{ request.GET.date_to }}"
+      class="filter-select"
+      aria-label="To date"
+    />
+
+    <div class="flex-1 hidden sm:block"></div>
+
+    {# Export #}
+    <a
+      href="{% url 'transaction:purchase_export' %}?{{ request.GET.urlencode }}"
+      class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-2 rounded-xl bg-white hover:bg-slate-50 transition-colors whitespace-nowrap"
+      aria-label="Export CSV"
+    >
+      <svg
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+        />
+      </svg>
+      Export
+    </a>
+
+    {# New PO button #}
+    <a
+      href="{% url 'transaction:purchase_create' %}"
+      class="flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-white text-sm font-bold px-4 py-2 rounded-xl shadow-navy transition-colors whitespace-nowrap"
+      aria-label="Create new purchase order"
+    >
+      <svg
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2.5"
+          d="M12 4v16m8-8H4"
+        />
+      </svg>
+      <span class="hidden sm:inline">New Purchase</span>
+    </a>
+  </form>
+</div>
+
+{% comment %} DESKTOP TABLE {% endcomment %}
+<div
+  class="table-wrapper bg-white border border-slate-100 rounded-xl shadow-card overflow-hidden"
+>
+  <div class="overflow-x-auto">
+    <table class="w-full" aria-label="Purchase order list">
+      <thead>
+        <tr>
+          <th class="w-10">
+            <input
+              type="checkbox"
+              id="select-all"
+              class="w-4 h-4 rounded accent-navy-900"
+              aria-label="Select all"
+            />
+          </th>
+          <th class="text-left">Tanggal</th>
+          <th class="text-left">No. Invoice</th>
+          <th class="text-left">Supplier</th>
+          <th class="text-left">Cabang</th>
+          <th class="text-right">Total</th>
+          <th class="text-center">Status Bayar</th>
+          <th class="text-center">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for purchase in purchases %}
+        <tr class="data-row">
+          <td>
+            <input
+              type="checkbox"
+              class="w-4 h-4 rounded accent-navy-900 row-cb"
+              aria-label="Select row"
+            />
+          </td>
+          <td class="text-slate-500 text-xs">{{ purchase.created_at|date:"d M Y" }}</td>
+          <td>
+            <span
+              class="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg"
+              >{{ purchase.invoice_number }}</span
+            >
+          </td>
+          <td>
+            <div class="flex items-center gap-2">
+              <div
+                class="w-7 h-7 rounded-lg {% if purchase.status == 'paid' %}bg-emerald-100 text-emerald-700{% elif purchase.status == 'overdue' %}bg-red-100 text-red-700{% elif purchase.status == 'partial' %}bg-blue-100 text-blue-700{% else %}bg-purple-100 text-purple-700{% endif %} flex items-center justify-center font-bold text-xs flex-shrink-0"
+              >
+                {{ purchase.supplier_initials }}
+              </div>
+              <div>
+                <p class="font-semibold text-slate-800 text-sm leading-tight">
+                  {{ purchase.contact.name }}
+                </p>
+                <p class="text-xs text-slate-400">{{ purchase.supplier_tag }}</p>
+              </div>
+            </div>
+          </td>
+          <td class="text-sm text-slate-600">{{ purchase.branch.name|default:"-" }}</td>
+          <td class="text-right font-semibold text-slate-800">Rp {{ purchase.total_amount|intcomma }}</td>
+          <td class="text-center">
+            <span
+              class="{{ purchase.status_badge }} inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
+            >
+              <span class="w-1.5 h-1.5 rounded-full {% if purchase.status == 'paid' %}bg-emerald-500{% elif purchase.status == 'overdue' %}bg-red-500{% elif purchase.status == 'partial' %}bg-blue-500{% else %}bg-amber-500{% endif %}"></span>
+              {{ purchase.status_label }}
+            </span>
+          </td>
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <a
+                href="{% url 'transaction:purchase_detail' purchase.pk %}"
+                class="icon-btn icon-btn-view"
+                title="Lihat Detail"
+                aria-label="Lihat detail {{ purchase.invoice_number }}"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
+                </svg>
+              </a>
+              <a
+                href="{% url 'transaction:purchase_print' purchase.pk %}"
+                class="icon-btn icon-btn-edit"
+                title="Cetak"
+                aria-label="Cetak {{ purchase.invoice_number }}"
+                target="_blank"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                  />
+                </svg>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center py-6 text-slate-500">Tidak ada data pembelian.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# Pagination #}
+  {% if purchases.has_other_pages %}
+  <div
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4 border-t border-slate-100"
+  >
+    <p class="text-xs text-slate-500">Showing page {{ purchases.number }} of {{ purchases.paginator.num_pages }}</p>
+    <div
+      class="flex items-center gap-1.5"
+      role="navigation"
+      aria-label="Pagination"
+    >
+      {% if purchases.has_previous %}
+      <a href="?page={{ purchases.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.supplier %}&supplier={{ request.GET.supplier }}{% endif %}" class="page-btn" aria-label="Previous">
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+      </a>
+      {% else %}
+      <button class="page-btn" disabled aria-label="Previous">
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+      </button>
+      {% endif %}
+
+      {% for num in purchases.paginator.page_range %}
+        {% if purchases.number == num %}
+          <a href="#" class="page-btn active" aria-current="page">{{ num }}</a>
+        {% elif num > purchases.number|add:'-3' and num < purchases.number|add:'3' %}
+          <a href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.supplier %}&supplier={{ request.GET.supplier }}{% endif %}" class="page-btn">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if purchases.has_next %}
+      <a href="?page={{ purchases.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.supplier %}&supplier={{ request.GET.supplier }}{% endif %}" class="page-btn" aria-label="Next">
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5l7 7-7 7"
+          />
+        </svg>
+      </a>
+      {% else %}
+      <button class="page-btn" disabled aria-label="Next">
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5l7 7-7 7"
+          />
+        </svg>
+      </button>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% comment %} ══════════════════════════════════════════ MOBILE CARD TABLE
+══════════════════════════════════════════ {% endcomment %}
+<div class="card-table" role="list" aria-label="Purchase orders">
+  {% for purchase in purchases %}
+  <div
+    class="bg-white border {% if purchase.status == 'overdue' %}border-red-100{% elif purchase.status == 'partial' %}border-blue-100{% elif purchase.status == 'pending' %}border-amber-100{% else %}border-slate-100{% endif %} rounded-xl shadow-card p-4"
+    role="listitem"
+  >
+    <div class="flex items-start justify-between mb-3">
+      <div>
+        <span
+          class="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg"
+          >{{ purchase.invoice_number }}</span
+        >
+        <p class="font-bold text-slate-800 mt-1.5">{{ purchase.contact.name }}</p>
+        <p class="text-xs text-slate-400">{{ purchase.created_at|date:"d M Y" }} · {{ purchase.branch.name|default:"-" }}</p>
+      </div>
+      <span
+        class="{{ purchase.status_badge }} inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold mt-0.5 shrink-0"
+      >
+        <span class="w-1.5 h-1.5 rounded-full {% if purchase.status == 'paid' %}bg-emerald-500{% elif purchase.status == 'overdue' %}bg-red-500{% elif purchase.status == 'partial' %}bg-blue-500{% else %}bg-amber-500{% endif %}"></span> {{ purchase.status_label }}
+      </span>
+    </div>
+    <div
+      class="flex items-center justify-between pt-3 border-t border-slate-100"
+    >
+      <div>
+        <p class="font-extrabold text-slate-900">Rp {{ purchase.total_amount|intcomma }}</p>
+        {% if purchase.outstanding > 0 %}
+        <p class="text-xs text-slate-400 mt-0.5">Sisa: Rp {{ purchase.outstanding|intcomma }}</p>
+        {% endif %}
+      </div>
+      <div class="flex gap-2">
+        <a
+          href="{% url 'transaction:purchase_detail' purchase.pk %}"
+          class="icon-btn icon-btn-view"
+          aria-label="Detail"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            />
+          </svg>
+        </a>
+        <a
+          href="{% url 'transaction:purchase_print' purchase.pk %}"
+          class="icon-btn icon-btn-edit"
+          aria-label="Cetak"
+          target="_blank"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+            />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

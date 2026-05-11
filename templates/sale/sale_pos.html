@@ -1,0 +1,560 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Point of Sale – New Sale{% endblock %}
+{% block nav_sales %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── PAGE-TAB ── */
+  .page-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 9px;
+    font-size: .8125rem;
+    font-weight: 600;
+    color: #64748b;
+    text-decoration: none;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+  }
+  .page-tab:hover  { background: #fff; color: #1e293b; }
+  .page-tab.active { background: #fff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+  /* ── SECTION CARD ── */
+  .section-card {
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .9375rem;
+    font-weight: 700;
+    color: #0f172a;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .section-title-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0f172a;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  /* ── ITEM TABLE ── */
+  .item-table th {
+    font-size: .72rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+  .item-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    font-size: .875rem;
+  }
+
+  .item-input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 11px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 9px;
+    font-size: .875rem;
+    color: #1e293b;
+    outline: none;
+    font-family: inherit;
+    background: #fff;
+    transition: border .15s, box-shadow .15s;
+  }
+  .item-input:focus {
+    border-color: #0f172a;
+    box-shadow: 0 0 0 3px rgba(15,23,42,.08);
+  }
+  .item-input[readonly] {
+    background: #f8fafc;
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+
+  .pay-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: .875rem;
+  }
+  .pay-row:last-child { border-bottom: none; }
+  .pay-label { color: #64748b; font-weight: 500; }
+  .pay-value { color: #0f172a; font-weight: 800; }
+
+  .danger-text { color: #b91c1c; }
+
+  /* ── PAYMENT METHOD RADIO CARDS ── */
+  .pay-method-card {
+    border: 2px solid #e2e8f0;
+    background: #fff;
+    transition: border-color .15s, background .15s;
+  }
+  .pay-method-card:hover { border-color: #c3d3ff; }
+  .pay-method-card:has(input[type="radio"]:checked) {
+    border-color: #0f172a;
+    background: #f0f4ff;
+  }
+  .pay-method-card:has(input[type="radio"]:checked):hover {
+    border-color: #0f172a;
+  }
+  .pay-method-card:has(input[type="radio"]:focus-visible) {
+    outline: 2px solid #1730b3;
+    outline-offset: 2px;
+  }
+  .pay-method-card input[type="radio"] {
+    accent-color: #0f172a;
+  }
+  .pay-method-card:has(input[type="radio"]:checked) .pay-method-title {
+    color: #0f172a;
+  }
+</style>
+{% endblock %}
+
+{% block topbar_search %}{# Suppressed on POS #}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+  <a href="{% url 'dashboard' %}" class="hover:text-slate-700 transition-colors">Dashboard</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <a href="{% url 'transaction:sales_list' %}" class="hover:text-slate-700 transition-colors">Sales</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <span class="text-slate-700 font-semibold">New Sale (POS)</span>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div class="flex items-center gap-3">
+    <a href="{% url 'transaction:sales_list' %}"
+       class="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors flex-shrink-0"
+       aria-label="Kembali ke daftar transaksi">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </a>
+    <div>
+      <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Point of Sale</h1>
+      <p class="text-sm text-slate-500 mt-0.5">Buat transaksi penjualan baru · {{ today|date:"d M Y" }}</p>
+    </div>
+  </div>
+
+  <div class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto shrink-0" role="tablist" aria-label="Sales sections">
+    <a href="{% url 'transaction:sales_list' %}" class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Transaksi
+    </a>
+    <a href="{% url 'transaction:sales_pos' %}" class="page-tab active whitespace-nowrap" role="tab" aria-selected="true">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      New Sale
+    </a>
+    <a href="{% url 'transaction:sales_receivables' %}" class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      Piutang
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<form method="POST" action="{% url 'transaction:sales_pos' %}" novalidate>
+  {% csrf_token %}
+
+  {# ── Transaction Info ── #}
+  <div class="section-card fade-up fade-up-1">
+    <div class="section-title">
+      <div class="section-title-icon">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      </div>
+      Informasi Transaksi
+    </div>
+
+    <div class="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div>
+        <label class="form-label" for="id_trx_date">Tanggal</label>
+        <input id="id_trx_date" class="form-input" value="{{ today }}" readonly aria-readonly="true" />
+      </div>
+
+      <div>
+        <label class="form-label" for="id_branch">Cabang <span class="text-red-500">*</span></label>
+        <select id="id_branch" name="branch" class="form-input" style="min-height:44px" required aria-required="true">
+          <option value="">— Pilih Cabang —</option>
+          {% for b in branches %}
+          <option value="{{ b.pk }}">{{ b.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label" for="id_customer">Customer</label>
+        <select id="id_customer" name="customer" class="form-input" style="min-height:44px">
+          <option value="">👤 Walk-in / Guest</option>
+          {% for c in customers %}
+          <option value="{{ c.pk }}">{{ c.name }}{% if c.whatsapp %} – {{ c.whatsapp }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  {# ── Items ── #}
+  <div class="section-card fade-up fade-up-2">
+    <div class="section-title">
+      <div class="section-title-icon">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      </div>
+      Daftar Item
+      <span class="ml-auto text-xs font-semibold text-slate-400">Minimal 1 item</span>
+    </div>
+
+    <div class="overflow-x-auto overflow-y-visible relative">
+      <table class="item-table w-full" aria-label="Sales items">
+        <thead>
+          <tr>
+            <th class="text-left" style="min-width:40px">#</th>
+            <th class="text-left" style="min-width:260px">Produk</th>
+            <th class="text-center" style="min-width:100px">Stok</th>
+            <th class="text-center" style="min-width:110px">Qty <span class="text-red-500">*</span></th>
+            <th class="text-right" style="min-width:150px">Harga Jual <span class="text-red-500">*</span></th>
+            <th class="text-right" style="min-width:110px">Disc %</th>
+            <th class="text-right" style="min-width:140px">Subtotal</th>
+            <th class="text-center" style="min-width:60px"></th>
+          </tr>
+        </thead>
+        <tbody id="items-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="px-5 py-4 border-t border-slate-100">
+      <button type="button"
+              id="btn-add-item"
+              class="w-full sm:w-auto flex items-center justify-center gap-2 bg-navy-50 hover:bg-navy-100 border border-navy-200 text-navy-800 font-bold text-sm px-5 rounded-xl transition-colors"
+              style="min-height:44px"
+              aria-label="Tambah item">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+        Tambah Item
+      </button>
+    </div>
+  </div>
+
+  {# ── Payment ── #}
+  <div class="section-card fade-up fade-up-3">
+    <div class="section-title">
+      <div class="section-title-icon">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+      </div>
+      Pembayaran
+    </div>
+
+    <div class="p-5 grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+      <div class="lg:col-span-2 space-y-4">
+        <div>
+          <label class="form-label">Metode Pembayaran <span class="text-red-500">*</span></label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="pay-method-card flex items-center gap-2 p-3 rounded-xl cursor-pointer">
+              <input type="radio" name="payment_method" value="cash" checked class="w-4 h-4" />
+              <span class="pay-method-title text-sm font-bold text-slate-700">Tunai</span>
+            </label>
+            <label class="pay-method-card flex items-center gap-2 p-3 rounded-xl cursor-pointer">
+              <input type="radio" name="payment_method" value="credit" class="w-4 h-4" />
+              <span class="pay-method-title text-sm font-bold text-slate-700">Kredit (Piutang)</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="credit-fields" class="bg-amber-50 border border-amber-200 rounded-xl p-4 hidden">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="form-label text-amber-700" for="id_dp_amount">Uang Muka (DP)</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold pointer-events-none">Rp</span>
+                <input type="number" id="id_dp_amount" name="dp_amount" value="0" min="0" class="form-input" style="padding-left:2.5rem;min-height:44px" />
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Dianggap pembayaran awal, sisanya jadi piutang.</p>
+            </div>
+            <div>
+              <label class="form-label text-amber-700" for="id_due_date">Jatuh Tempo</label>
+              <input type="date" id="id_due_date" name="due_date" class="form-input" style="min-height:44px" />
+              <p class="text-xs text-slate-500 mt-1">Opsional, untuk menandai overdue.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+          <div class="text-sm font-semibold text-slate-700">Validasi</div>
+          <div id="ui-validation" class="text-sm font-bold text-slate-500">Siap</div>
+        </div>
+      </div>
+
+      <div class="bg-white border border-slate-100 rounded-xl p-5 shadow-card">
+        <div class="pay-row">
+          <span class="pay-label">Subtotal</span>
+          <span id="ui-subtotal" class="pay-value">Rp 0</span>
+        </div>
+        <div class="pay-row">
+          <span class="pay-label">Diskon</span>
+          <span id="ui-discount" class="pay-value">Rp 0</span>
+        </div>
+        <div class="pay-row">
+          <span class="pay-label">Grand Total</span>
+          <span id="ui-grandtotal" class="pay-value">Rp 0</span>
+        </div>
+        <div class="pay-row" id="ui-outstanding-row" style="display:none">
+          <span class="pay-label">Sisa Piutang</span>
+          <span id="ui-outstanding" class="pay-value">Rp 0</span>
+        </div>
+
+        <button type="submit"
+                class="w-full min-h-[52px] bg-navy-900 hover:bg-navy-800 text-white font-extrabold text-sm rounded-xl shadow-navy transition-colors flex items-center justify-center gap-2 mt-4"
+                aria-label="Simpan transaksi penjualan">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          Simpan Transaksi
+        </button>
+
+        <a href="{% url 'transaction:sales_list' %}"
+           class="w-full min-h-[44px] mt-2 border border-slate-200 text-slate-600 font-semibold text-sm rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center">
+          Batal
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+</form>
+
+<script>
+  const PRODUCTS = (function() {
+    try { return {{ products_json|safe }}; } catch (e) { return []; }
+  })();
+
+  const productById = new Map(PRODUCTS.map(p => [String(p.id), p]));
+
+  function parseNum(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function rupiah(n) {
+    const v = Math.round(parseNum(n));
+    return 'Rp ' + v.toLocaleString('id-ID');
+  }
+
+  function makeProductOptions() {
+    const opts = ['<option value="">— Pilih Produk —</option>'];
+    for (const p of PRODUCTS) {
+      const label = `${p.name} (${p.sku})`;
+      opts.push(`<option value="${String(p.id)}">${label}</option>`);
+    }
+    return opts.join('');
+  }
+
+  const productOptionsHtml = makeProductOptions();
+
+  let rowCounter = 0;
+
+  function addRow() {
+    rowCounter += 1;
+    const idx = rowCounter;
+
+    const tr = document.createElement('tr');
+    tr.dataset.idx = String(idx);
+    tr.innerHTML = `
+      <td class="text-slate-500 font-semibold">${idx}</td>
+      <td>
+        <select class="item-input js-product" name="product_id_${idx}" required aria-required="true">
+          ${productOptionsHtml}
+        </select>
+        <p class="text-xs text-slate-400 mt-1 js-sku"></p>
+      </td>
+      <td class="text-center">
+        <span class="text-xs font-bold text-slate-700 js-stock">-</span>
+      </td>
+      <td class="text-center">
+        <input class="item-input js-qty" type="number" min="1" step="1" name="qty_${idx}" value="1" required aria-required="true" style="text-align:center; max-width:110px; margin:0 auto;" />
+      </td>
+      <td class="text-right">
+        <input class="item-input js-price" type="number" min="0" step="0.01" name="price_${idx}" value="0" required aria-required="true" style="text-align:right;" />
+      </td>
+      <td class="text-right">
+        <input class="item-input js-disc" type="number" min="0" max="100" step="0.01" name="disc_${idx}" value="0" style="text-align:right; max-width:110px; margin-left:auto;" />
+      </td>
+      <td class="text-right">
+        <input class="item-input js-subtotal" type="text" value="Rp 0" readonly />
+      </td>
+      <td class="text-center">
+        <button type="button" class="icon-btn icon-btn-delete js-remove" aria-label="Hapus baris ${idx}">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </td>
+    `;
+
+    document.getElementById('items-tbody').appendChild(tr);
+
+    const productSel = tr.querySelector('.js-product');
+    const qtyInput = tr.querySelector('.js-qty');
+    const priceInput = tr.querySelector('.js-price');
+    const discInput = tr.querySelector('.js-disc');
+
+    productSel.addEventListener('change', () => {
+      const p = productById.get(productSel.value);
+      tr.querySelector('.js-sku').textContent = p ? `SKU: ${p.sku}` : '';
+      tr.querySelector('.js-stock').textContent = p ? String(p.stock ?? '-') : '-';
+      if (p) {
+        const price = parseNum(p.selling_price);
+        if (priceInput.value === '0' || priceInput.value === '' || parseNum(priceInput.value) <= 0) {
+          priceInput.value = String(price);
+        }
+      }
+      recalc();
+    });
+
+    [qtyInput, priceInput, discInput].forEach(el => {
+      el.addEventListener('input', recalc);
+    });
+
+    tr.querySelector('.js-remove').addEventListener('click', () => {
+      tr.remove();
+      recalc();
+    });
+
+    recalc();
+  }
+
+  function getMethod() {
+    const el = document.querySelector('input[name="payment_method"]:checked');
+    return el ? el.value : 'cash';
+  }
+
+  function toggleCreditFields() {
+    const credit = getMethod() === 'credit';
+    const box = document.getElementById('credit-fields');
+    box.classList.toggle('hidden', !credit);
+    document.getElementById('ui-outstanding-row').style.display = credit ? '' : 'none';
+    recalc();
+  }
+
+  function recalc() {
+    const rows = Array.from(document.querySelectorAll('#items-tbody tr'));
+
+    let subtotal = 0;
+    let discountTotal = 0;
+
+    for (const tr of rows) {
+      const qty = parseNum(tr.querySelector('.js-qty')?.value);
+      const price = parseNum(tr.querySelector('.js-price')?.value);
+      const discPct = Math.min(100, Math.max(0, parseNum(tr.querySelector('.js-disc')?.value)));
+
+      const lineGross = qty * price;
+      const lineDisc = lineGross * (discPct / 100);
+      const lineNet = Math.max(0, lineGross - lineDisc);
+
+      subtotal += lineGross;
+      discountTotal += lineDisc;
+
+      const sub = tr.querySelector('.js-subtotal');
+      if (sub) sub.value = rupiah(lineNet);
+    }
+
+    const grandTotal = Math.max(0, subtotal - discountTotal);
+
+    document.getElementById('ui-subtotal').textContent = rupiah(subtotal);
+    document.getElementById('ui-discount').textContent = rupiah(discountTotal);
+    document.getElementById('ui-grandtotal').textContent = rupiah(grandTotal);
+
+    const method = getMethod();
+    let outstanding = 0;
+
+    if (method === 'credit') {
+      const dp = Math.max(0, parseNum(document.getElementById('id_dp_amount').value));
+      outstanding = Math.max(0, grandTotal - Math.min(dp, grandTotal));
+      document.getElementById('ui-outstanding').textContent = rupiah(outstanding);
+    }
+
+    const validation = validate(false);
+    const vEl = document.getElementById('ui-validation');
+    if (!validation.ok) {
+      vEl.textContent = validation.message;
+      vEl.classList.add('danger-text');
+    } else {
+      vEl.textContent = 'Siap';
+      vEl.classList.remove('danger-text');
+    }
+  }
+
+  function validate(focusFirst) {
+    const branch = document.getElementById('id_branch').value;
+    if (!branch) return { ok: false, message: 'Cabang wajib' };
+
+    const rows = Array.from(document.querySelectorAll('#items-tbody tr'));
+    if (!rows.length) return { ok: false, message: 'Minimal 1 item' };
+
+    for (const tr of rows) {
+      const idx = tr.dataset.idx;
+      const product = tr.querySelector('.js-product')?.value;
+      const qty = parseNum(tr.querySelector('.js-qty')?.value);
+      const price = parseNum(tr.querySelector('.js-price')?.value);
+      const disc = parseNum(tr.querySelector('.js-disc')?.value);
+
+      if (!product) {
+        if (focusFirst) tr.querySelector('.js-product')?.focus();
+        return { ok: false, message: `Produk baris ${idx} kosong` };
+      }
+      if (qty <= 0) {
+        if (focusFirst) tr.querySelector('.js-qty')?.focus();
+        return { ok: false, message: `Qty baris ${idx} invalid` };
+      }
+      if (price < 0) {
+        if (focusFirst) tr.querySelector('.js-price')?.focus();
+        return { ok: false, message: `Harga baris ${idx} invalid` };
+      }
+      if (disc < 0 || disc > 100) {
+        if (focusFirst) tr.querySelector('.js-disc')?.focus();
+        return { ok: false, message: `Disc baris ${idx} 0-100` };
+      }
+    }
+
+    return { ok: true, message: '' };
+  }
+
+  document.getElementById('btn-add-item').addEventListener('click', addRow);
+  document.querySelectorAll('input[name="payment_method"]').forEach(r => r.addEventListener('change', toggleCreditFields));
+  document.getElementById('id_dp_amount').addEventListener('input', recalc);
+
+  document.querySelector('form').addEventListener('submit', (e) => {
+    const res = validate(true);
+    if (!res.ok) {
+      e.preventDefault();
+      recalc();
+    }
+  });
+
+  // Start with 1 empty row
+  addRow();
+  toggleCreditFields();
+</script>
+
+{% endblock %}

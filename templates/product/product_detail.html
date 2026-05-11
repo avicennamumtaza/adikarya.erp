@@ -28,23 +28,26 @@
     <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Product Detail</h1>
     <p class="text-sm text-slate-500 mt-0.5">Full product information and stock levels across branches.</p>
   </div>
-  {# Sub-nav tabs consistent with product_list #}
-  <div class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto shrink-0" role="tablist" aria-label="Inventory sections">
-    <a href="{% url 'product_list' %}"
-       class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
-      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-      Products
-    </a>
-    <a href="{% url 'branch_list' %}"
-       class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
-      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-      Branches
-    </a>
-    <a href="{% url 'product_add' %}"
-       class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
-      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-      Add Product
-    </a>
+  {# Sub-nav consistent with list/form pages #}
+  <div class="w-full sm:w-auto overflow-x-auto">
+    <nav aria-label="Inventory sections" class="inline-flex min-w-max items-center gap-1 rounded-2xl bg-slate-100 p-1.5">
+      <a href="{% url 'product_list' %}"
+         aria-current="page"
+         class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-white px-3.5 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-700">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        Products
+      </a>
+      <a href="{% url 'branch_list' %}"
+         class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-700">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Branches
+      </a>
+      <a href="{% url 'product_add' %}"
+         class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-700">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Product
+      </a>
+    </nav>
   </div>
 </div>
 {% endblock %}
@@ -165,15 +168,15 @@
     {# Summary pills #}
     <div class="grid grid-cols-3 gap-3 mb-5">
       <div class="bg-slate-50 rounded-xl p-3 text-center">
-        <p class="text-3xl font-extrabold text-slate-900">142</p>
+        <p class="text-3xl font-extrabold text-slate-900">{{ detail_summary.total_units|default:0 }}</p>
         <p class="text-xs text-slate-400 mt-1">Total Units</p>
       </div>
       <div class="bg-amber-50 rounded-xl p-3 text-center">
-        <p class="text-3xl font-extrabold text-amber-600">2</p>
+        <p class="text-3xl font-extrabold text-amber-600">{{ detail_summary.low_branches|default:0 }}</p>
         <p class="text-xs text-slate-400 mt-1">Low Branches</p>
       </div>
       <div class="bg-red-50 rounded-xl p-3 text-center">
-        <p class="text-3xl font-extrabold text-red-600">0</p>
+        <p class="text-3xl font-extrabold text-red-600">{{ detail_summary.out_branches|default:0 }}</p>
         <p class="text-xs text-slate-400 mt-1">Out of Stock</p>
       </div>
     </div>
@@ -182,10 +185,14 @@
     <div class="space-y-2 mb-5">
       <div class="flex justify-between text-xs text-slate-500 mb-1">
         <span>Stock vs minimum level</span>
-        <span>142 / 50 min</span>
+        <span>{{ detail_summary.total_units|default:0 }} / {{ detail_summary.min_total|default:0 }} min</span>
       </div>
       <div class="stock-bar">
-        <div class="stock-bar-fill bg-green-500" style="width:85%"></div>
+        <div class="stock-bar-fill
+          {% if detail_summary.total_units|default:0 == 0 %}bg-red-400
+          {% elif detail_summary.total_units|default:0 <= detail_summary.min_total|default:0 %}bg-amber-400
+          {% else %}bg-green-500{% endif %}"
+          style="width:{{ detail_summary.progress_pct|default:0 }}%"></div>
       </div>
     </div>
 
@@ -228,7 +235,7 @@
         </tr>
       </thead>
       <tbody>
-        {# Dummy data — replace with: {% for bs in branch_stocks %} #}
+        {% for bs in branch_stocks %}
         <tr class="data-row">
           <td>
             <div class="flex items-center gap-3">
@@ -236,114 +243,39 @@
                 <svg class="w-4 h-4 text-navy-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
               </div>
               <div>
-                <p class="font-semibold text-slate-800 text-sm">Cabang Jakarta Pusat</p>
-                <p class="text-xs text-slate-400">Jl. Thamrin No. 12</p>
+                <p class="font-semibold text-slate-800 text-sm">{{ bs.branch.name }}</p>
+                <p class="text-xs text-slate-400">{{ bs.branch.address|default:"—" }}</p>
               </div>
             </div>
           </td>
           <td class="text-right">
-            <span class="font-bold text-slate-900">52 <span class="text-slate-400 font-normal text-xs">units</span></span>
+            <span class="font-bold {% if bs.quantity == 0 %}text-red-600{% elif bs.quantity <= bs.min_stock %}text-amber-600{% else %}text-slate-900{% endif %}">
+              {{ bs.quantity }} <span class="text-slate-400 font-normal text-xs">units</span>
+            </span>
           </td>
-          <td class="text-right text-sm text-slate-500">10</td>
-          <td><span class="badge-ok text-xs font-bold px-2.5 py-1 rounded-full">In Stock</span></td>
-          <td class="text-sm text-slate-500">20 Jun 2025</td>
-          <td class="text-center">
-            <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=1"
-               class="icon-btn icon-btn-adj text-xs px-3" aria-label="Adjust stock for Jakarta">Adjust</a>
-          </td>
-        </tr>
-        <tr class="data-row">
+          <td class="text-right text-sm text-slate-500">{{ bs.min_stock }}</td>
           <td>
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-xl bg-navy-50 flex items-center justify-center flex-shrink-0">
-                <svg class="w-4 h-4 text-navy-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
-              </div>
-              <div>
-                <p class="font-semibold text-slate-800 text-sm">Cabang Surabaya</p>
-                <p class="text-xs text-slate-400">Jl. Pemuda No. 5</p>
-              </div>
-            </div>
+            {% if bs.quantity == 0 %}
+              <span class="badge-out text-xs font-bold px-2.5 py-1 rounded-full">Out of Stock</span>
+            {% elif bs.quantity <= bs.min_stock %}
+              <span class="badge-low text-xs font-bold px-2.5 py-1 rounded-full">Low Stock</span>
+            {% else %}
+              <span class="badge-ok text-xs font-bold px-2.5 py-1 rounded-full">In Stock</span>
+            {% endif %}
           </td>
-          <td class="text-right">
-            <span class="font-bold text-slate-900">35 <span class="text-slate-400 font-normal text-xs">units</span></span>
+          <td class="text-sm text-slate-500">
+            {% if bs.last_restock_at %}{{ bs.last_restock_at|date:"d M Y" }}{% else %}—{% endif %}
           </td>
-          <td class="text-right text-sm text-slate-500">10</td>
-          <td><span class="badge-ok text-xs font-bold px-2.5 py-1 rounded-full">In Stock</span></td>
-          <td class="text-sm text-slate-500">15 Jun 2025</td>
           <td class="text-center">
-            <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=2"
-               class="icon-btn icon-btn-adj text-xs px-3" aria-label="Adjust stock for Surabaya">Adjust</a>
+            <a href="{% url 'product_stock_adjust' product.pk %}?branch={{ bs.branch.pk }}"
+               class="icon-btn icon-btn-adj text-xs px-3" aria-label="Adjust stock for {{ bs.branch.name }}">Adjust</a>
           </td>
         </tr>
-        <tr class="data-row">
-          <td>
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
-                <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-              </div>
-              <div>
-                <p class="font-semibold text-slate-800 text-sm">Cabang Bandung</p>
-                <p class="text-xs text-slate-400">Jl. Braga No. 8</p>
-              </div>
-            </div>
-          </td>
-          <td class="text-right">
-            <span class="font-bold text-amber-600">8 <span class="text-slate-400 font-normal text-xs">units</span></span>
-          </td>
-          <td class="text-right text-sm text-slate-500">10</td>
-          <td><span class="badge-low text-xs font-bold px-2.5 py-1 rounded-full">Low Stock</span></td>
-          <td class="text-sm text-slate-500">30 May 2025</td>
-          <td class="text-center">
-            <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=3"
-               class="icon-btn icon-btn-adj text-xs px-3" aria-label="Adjust stock for Bandung">Adjust</a>
-          </td>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center py-10 text-sm text-slate-400">No branches available.</td>
         </tr>
-        <tr class="data-row">
-          <td>
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-xl bg-navy-50 flex items-center justify-center flex-shrink-0">
-                <svg class="w-4 h-4 text-navy-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
-              </div>
-              <div>
-                <p class="font-semibold text-slate-800 text-sm">Cabang Medan</p>
-                <p class="text-xs text-slate-400">Jl. Sudirman No. 22</p>
-              </div>
-            </div>
-          </td>
-          <td class="text-right">
-            <span class="font-bold text-slate-900">22 <span class="text-slate-400 font-normal text-xs">units</span></span>
-          </td>
-          <td class="text-right text-sm text-slate-500">10</td>
-          <td><span class="badge-ok text-xs font-bold px-2.5 py-1 rounded-full">In Stock</span></td>
-          <td class="text-sm text-slate-500">10 Jun 2025</td>
-          <td class="text-center">
-            <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=4"
-               class="icon-btn icon-btn-adj text-xs px-3" aria-label="Adjust stock for Medan">Adjust</a>
-          </td>
-        </tr>
-        <tr class="data-row">
-          <td>
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-xl bg-navy-50 flex items-center justify-center flex-shrink-0">
-                <svg class="w-4 h-4 text-navy-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
-              </div>
-              <div>
-                <p class="font-semibold text-slate-800 text-sm">Cabang Makassar</p>
-                <p class="text-xs text-slate-400">Jl. Penghibur No. 7</p>
-              </div>
-            </div>
-          </td>
-          <td class="text-right">
-            <span class="font-bold text-slate-900">25 <span class="text-slate-400 font-normal text-xs">units</span></span>
-          </td>
-          <td class="text-right text-sm text-slate-500">10</td>
-          <td><span class="badge-ok text-xs font-bold px-2.5 py-1 rounded-full">In Stock</span></td>
-          <td class="text-sm text-slate-500">18 Jun 2025</td>
-          <td class="text-center">
-            <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=5"
-               class="icon-btn icon-btn-adj text-xs px-3" aria-label="Adjust stock for Makassar">Adjust</a>
-          </td>
-        </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>
@@ -351,65 +283,38 @@
   {# Mobile branch cards #}
   <div class="card-table p-4" role="list" aria-label="Branch stock cards">
 
+    {% for bs in branch_stocks %}
     <div class="bg-white border border-slate-100 rounded-xl p-4" role="listitem">
       <div class="flex items-start justify-between mb-3">
         <div>
-          <p class="font-bold text-slate-800 text-sm">Cabang Jakarta Pusat</p>
-          <p class="text-xs text-slate-400">Jl. Thamrin No. 12</p>
+          <p class="font-bold text-slate-800 text-sm">{{ bs.branch.name }}</p>
+          <p class="text-xs text-slate-400">{{ bs.branch.address|default:"—" }}</p>
         </div>
-        <span class="badge-ok text-xs font-bold px-2.5 py-1 rounded-full">In Stock</span>
+        {% if bs.quantity == 0 %}
+          <span class="badge-out text-xs font-bold px-2.5 py-1 rounded-full">Out</span>
+        {% elif bs.quantity <= bs.min_stock %}
+          <span class="badge-low text-xs font-bold px-2.5 py-1 rounded-full">Low</span>
+        {% else %}
+          <span class="badge-ok text-xs font-bold px-2.5 py-1 rounded-full">In Stock</span>
+        {% endif %}
       </div>
       <div class="grid grid-cols-3 gap-2 text-xs mb-3">
-        <div><p class="text-slate-400">Stock</p><p class="font-bold text-slate-800">52 units</p></div>
-        <div><p class="text-slate-400">Min</p><p class="font-semibold text-slate-600">10</p></div>
-        <div><p class="text-slate-400">Restock</p><p class="font-semibold text-slate-600">20 Jun</p></div>
+        <div><p class="text-slate-400">Stock</p><p class="font-bold {% if bs.quantity == 0 %}text-red-600{% elif bs.quantity <= bs.min_stock %}text-amber-600{% else %}text-slate-800{% endif %}">{{ bs.quantity }} units</p></div>
+        <div><p class="text-slate-400">Min</p><p class="font-semibold text-slate-600">{{ bs.min_stock }}</p></div>
+        <div><p class="text-slate-400">Restock</p><p class="font-semibold text-slate-600">{% if bs.last_restock_at %}{{ bs.last_restock_at|date:"d M" }}{% else %}—{% endif %}</p></div>
       </div>
-      <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=1"
+      <a href="{% url 'product_stock_adjust' product.pk %}?branch={{ bs.branch.pk }}"
          class="flex items-center justify-center gap-1.5 w-full border border-amber-200 text-amber-700 font-bold text-xs py-2.5 rounded-xl hover:bg-amber-50 transition-colors">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
         Adjust Stock
       </a>
     </div>
-
-    <div class="bg-white border border-slate-100 rounded-xl p-4" role="listitem">
-      <div class="flex items-start justify-between mb-3">
-        <div>
-          <p class="font-bold text-slate-800 text-sm">Cabang Surabaya</p>
-          <p class="text-xs text-slate-400">Jl. Pemuda No. 5</p>
-        </div>
-        <span class="badge-ok text-xs font-bold px-2.5 py-1 rounded-full">In Stock</span>
-      </div>
-      <div class="grid grid-cols-3 gap-2 text-xs mb-3">
-        <div><p class="text-slate-400">Stock</p><p class="font-bold text-slate-800">35 units</p></div>
-        <div><p class="text-slate-400">Min</p><p class="font-semibold text-slate-600">10</p></div>
-        <div><p class="text-slate-400">Restock</p><p class="font-semibold text-slate-600">15 Jun</p></div>
-      </div>
-      <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=2"
-         class="flex items-center justify-center gap-1.5 w-full border border-amber-200 text-amber-700 font-bold text-xs py-2.5 rounded-xl hover:bg-amber-50 transition-colors">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
-        Adjust Stock
-      </a>
+    {% empty %}
+    <div class="bg-white border border-slate-100 rounded-xl shadow-card py-10 text-center">
+      <p class="font-bold text-slate-600 mb-1">No branches found</p>
+      <p class="text-sm text-slate-400">Create a branch first to track stock.</p>
     </div>
-
-    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4" role="listitem">
-      <div class="flex items-start justify-between mb-3">
-        <div>
-          <p class="font-bold text-slate-800 text-sm">Cabang Bandung</p>
-          <p class="text-xs text-slate-400">Jl. Braga No. 8</p>
-        </div>
-        <span class="badge-low text-xs font-bold px-2.5 py-1 rounded-full">Low Stock</span>
-      </div>
-      <div class="grid grid-cols-3 gap-2 text-xs mb-3">
-        <div><p class="text-slate-400">Stock</p><p class="font-bold text-amber-600">8 units</p></div>
-        <div><p class="text-slate-400">Min</p><p class="font-semibold text-slate-600">10</p></div>
-        <div><p class="text-slate-400">Restock</p><p class="font-semibold text-slate-600">30 May</p></div>
-      </div>
-      <a href="{% url 'product_stock_adjust' product.pk|default:1 %}?branch=3"
-         class="flex items-center justify-center gap-1.5 w-full border border-amber-400 text-amber-700 bg-amber-100 font-bold text-xs py-2.5 rounded-xl hover:bg-amber-200 transition-colors">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
-        Restock Needed
-      </a>
-    </div>
+    {% endfor %}
 
   </div>
 </div>

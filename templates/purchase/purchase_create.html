@@ -1,0 +1,1061 @@
+{% extends "base.html" %} {% load static %} {% block title %}New Purchase
+Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_head %}
+<style>
+  /* ── PAGE-TAB ── */
+  .page-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 9px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #64748b;
+    text-decoration: none;
+    transition:
+      background 0.15s,
+      color 0.15s;
+    white-space: nowrap;
+  }
+  .page-tab:hover {
+    background: #fff;
+    color: #1e293b;
+  }
+  .page-tab.active {
+    background: #fff;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  /* ── SECTION CARD ── */
+  .section-card {
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #0f172a;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .section-title-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0f172a;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  /* ── ITEM TABLE (big touch targets for boomer UX) ── */
+  .item-table th {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+  .item-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+  }
+
+  /* Active row highlight (Focus Mode for boomer UX) */
+  .item-row-active {
+    background: #f0f4ff;
+    outline: 2px solid #1730b3;
+    outline-offset: -2px;
+  }
+  .item-row-ok {
+    background: #f0fdf4;
+  }
+
+  /* Big input targets ≥ 44px */
+  .item-input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 11px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 9px;
+    font-size: 0.875rem;
+    color: #1e293b;
+    outline: none;
+    font-family: inherit;
+    background: #fff;
+    transition:
+      border 0.15s,
+      box-shadow 0.15s;
+  }
+  .item-input:focus {
+    border-color: #0f172a;
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+  }
+  .item-input[readonly] {
+    background: #f8fafc;
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+
+  /* Checkmark badge when row is complete */
+  .row-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #dcfce7;
+    color: #15803d;
+    flex-shrink: 0;
+  }
+
+  /* ── PAYMENT SUMMARY BOX ── */
+  .pay-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.875rem;
+  }
+  .pay-row:last-child {
+    border-bottom: none;
+  }
+  .pay-label {
+    color: #64748b;
+    font-weight: 500;
+  }
+  .pay-value {
+    color: #0f172a;
+    font-weight: 700;
+  }
+  .pay-total {
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  .pay-total-label {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+</style>
+{% endblock %} {% block topbar_search %}{# hide on form page #}{% endblock %}
+{% block breadcrumb %}
+<nav
+  aria-label="Breadcrumb"
+  class="flex items-center gap-2 text-xs text-slate-400 mb-1"
+>
+  <a href="{% url 'dashboard' %}" class="hover:text-slate-700 transition-colors"
+    >Dashboard</a
+  >
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M9 5l7 7-7 7"
+    />
+  </svg>
+  <a
+    href="{% url 'transaction:purchase_list' %}"
+    class="hover:text-slate-700 transition-colors"
+    >Purchase</a
+  >
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M9 5l7 7-7 7"
+    />
+  </svg>
+  <span class="text-slate-700 font-semibold">New Purchase Order</span>
+</nav>
+{% endblock %} {% block page_header %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div class="flex items-center gap-3">
+    <a
+      href="{% url 'transaction:purchase_list' %}"
+      class="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors"
+      aria-label="Back to purchase list"
+    >
+      <svg
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 19l-7-7 7-7"
+        />
+      </svg>
+    </a>
+    <div>
+      <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">
+        New Purchase Order
+      </h1>
+      <p class="text-sm text-slate-500 mt-0.5">
+        Form stok masuk &amp; kalkulasi HPP (Moving Average).
+      </p>
+    </div>
+  </div>
+  <div
+    class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto shrink-0"
+    role="tablist"
+  >
+    <a
+      href="{% url 'transaction:purchase_list' %}"
+      class="page-tab whitespace-nowrap"
+      role="tab"
+      aria-selected="false"
+    >
+      <svg
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+        />
+      </svg>
+      Orders
+    </a>
+    <a
+      href="{% url 'transaction:purchase_create' %}"
+      class="page-tab active whitespace-nowrap"
+      role="tab"
+      aria-selected="true"
+    >
+      <svg
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 4v16m8-8H4"
+        />
+      </svg>
+      New PO
+    </a>
+    <a
+      href="{% url 'transaction:purchase_payables' %}"
+      class="page-tab whitespace-nowrap"
+      role="tab"
+      aria-selected="false"
+    >
+      <svg
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+        />
+      </svg>
+      Hutang
+    </a>
+  </div>
+</div>
+{% endblock %} {% block content %}
+<form method="POST" action="{% url 'transaction:purchase_create' %}" novalidate>
+  {% csrf_token %} 
+    
+  <div class="section-card fade-up fade-up-1">
+    <div class="section-title">
+      <div class="section-title-icon">
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+      </div>
+      Informasi Order
+    </div>
+
+    <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {# Supplier (searchable select) #}
+      <div>
+        <label class="form-label" for="id_supplier">
+          Supplier <span class="text-red-500">*</span>
+        </label>
+        <select
+          id="id_supplier"
+          name="supplier"
+          class="form-input"
+          style="min-height: 44px"
+          required
+          aria-required="true"
+        >
+          <option value="">— Pilih Supplier —</option>
+          {% for s in suppliers %}
+          <option value="{{ s.pk }}">{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# Branch #}
+      <div>
+        <label class="form-label" for="id_branch">
+          Cabang Tujuan <span class="text-red-500">*</span>
+        </label>
+        <select
+          id="id_branch"
+          name="branch"
+          class="form-input"
+          style="min-height: 44px"
+          required
+          aria-required="true"
+        >
+          <option value="">— Pilih Cabang —</option>
+          {% for b in branches %}
+          <option value="{{ b.pk }}">{{ b.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# invoice date & external reference are not stored in the current model #}
+    </div>
+  </div>
+
+  {% comment %} ══════════════════════════════════════════ SECTION 2 – DYNAMIC
+  ITEM TABLE ══════════════════════════════════════════ {% endcomment %}
+  <div class="section-card fade-up fade-up-2">
+    <div class="section-title">
+      <div class="section-title-icon">
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+          />
+        </svg>
+      </div>
+      Daftar Item Pembelian
+      <span id="item-count" class="ml-auto text-xs font-semibold text-slate-400"
+        >*Semua baris harus terisi sebelum simpan</span
+      >
+    </div>
+
+    {# Desktop table — scrolls horizontally on tablet #}
+    <div class="overflow-x-auto overflow-y-visible relative z-20">
+      <table class="item-table w-full" aria-label="Purchase items">
+        <thead>
+          <tr>
+            <th class="text-left" style="min-width: 40px">#</th>
+            <th class="text-left" style="min-width: 240px">Produk / SKU</th>
+            <th class="text-center" style="min-width: 110px">Stok Saat Ini</th>
+            <th class="text-center" style="min-width: 110px">
+              Qty Masuk <span class="text-red-500">*</span>
+            </th>
+            <th class="text-right" style="min-width: 150px">
+              Harga Beli / Unit <span class="text-red-500">*</span>
+            </th>
+            <th class="text-right" style="min-width: 140px">Subtotal</th>
+            <th class="text-center" style="min-width: 60px"></th>
+          </tr>
+        </thead>
+        <tbody id="items-tbody">
+          {# JS will render rows here #}
+        </tbody>
+      </table>
+    </div>
+
+    {# Add Item button #}
+    <div class="px-5 py-4 border-t border-slate-100 relative z-0">
+      <button
+        type="button"
+        id="btn-add-item"
+        class="w-full sm:w-auto flex items-center justify-center gap-2 bg-navy-50 hover:bg-navy-100 border border-navy-200 text-navy-800 font-bold text-sm px-5 rounded-xl transition-colors"
+        style="min-height: 44px"
+        aria-label="Tambah baris item baru"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+        </svg>
+        Tambah Item
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 fade-up fade-up-3">
+    {# LEFT – Landed Cost #}
+    <div class="section-card">
+      <div class="section-title">
+        <div class="section-title-icon">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            />
+          </svg>
+        </div>
+        Biaya Tambahan (Landed Cost)
+      </div>
+      <div class="p-5 space-y-4">
+        {# Shipping / Freight #}
+        <div>
+          <label class="form-label" for="id_shipping_cost">
+            Ongkos Kirim / Freight
+          </label>
+          <div class="relative">
+            <span
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold pointer-events-none"
+              >Rp</span
+            >
+            <input
+              type="number"
+              id="id_shipping_cost"
+              name="shipping_cost"
+              value="0"
+              min="0"
+              class="form-input"
+              style="padding-left: 2.5rem; min-height: 44px"
+              aria-label="Ongkos kirim"
+            />
+          </div>
+        </div>
+
+        {# Other fees #}
+        <div>
+          <label class="form-label" for="id_other_fees">Biaya Lain-lain</label>
+          <div class="relative">
+            <span
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold pointer-events-none"
+              >Rp</span
+            >
+            <input
+              type="number"
+              id="id_other_fees"
+              name="other_fees"
+              value="0"
+              min="0"
+              class="form-input"
+              style="padding-left: 2.5rem; min-height: 44px"
+              aria-label="Biaya lain-lain"
+            />
+          </div>
+        </div>
+
+        {# Notes are intentionally omitted (not persisted) #}
+
+        {# HPP Preview info box #}
+        <div class="bg-blue-50 border border-blue-100 rounded-xl p-4">
+          <p
+            class="text-xs font-bold text-blue-700 mb-2 flex items-center gap-1.5"
+          >
+            <svg
+              class="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Kalkulasi HPP (Moving Average)
+          </p>
+          <div class="space-y-1.5 text-xs text-blue-800">
+            <div class="flex justify-between">
+              <span>Subtotal item:</span>
+              <span class="font-bold" id="hpp-subtotal">Rp 0</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Total landed cost:</span>
+              <span class="font-bold" id="hpp-landed">Rp 0</span>
+            </div>
+            <div
+              class="flex justify-between border-t border-blue-200 pt-1.5 mt-1.5"
+            >
+              <span class="font-bold">Total biaya aktual:</span>
+              <span class="font-extrabold" id="hpp-total">Rp 0</span>
+            </div>
+            <p class="text-blue-600 mt-2 leading-relaxed">
+              Landed cost akan didistribusikan proporsional ke setiap item dan
+              digabungkan dengan HPP lama (Moving Average) saat disimpan.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# RIGHT – Payment Footer #}
+    <div class="section-card">
+      <div class="section-title">
+        <div class="section-title-icon">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+            />
+          </svg>
+        </div>
+        Pembayaran
+      </div>
+      <div class="p-5">
+        {# Total calculation display #}
+        <div class="bg-slate-50 rounded-xl p-4 mb-5 space-y-1">
+          <div class="pay-row">
+            <span class="pay-label">Subtotal Item</span>
+            <span class="pay-value" id="pay-subtotal">Rp 0</span>
+          </div>
+          <div class="pay-row">
+            <span class="pay-label">Ongkos Kirim</span>
+            <span class="pay-value" id="pay-shipping">Rp 0</span>
+          </div>
+          <div class="pay-row">
+            <span class="pay-label">Biaya Lain-lain</span>
+            <span class="pay-value" id="pay-other">Rp 0</span>
+          </div>
+          <div
+            class="flex justify-between items-center pt-3 border-t-2 border-slate-300 mt-2"
+          >
+            <span class="pay-total-label">TOTAL</span>
+            <span class="pay-total" id="pay-grand-total">Rp 0</span>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          {# Payment Method #}
+          <div>
+            <label class="form-label"
+              >Metode Pembayaran <span class="text-red-500">*</span></label
+            >
+            <div class="grid grid-cols-2 gap-2">
+              <label
+                class="flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-navy-900 bg-navy-50 cursor-pointer text-center pay-method-label"
+                data-value="CASH"
+              >
+                <input
+                  type="radio"
+                  name="payment_method"
+                  value="CASH"
+                  checked
+                  class="w-4 h-4 accent-navy-900"
+                />
+                <svg class="w-5 h-5 text-navy-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <span class="text-xs font-bold text-navy-900">Tunai</span>
+              </label>
+              <label
+                class="flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-slate-200 hover:border-navy-300 cursor-pointer text-center transition-colors pay-method-label"
+                data-value="CREDIT"
+              >
+                <input
+                  type="radio"
+                  name="payment_method"
+                  value="CREDIT"
+                  class="w-4 h-4 accent-navy-900"
+                />
+                <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="text-xs font-bold text-slate-600">Kredit</span>
+              </label>
+            </div>
+          </div>
+
+          {# Amount Paid #}
+          <div>
+            <label class="form-label" for="id_amount_paid">
+              Jumlah Dibayar <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <span
+                class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold pointer-events-none"
+                >Rp</span
+              >
+              <input
+                type="number"
+                id="id_amount_paid"
+                name="amount_paid"
+                value="0"
+                min="0"
+                class="form-input"
+                style="
+                  padding-left: 2.5rem;
+                  min-height: 44px;
+                  font-size: 1rem;
+                  font-weight: 700;
+                "
+                aria-label="Jumlah dibayar"
+              />
+            </div>
+            <p class="text-xs text-slate-400 mt-1" id="paid-help">Untuk Tunai: otomatis lunas. Untuk Kredit: isi DP jika ada (boleh 0).</p>
+          </div>
+
+          {# Due Date (shown when payment < total / tempo) #}
+          <div id="due-date-section">
+            <label class="form-label" for="id_due_date">
+              Tanggal Jatuh Tempo
+              <span class="text-slate-400 font-normal">(jika belum lunas)</span>
+            </label>
+            <input
+              type="date"
+              id="id_due_date"
+              name="due_date"
+              value="{{ default_due_date|date:'Y-m-d' }}"
+              class="form-input"
+              style="min-height: 44px"
+              aria-label="Tanggal jatuh tempo"
+            />
+          </div>
+
+          {# Remaining debt indicator (shows when amount_paid < total) #}
+          <div
+            class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3"
+          >
+            <div class="flex items-center gap-2 text-amber-700">
+              <svg
+                class="w-4 h-4 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span class="text-sm font-semibold">Sisa Hutang</span>
+            </div>
+            <span class="text-base font-extrabold text-amber-800" id="remaining-debt">Rp 0</span>
+          </div>
+
+          {# Notes are intentionally omitted (not persisted) #}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 fade-up fade-up-4"
+  >
+    <a
+      href="{% url 'transaction:purchase_list' %}"
+      class="flex items-center justify-center border border-slate-200 text-slate-600 font-semibold text-sm py-3 px-6 rounded-xl hover:bg-slate-50 transition-colors"
+      style="min-height: 48px"
+    >
+      Batal
+    </a>
+    <button
+      type="submit"
+      class="flex items-center justify-center gap-2 bg-navy-900 hover:bg-navy-800 text-white font-bold text-sm py-3 px-8 rounded-xl shadow-navy transition-colors"
+      style="min-height: 48px"
+    >
+      <svg
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2.5"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      Konfirmasi &amp; Terima Stok
+    </button>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  'use strict';
+
+  /* ── Product catalog from Django context ── */
+  const PRODUCTS = JSON.parse('{{ products_json|escapejs }}');
+
+  /* ── DOM refs ── */
+  const tbody      = document.getElementById('items-tbody');
+  const btnAdd     = document.getElementById('btn-add-item');
+  const itemCount  = document.getElementById('item-count');
+  const shippingEl = document.getElementById('id_shipping_cost');
+  const otherEl    = document.getElementById('id_other_fees');
+  const amountEl   = document.getElementById('id_amount_paid');
+
+  let lastGrandTotal = 0;
+
+  let rowIndex = 0;
+
+  /* ── Helpers ── */
+  function fmt(n) {
+    return 'Rp ' + Number(n).toLocaleString('id-ID');
+  }
+
+  /* ── Recalculate everything ── */
+  function recalc() {
+    let subtotal = 0;
+    tbody.querySelectorAll('tr[data-row]').forEach(tr => {
+      const qty  = parseInt(tr.querySelector('.js-qty').value) || 0;
+      const cost = parseInt(tr.querySelector('.js-cost').value) || 0;
+      const sub  = qty * cost;
+      subtotal += sub;
+      tr.querySelector('.js-subtotal').textContent = fmt(sub);
+    });
+    const shipping = parseInt(shippingEl.value) || 0;
+    const other    = parseInt(otherEl.value) || 0;
+    const landed   = shipping + other;
+    const grand    = subtotal + landed;
+
+    lastGrandTotal = grand;
+
+    document.getElementById('hpp-subtotal').textContent   = fmt(subtotal);
+    document.getElementById('hpp-landed').textContent     = fmt(landed);
+    document.getElementById('hpp-total').textContent      = fmt(grand);
+    document.getElementById('pay-subtotal').textContent   = fmt(subtotal);
+    document.getElementById('pay-shipping').textContent   = fmt(shipping);
+    document.getElementById('pay-other').textContent      = fmt(other);
+    document.getElementById('pay-grand-total').textContent = fmt(grand);
+
+    const paid = parseInt(amountEl.value) || 0;
+    const debt = Math.max(grand - paid, 0);
+    document.getElementById('remaining-debt').textContent = fmt(debt);
+
+    const rows = tbody.querySelectorAll('tr[data-row]').length;
+    itemCount.textContent = rows > 0 ? rows + ' item' : '*Semua baris harus terisi sebelum simpan';
+  }
+
+  function syncPaymentState() {
+    const methodEl = document.querySelector('input[name="payment_method"]:checked');
+    const method = methodEl ? methodEl.value : 'CASH';
+    const isCredit = method === 'CREDIT';
+
+    document.getElementById('due-date-section').style.display = isCredit ? '' : 'none';
+
+    if (isCredit) {
+      amountEl.readOnly = false;
+      document.getElementById('paid-help').textContent = 'Kredit: isi DP jika ada (boleh 0).';
+      return;
+    }
+
+    // CASH: assume fully paid
+    amountEl.value = lastGrandTotal;
+    amountEl.readOnly = true;
+    document.getElementById('paid-help').textContent = 'Tunai: otomatis lunas.';
+  }
+
+  /* ── Product dropdown ── */
+  let dropdownEl = null;
+  let dropdownInput = null;
+  let dropdownRow = null;
+  let dropdownOpen = false;
+
+  function ensureDropdownEl() {
+    if (dropdownEl) return dropdownEl;
+    dropdownEl = document.createElement('div');
+    dropdownEl.className = 'product-dropdown';
+    dropdownEl.style.cssText = [
+      'position:fixed',
+      'z-index:999999',
+      'background:#fff',
+      'border:1.5px solid #e2e8f0',
+      'border-radius:12px',
+      'box-shadow:0 8px 25px rgba(0,0,0,.12)',
+      'max-height:240px',
+      'overflow-y:auto',
+      'display:none'
+    ].join(';');
+    document.body.appendChild(dropdownEl);
+
+    // Prevent clicks inside dropdown from closing it via document handler
+    dropdownEl.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+    });
+    return dropdownEl;
+  }
+
+  function positionDropdown() {
+    if (!dropdownInput || !dropdownEl) return;
+    const rect = dropdownInput.getBoundingClientRect();
+    const margin = 6;
+    const maxHeight = 240;
+    const spaceBelow = window.innerHeight - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+
+    const openUp = spaceBelow < 160 && spaceAbove > spaceBelow;
+    dropdownEl.style.left = Math.max(rect.left, 8) + 'px';
+    dropdownEl.style.width = Math.max(rect.width, 240) + 'px';
+
+    if (openUp) {
+      dropdownEl.style.top = 'auto';
+      dropdownEl.style.bottom = (window.innerHeight - rect.top + margin) + 'px';
+      dropdownEl.style.maxHeight = Math.min(maxHeight, Math.max(spaceAbove - 8, 120)) + 'px';
+    } else {
+      dropdownEl.style.bottom = 'auto';
+      dropdownEl.style.top = (rect.bottom + margin) + 'px';
+      dropdownEl.style.maxHeight = Math.min(maxHeight, Math.max(spaceBelow - 8, 120)) + 'px';
+    }
+  }
+
+  function renderDropdown(results) {
+    ensureDropdownEl();
+    dropdownEl.innerHTML = '';
+    results.forEach(p => {
+      const item = document.createElement('div');
+      item.style.cssText = 'padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f5f9;font-size:.875rem;transition:background .1s;';
+      item.innerHTML = `
+        <div>
+          <p style="font-weight:600;color:#1e293b;">${p.name}</p>
+          <p style="font-size:.75rem;color:#94a3b8;font-family:monospace;">${p.sku}</p>
+        </div>
+        <div style="text-align:right;">
+          <p style="font-weight:700;color:#0f172a;font-size:.8125rem;">Rp ${Number(p.base_price).toLocaleString('id-ID')}</p>
+          <p style="font-size:.75rem;color:${p.stock > 0 ? '#16a34a' : '#dc2626'};">Stok: ${p.stock}</p>
+        </div>`;
+      item.addEventListener('mouseenter', () => item.style.background = '#f0f4ff');
+      item.addEventListener('mouseleave', () => item.style.background = '');
+      item.addEventListener('mousedown', () => {
+        if (!dropdownRow) return;
+        selectProduct(dropdownRow, p);
+        closeAllDropdowns();
+      });
+      dropdownEl.appendChild(item);
+    });
+  }
+
+  function showDropdown(input, tr) {
+    const q = input.value.trim().toLowerCase();
+    const results = PRODUCTS.filter(p =>
+      p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
+    ).slice(0, 8);
+
+    if (!results.length) {
+      closeAllDropdowns();
+      return;
+    }
+
+    dropdownInput = input;
+    dropdownRow = tr;
+    renderDropdown(results);
+    positionDropdown();
+
+    dropdownEl.style.display = '';
+    dropdownOpen = true;
+  }
+
+  function closeAllDropdowns() {
+    if (!dropdownEl) return;
+    dropdownEl.style.display = 'none';
+    dropdownEl.innerHTML = '';
+    dropdownInput = null;
+    dropdownRow = null;
+    dropdownOpen = false;
+  }
+
+  function selectProduct(tr, product) {
+    tr.querySelector('.js-product-search').value = product.name;
+    tr.querySelector('.js-product-id').value = product.id;
+    tr.querySelector('.js-stock').value = product.stock;
+    tr.querySelector('.js-cost').value = Math.round(Number(product.base_price));
+    if (!tr.querySelector('.js-qty').value || tr.querySelector('.js-qty').value === '0') {
+      tr.querySelector('.js-qty').value = 1;
+    }
+    tr.classList.remove('item-row-active');
+    tr.classList.add('item-row-ok');
+    recalc();
+  }
+
+  /* ── Add row ── */
+  function addRow() {
+    rowIndex++;
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-row', rowIndex);
+    tr.className = 'item-row-active';
+    tr.innerHTML = `
+      <td class="text-slate-400 font-bold text-sm pl-4">${rowIndex}</td>
+      <td>
+        <div class="relative">
+          <input type="hidden" name="item_product_${rowIndex}" class="js-product-id" value="">
+          <input type="text" placeholder="Ketik nama produk atau SKU..." class="item-input pr-8 js-product-search" autocomplete="off" aria-label="Produk baris ${rowIndex}">
+        </div>
+      </td>
+      <td class="text-center">
+        <input type="text" readonly value="" class="item-input text-center font-semibold js-stock" aria-label="Stok saat ini" tabindex="-1">
+      </td>
+      <td class="text-center">
+        <input type="number" name="item_qty_${rowIndex}" min="1" value="" class="item-input text-center font-bold js-qty" aria-label="Qty masuk baris ${rowIndex}">
+      </td>
+      <td class="text-right">
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-semibold pointer-events-none">Rp</span>
+          <input type="number" name="item_cost_${rowIndex}" min="0" class="item-input text-right js-cost" style="padding-left:2rem" aria-label="Harga beli baris ${rowIndex}">
+        </div>
+      </td>
+      <td class="text-right">
+        <p class="font-bold text-slate-800 text-sm pr-1 js-subtotal">Rp 0</p>
+      </td>
+      <td class="text-center">
+        <button type="button" class="icon-btn icon-btn-delete js-remove" style="min-width:38px;min-height:38px" title="Hapus baris" aria-label="Hapus item baris ${rowIndex}">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
+      </td>`;
+    tbody.appendChild(tr);
+
+    // Bind events
+    const searchInput = tr.querySelector('.js-product-search');
+    searchInput.addEventListener('input', () => showDropdown(searchInput, tr));
+    searchInput.addEventListener('focus', () => { if (searchInput.value) showDropdown(searchInput, tr); });
+    searchInput.addEventListener('blur', () => setTimeout(closeAllDropdowns, 200));
+
+    tr.querySelector('.js-qty').addEventListener('input', recalc);
+    tr.querySelector('.js-cost').addEventListener('input', recalc);
+    tr.querySelector('.js-remove').addEventListener('click', () => {
+      tr.remove();
+      renumberRows();
+      recalc();
+      syncPaymentState();
+    });
+
+    searchInput.focus();
+    recalc();
+    syncPaymentState();
+  }
+
+  function renumberRows() {
+    let i = 0;
+    tbody.querySelectorAll('tr[data-row]').forEach(tr => {
+      i++;
+      tr.querySelector('td').textContent = i;
+    });
+  }
+
+  /* ── Payment method toggle UI ── */
+  document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      document.querySelectorAll('.pay-method-label').forEach(lbl => {
+        lbl.classList.remove('border-navy-900', 'bg-navy-50');
+        lbl.classList.add('border-slate-200');
+      });
+      const parent = radio.closest('.pay-method-label');
+      parent.classList.remove('border-slate-200');
+      parent.classList.add('border-navy-900', 'bg-navy-50');
+
+      const isCredit = radio.value === 'CREDIT';
+      document.getElementById('due-date-section').style.display = isCredit ? '' : 'none';
+      syncPaymentState();
+      recalc();
+    });
+  });
+
+  /* ── Bind cost inputs ── */
+  shippingEl.addEventListener('input', () => { recalc(); syncPaymentState(); });
+  otherEl.addEventListener('input', () => { recalc(); syncPaymentState(); });
+  amountEl.addEventListener('input', recalc);
+
+  /* ── Add button ── */
+  btnAdd.addEventListener('click', addRow);
+
+  /* ── Form validation ── */
+  document.querySelector('form').addEventListener('submit', function(e) {
+    const rows = tbody.querySelectorAll('tr[data-row]');
+    if (rows.length === 0) {
+      e.preventDefault();
+      alert('Tambahkan minimal 1 item pembelian.');
+      return;
+    }
+    let valid = true;
+    rows.forEach(tr => {
+      const pid  = tr.querySelector('.js-product-id').value;
+      const qty  = parseInt(tr.querySelector('.js-qty').value) || 0;
+      const cost = parseInt(tr.querySelector('.js-cost').value) || 0;
+      if (!pid || qty <= 0 || cost <= 0) valid = false;
+    });
+    if (!valid) {
+      e.preventDefault();
+      alert('Semua item harus memiliki produk, qty > 0, dan harga > 0.');
+    }
+  });
+
+  /* ── Close dropdown on outside click ── */
+  document.addEventListener('click', e => {
+    if (!dropdownOpen) return;
+    if (e.target.closest('.js-product-search')) return;
+    if (dropdownEl && dropdownEl.contains(e.target)) return;
+    closeAllDropdowns();
+  });
+
+  window.addEventListener('scroll', () => { if (dropdownOpen) positionDropdown(); }, true);
+  window.addEventListener('resize', () => { if (dropdownOpen) positionDropdown(); });
+
+  /* ── Init: add first row ── */
+  addRow();
+
+  /* ── Init: hide due date section if not credit ── */
+  document.getElementById('due-date-section').style.display = 'none';
+
+  recalc();
+  syncPaymentState();
+
+})();
+</script>
+{% endblock %}

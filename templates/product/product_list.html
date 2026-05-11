@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}Inventory – Products{% endblock %}
 
@@ -25,23 +26,26 @@
     <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Inventory Management</h1>
     <p class="text-sm text-slate-500 mt-0.5">Manage products, stock, and branch locations.</p>
   </div>
-  {# Page-level sub-nav tabs #}
-  <div class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto shrink-0" role="tablist" aria-label="Inventory sections">
-    <a href="{% url 'product_list' %}"
-       class="page-tab active whitespace-nowrap" role="tab" aria-selected="true">
-      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-      Products
-    </a>
-    <a href="{% url 'branch_list' %}"
-       class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
-      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-      Branches
-    </a>
-    <a href="{% url 'product_add' %}"
-       class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
-      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-      Add Product
-    </a>
+  {# Page-level section navigation #}
+  <div class="w-full sm:w-auto overflow-x-auto">
+    <nav aria-label="Inventory sections" class="inline-flex min-w-max items-center gap-1 rounded-2xl bg-slate-100 p-1.5">
+      <a href="{% url 'product_list' %}"
+         aria-current="page"
+         class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-white px-3.5 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-700">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        Products
+      </a>
+      <a href="{% url 'branch_list' %}"
+         class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-700">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Branches
+      </a>
+      <a href="{% url 'product_add' %}"
+         class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-700">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Product
+      </a>
+    </nav>
   </div>
 </div>
 {% endblock %}
@@ -58,11 +62,18 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
       </div>
     </div>
-    <p class="text-4xl font-extrabold text-white mb-2">{{ stat_skus|default:"48" }}</p>
-    <div class="stat-badge inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full">
+    <p class="text-4xl font-extrabold text-white mb-2">{{ stat_skus|default:"0" }}</p>
+    {% comment %} <div class="stat-badge inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full">
       <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-      +6 this month
-    </div>
+      {% if stat_skus_change > 0 %}
+      <span>{{ stat_skus_change }}% increase</span>
+      {% elif stat_skus_change < 0 %}
+      {% widthratio stat_skus_change 1 -1 as stat_skus_drop %}
+      <span>{{ stat_skus_drop }}% decrease</span>
+      {% else %}
+      <span>No change</span>
+      {% endif %}
+    </div> {% endcomment %}
   </div>
 
   <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-100 shadow-card fade-up fade-up-2">
@@ -72,7 +83,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-1">Rp {{ stat_value|default:"148M" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-1">Rp {{ stat_value|intcomma|default:"0" }}</p>
     <p class="text-xs text-slate-400">Across all branches</p>
   </div>
 
@@ -83,7 +94,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-amber-600 mb-1">{{ stat_low|default:"8" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-amber-600 mb-1">{{ stat_low|default:"0" }}</p>
     <p class="text-xs text-slate-400">Below minimum level</p>
   </div>
 
@@ -146,24 +157,24 @@
     <table class="w-full" aria-label="Product list">
       <thead>
         <tr>
-          <th class="w-10">
+          <th class="w-10 text-center">
             <input type="checkbox" id="select-all-prod" class="w-4 h-4 rounded accent-navy-900" aria-label="Select all"/>
           </th>
-          <th>Product</th>
-          <th>SKU</th>
-          <th>Category</th>
-          <th>Base Price</th>
-          <th>Sell Price</th>
-          <th>Stock</th>
-          <th>Status</th>
-          <th class="text-center">Actions</th>
+          <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Product</th>
+          <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider">SKU</th>
+          <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Category</th>
+          <th class="text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Base Price</th>
+          <th class="text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Sell Price</th>
+          <th class="text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Stock</th>
+          <th class="text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+          <th class="text-center text-xs font-bold text-slate-500 uppercase tracking-wider pr-5">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for product in products %}
         {% with pct=product.stock_pct|default:70 %}
         <tr class="data-row">
-          <td>
+          <td class="text-center">
             <input type="checkbox" class="w-4 h-4 rounded accent-navy-900 row-cb-prod" aria-label="Select {{ product.name }}"/>
           </td>
           <td>
@@ -180,11 +191,11 @@
               </div>
             </div>
           </td>
-          <td><span class="font-mono text-xs text-slate-500 bg-slate-50 px-2 py-0.5 rounded-lg">{{ product.sku }}</span></td>
+          <td><span class="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">{{ product.sku }}</span></td>
           <td><span class="text-sm text-slate-600">{{ product.category }}</span></td>
-          <td class="text-sm text-slate-600">Rp {{ product.base_price|floatformat:0 }}</td>
-          <td class="font-semibold text-slate-800 text-sm">Rp {{ product.sell_price|floatformat:0 }}</td>
-          <td>
+          <td class="text-right text-sm text-slate-600">Rp {{ product.base_price|intcomma|default:"0" }}</td>
+          <td class="text-right font-semibold text-slate-800 text-sm">Rp {{ product.sell_price|intcomma|default:"0" }}</td>
+          <td class="text-center">
             <div>
               <p class="text-sm font-semibold text-slate-800">{{ product.stock }} <span class="text-xs text-slate-400 font-normal">units</span></p>
               <div class="stock-bar w-20 mt-1">
@@ -196,7 +207,7 @@
               </div>
             </div>
           </td>
-          <td>
+          <td class="text-center">
             {% if product.stock == 0 %}
             <span class="badge-out inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold">Out of Stock</span>
             {% elif product.stock <= product.min_stock %}
@@ -205,7 +216,7 @@
             <span class="badge-ok inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold">In Stock</span>
             {% endif %}
           </td>
-          <td>
+          <td class="text-center">
             <div class="flex items-center justify-center gap-1">
               <a href="{% url 'product_detail' product.pk %}"
                  class="icon-btn icon-btn-view" title="View detail"
@@ -218,7 +229,7 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
               </a>
               <button type="button"
-                      onclick="openDelModal('{{ product.pk }}','{{ product.name|escapejs }}')"
+                      onclick="openDelModal('{% url 'product_delete' product.pk %}','{{ product.name|escapejs }}')"
                       class="icon-btn icon-btn-delete" title="Delete"
                       aria-label="Delete {{ product.name }}">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -291,8 +302,8 @@
     <div class="grid grid-cols-2 gap-2 text-xs mb-3">
       <div><p class="text-slate-400 mb-0.5">Category</p><p class="font-semibold text-slate-700">{{ product.category }}</p></div>
       <div><p class="text-slate-400 mb-0.5">Stock</p><p class="font-semibold text-slate-700">{{ product.stock }} units</p></div>
-      <div><p class="text-slate-400 mb-0.5">Sell Price</p><p class="font-bold text-slate-800">Rp {{ product.sell_price|floatformat:0 }}</p></div>
-      <div><p class="text-slate-400 mb-0.5">Base Price</p><p class="text-slate-600">Rp {{ product.base_price|floatformat:0 }}</p></div>
+      <div><p class="text-slate-400 mb-0.5">Sell Price</p><p class="font-bold text-slate-800">Rp {{ product.sell_price|intcomma|default:"0" }}</p></div>
+      <div><p class="text-slate-400 mb-0.5">Base Price</p><p class="text-slate-600">Rp {{ product.base_price|intcomma|default:"0" }}</p></div>
     </div>
     <div class="flex gap-2 pt-3 border-t border-slate-100">
       <a href="{% url 'product_detail' product.pk %}"
@@ -306,7 +317,7 @@
         Edit
       </a>
       <button type="button"
-              onclick="openDelModal('{{ product.pk }}','{{ product.name|escapejs }}')"
+              onclick="openDelModal('{% url 'product_delete' product.pk %}','{{ product.name|escapejs }}')"
               class="flex-1 flex items-center justify-center gap-1.5 border border-red-200 text-red-500 font-bold text-xs py-2.5 rounded-xl hover:bg-red-50 transition-colors">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
         Delete
@@ -366,10 +377,10 @@ document.getElementById('select-all-prod')?.addEventListener('change', function(
 });
 
 let _delPk = null;
-function openDelModal(pk, name){
-  _delPk = pk;
+function openDelModal(url, name){
+  _delPk = url;
   document.getElementById('del-product-name').textContent = name;
-  document.getElementById('del-form').action = `/inventory/products/${pk}/delete/`;
+  document.getElementById('del-form').action = url;
   document.getElementById('del-modal').classList.remove('hidden');
 }
 function closeDelModal(){

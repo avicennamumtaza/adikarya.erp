@@ -33,48 +33,72 @@
     </h1>
     <p class="text-sm text-slate-500 mt-0.5">Fill in all required fields marked with <span class="text-red-500">*</span></p>
   </div>
-  <div class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto shrink-0" role="tablist" aria-label="Inventory sections">
-    <a href="{% url 'product_list' %}"
-       class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
-      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-      Products
-    </a>
-    <a href="{% url 'branch_list' %}"
-       class="page-tab whitespace-nowrap" role="tab" aria-selected="false">
-      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-      Branches
-    </a>
-    <a href="{% url 'product_add' %}"
-       class="page-tab active whitespace-nowrap" role="tab" aria-selected="true">
-      <svg class="inline w-4 h-4 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-      Add Product
-    </a>
+  <div class="w-full sm:w-auto overflow-x-auto">
+    <nav aria-label="Inventory sections" class="inline-flex min-w-max items-center gap-1 rounded-2xl bg-slate-100 p-1.5">
+      <a href="{% url 'product_list' %}"
+         class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-700">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        Products
+      </a>
+      <a href="{% url 'branch_list' %}"
+         class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-700">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Branches
+      </a>
+      <a href="{% url 'product_add' %}"
+         aria-current="page"
+         class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-white px-3.5 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-700">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Product
+      </a>
+    </nav>
   </div>
 </div>
 {% endblock %}
 
+{% block extra_head %}
+<style>
+  /* Product type radio cards: keep "selected" visuals in sync with checked state (no JS needed). */
+  .product-type-card:has(input[type="radio"]:checked) {
+    border-color: #0f172a; /* navy-900 */
+    background: #f0f4ff; /* navy-50 */
+  }
+  .product-type-card:has(input[type="radio"]:checked):hover {
+    border-color: #0f172a; /* prevent hover override */
+  }
+  .product-type-card:has(input[type="radio"]:focus-visible) {
+    outline: 2px solid #1730b3; /* navy-700 */
+    outline-offset: 2px;
+  }
+  .product-type-card input[type="radio"] {
+    accent-color: #0f172a; /* navy-900 */
+  }
+</style>
+{% endblock %}
+
 {% block content %}
+<div class="mx-auto w-full max-w-7xl space-y-4">
 
-{# Back link #}
-<a href="{% url 'product_list' %}"
-   class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors">
-  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-  Back to Products
-</a>
+  {# Back link #}
+  <a href="{% url 'product_list' %}"
+     class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+    Back to Products
+  </a>
 
-<form method="POST"
-      action="{% if product %}{% url 'product_edit' product.pk %}{% else %}{% url 'product_add' %}{% endif %}"
-      enctype="multipart/form-data"
-      novalidate
-      class="max-w-4xl">
-  {% csrf_token %}
+  <form method="POST"
+        action="{% if product %}{% url 'product_edit' product.pk %}{% else %}{% url 'product_add' %}{% endif %}"
+        enctype="multipart/form-data"
+        novalidate
+        class="w-full">
+    {% csrf_token %}
 
-  <div class="grid lg:grid-cols-2 gap-5">
+    <div class="grid grid-cols-1 gap-5 xl:grid-cols-12 xl:gap-7">
 
-    {# ══════════════════════════════════
+    {% comment %} ══════════════════════════════════
        LEFT: General Information
-    ══════════════════════════════════ #}
-    <div class="bg-white rounded-xl border border-slate-100 shadow-card p-5 sm:p-6 space-y-4 fade-up fade-up-1">
+    ══════════════════════════════════ {% endcomment %}
+    <div class="xl:col-span-7 bg-white rounded-xl border border-slate-100 shadow-card p-5 sm:p-6 space-y-4 fade-up fade-up-1">
       <h3 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
         <svg class="w-4 h-4 text-navy-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         General Information
@@ -157,7 +181,7 @@
         <input id="id_brand"
                name="brand"
                type="text"
-               value="{{ form.brand.value|default:product.brand|default:'' }}"
+               value="{{ form.brand.value|default:'' }}"
                placeholder="e.g. Sony, Samsung, Generic"
                class="form-input"/>
       </div>
@@ -166,8 +190,7 @@
       <div>
         <label class="form-label">Product Type <span class="text-red-500">*</span></label>
         <div class="flex gap-3">
-          <label class="flex-1 flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors
-            {% if form.product_type.value == 'Goods' or not form.product_type.value %}border-navy-900 bg-navy-50{% else %}border-slate-200 hover:border-navy-300{% endif %}">
+          <label class="product-type-card flex-1 flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors border-slate-200 hover:border-navy-300">
             <input type="radio"
                    name="product_type"
                    value="Goods"
@@ -178,8 +201,7 @@
               <p class="text-xs text-slate-400">Physical product</p>
             </div>
           </label>
-          <label class="flex-1 flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors
-            {% if form.product_type.value == 'Service' %}border-navy-900 bg-navy-50{% else %}border-slate-200 hover:border-navy-300{% endif %}">
+          <label class="product-type-card flex-1 flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors border-slate-200 hover:border-navy-300">
             <input type="radio"
                    name="product_type"
                    value="Service"
@@ -201,14 +223,15 @@
                   class="form-input"
                   rows="3"
                   placeholder="Additional product notes..."
-                  style="resize:vertical;">{{ form.notes.value|default:product.notes|default:'' }}</textarea>
+                  style="resize:vertical;">{{ form.notes.value|default:'' }}</textarea>
       </div>
     </div>
 
-    {# ══════════════════════════════════
+    {% comment %} ══════════════════════════════════
        RIGHT: Pricing + Inventory Policy
-    ══════════════════════════════════ #}
-    <div class="space-y-5">
+    ══════════════════════════════════ {% endcomment %}
+    <div class="xl:col-span-5">
+      <div class="space-y-5 xl:sticky xl:top-24">
 
       {# Pricing Card #}
       <div class="bg-white rounded-xl border border-slate-100 shadow-card p-5 sm:p-6 space-y-4 fade-up fade-up-2">
@@ -246,7 +269,7 @@
             <input id="id_sell_price"
                    name="sell_price"
                    type="number"
-                   value="{{ form.sell_price.value|default:product.sell_price|default:'' }}"
+                   value="{{ form.sell_price.value|default:'' }}"
                    placeholder="0"
                    class="form-input pl-9 {% if form.sell_price.errors %}error{% endif %}"
                    aria-required="true"
@@ -284,7 +307,7 @@
             <input id="id_min_stock"
                    name="min_stock"
                    type="number"
-                   value="{{ form.min_stock.value|default:product.min_stock|default:'' }}"
+                   value="{{ form.min_stock.value|default:'' }}"
                    placeholder="e.g. 10"
                    class="form-input pr-16 {% if form.min_stock.errors %}error{% endif %}"
                    min="0"
@@ -341,7 +364,7 @@
       </div>
 
       {# ── Submit buttons ── #}
-      <div class="flex gap-3 fade-up fade-up-4">
+      <div class="flex flex-col sm:flex-row gap-3 fade-up fade-up-4">
         <a href="{% url 'product_list' %}"
            class="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors text-center">
           Cancel
@@ -367,9 +390,23 @@
       </div>
       {% endif %}
 
-    </div>
-  </div>{# /grid #}
+      {# Side helper: keeps desktop right panel visually balanced and improves form guidance #}
+      <div class="hidden xl:block rounded-xl border border-slate-200 bg-slate-50 p-4 fade-up fade-up-4">
+        <p class="text-sm font-bold text-slate-700">Quick Checklist</p>
+        <ul class="mt-2 space-y-1.5 text-xs text-slate-500">
+          <li>Use unique SKU for each product variant.</li>
+          <li>Set minimum stock based on average sales.</li>
+          <li>Assign opening stock to the correct branch.</li>
+        </ul>
+      </div>
 
-</form>
+      </div>
+    </div>
+
+    </div>{# /grid #}
+
+  </form>
+
+</div>
 
 {% endblock %}
