@@ -19,8 +19,9 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 
 urlpatterns = [
-    path('', RedirectView.as_view(pattern_name='partner_list',
+    path('dashboard/', RedirectView.as_view(url='/',
          permanent=False), name='dashboard'),
+    path('', include('apps.transaction.urls')),
     path('partners/', include('apps.partner.urls')),
     path('inventory/', include('apps.inventory.urls')),
     path('admin/', admin.site.urls),

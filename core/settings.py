@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Load environment variables from .env file
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +29,7 @@ SECRET_KEY = 'django-insecure-&_7_cdj#vfewvr0#mt1x26bglhk4dg(y(o5disw_%_e%xn$3w#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -37,9 +41,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'apps.common',
     'apps.partner',
     'apps.inventory',
+    'apps.transaction',
+    'apps.finance',
+    'apps.report',
 ]
 
 MIDDLEWARE = [
@@ -77,8 +85,12 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DEV_DB_NAME', 'v1'),
+        'USER': os.getenv('DEV_DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DEV_DB_PASSWORD', "'"),
+        'HOST': os.getenv('DEV_DB_HOST', 'localhost'),
+        'PORT': os.getenv('DEV_DB_PORT', '5432'),
     }
 }
 
