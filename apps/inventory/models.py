@@ -6,6 +6,9 @@ from apps.common.models import TimeStampedModel
 class Branch(TimeStampedModel):
     name = models.CharField(max_length=100)
     address = models.TextField()
+    manager = models.CharField(max_length=100, blank=True, default="")
+    phone = models.CharField(max_length=30, blank=True, default="")
+    email = models.EmailField(blank=True, default="")
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -18,7 +21,12 @@ class Product(TimeStampedModel):
     sku = models.CharField(max_length=50, unique=True)
     name = models.CharField(max_length=200)
     product_type = models.CharField(
-        max_length=10, choices=PRODUCT_TYPES, default='GOODS')
+        max_length=10, choices=PRODUCT_TYPES, default='PRODUCT')
+
+    # UI metadata (used by templates)
+    category = models.CharField(max_length=100, blank=True, default="")
+    brand = models.CharField(max_length=100, blank=True, default="")
+    notes = models.TextField(blank=True, default="")
 
     # Cost & Pricing
     base_price = models.DecimalField(
