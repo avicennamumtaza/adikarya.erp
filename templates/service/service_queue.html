@@ -1,0 +1,543 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Service – Workshop Queue{% endblock %}
+{% block nav_service %}active{% endblock %}
+
+{% block topbar_search %}
+<input type="search"
+       id="search-desktop"
+       name="q"
+       placeholder="Search ticket, customer, device..."
+       class="search-input w-56"
+       aria-label="Search service tickets"/>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+  <a href="{% url 'dashboard' %}" class="hover:text-slate-700 transition-colors">Dashboard</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <span class="text-slate-700 font-semibold">Service Workshop</span>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div>
+    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Service Workshop</h1>
+    <p class="text-sm text-slate-500 mt-0.5">Monitor repair queue, track technician progress, and manage unit status.</p>
+  </div>
+  <div class="flex items-center gap-2 flex-shrink-0">
+    <a href="{% url 'service_checkin' %}"
+       class="flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-white text-sm font-bold px-4 py-3 rounded-xl shadow-navy transition-colors whitespace-nowrap min-h-[48px]"
+       aria-label="Create new service ticket">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+      <span>+ New Service Ticket</span>
+    </a>
+    <a href="{% url 'service_export' %}"
+       class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-3 rounded-xl bg-white hover:bg-slate-50 transition-colors min-h-[48px]"
+       aria-label="Export service data">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      <span class="hidden sm:inline">Export</span>
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Service-specific status badges */
+  .badge-received    { background:#f1f5f9; color:#334155; }
+  .badge-diagnosing  { background:#dbeafe; color:#1d4ed8; }
+  .badge-waiting     { background:#fef3c7; color:#b45309; }
+  .badge-repairing   { background:#ede9fe; color:#6d28d9; }
+  .badge-ready       { background:#d1fae5; color:#065f46; }
+  .badge-cancelled   { background:#fee2e2; color:#b91c1c; }
+  .badge-done        { background:#d1fae5; color:#065f46; }
+
+  /* Priority ring */
+  .priority-high  { box-shadow:0 0 0 2px #ef4444; }
+  .priority-med   { box-shadow:0 0 0 2px #f59e0b; }
+
+  /* Timeline */
+  .timeline-line  { position:absolute; left:19px; top:32px; bottom:0; width:2px; background:#e2e8f0; }
+  .timeline-dot   { width:12px; height:12px; border-radius:50%; border:2px solid #fff; flex-shrink:0; }
+
+  /* Focus active row */
+  .data-row:focus-within td { background:#f0f9ff; }
+
+  /* Overdue badge pulse */
+  @keyframes overdue-pulse {
+    0%, 100% { opacity:1; }
+    50%       { opacity:.55; }
+  }
+  .overdue-pulse { animation: overdue-pulse 2s ease-in-out infinite; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══════════════════════════
+     SUMMARY CARDS
+═══════════════════════════ -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+
+  <!-- Total Active -->
+  <div class="stat-card-dark rounded-xl p-4 sm:p-5 fade-up fade-up-1">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Total Active Units</p>
+      <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+      </div>
+    </div>
+    <p class="text-4xl font-extrabold text-white mb-2">24</p>
+    <div class="stat-badge inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full">
+      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      +4 from yesterday
+    </div>
+  </div>
+
+  <!-- Waiting for Parts -->
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-amber-100 shadow-card fade-up fade-up-2">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-amber-600 uppercase tracking-wide">Waiting for Parts</p>
+      <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+    </div>
+    <p class="text-3xl font-extrabold text-amber-600 mb-1">7</p>
+    <p class="text-xs text-slate-400">3 overdue &gt; 3 days</p>
+  </div>
+
+  <!-- Ready for Pickup -->
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-emerald-100 shadow-card fade-up fade-up-3">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Ready for Pickup</p>
+      <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+    </div>
+    <p class="text-3xl font-extrabold text-emerald-600 mb-1">5</p>
+    <p class="text-xs text-slate-400">Awaiting customer pickup</p>
+  </div>
+
+  <!-- Today Finished -->
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-blue-100 shadow-card fade-up fade-up-4">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-blue-600 uppercase tracking-wide">Finished Today</p>
+      <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      </div>
+    </div>
+    <p class="text-3xl font-extrabold text-blue-600 mb-1">8</p>
+    <p class="text-xs text-slate-400">Avg. repair: 2.4 hrs</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     FILTER / CONTROL BAR
+═══════════════════════════ -->
+<div class="bg-white rounded-xl border border-slate-100 shadow-card p-3 sm:p-4">
+  <form method="GET" class="flex flex-col sm:flex-row gap-3" role="search" aria-label="Filter service tickets">
+
+    <!-- Search -->
+    <div class="relative flex-1 min-w-0">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input type="search" name="q" value="Samsung"
+             placeholder="Ticket ID, customer, device model..."
+             class="search-input w-full" aria-label="Search service tickets" style="width:100%;"/>
+    </div>
+
+    <!-- Status Filter -->
+    <select name="status" class="filter-select min-h-[44px]" aria-label="Filter by status">
+      <option value="">All Statuses</option>
+      <option value="RECEIVED">Received</option>
+      <option value="DIAGNOSING" selected>Diagnosing</option>
+      <option value="WAITING">Waiting for Parts</option>
+      <option value="REPAIRING">Repairing</option>
+      <option value="DONE">Ready / Done</option>
+      <option value="CANCELLED">Cancelled</option>
+    </select>
+
+    <!-- Technician Filter -->
+    <select name="technician" class="filter-select min-h-[44px]" aria-label="Filter by technician">
+      <option value="">All Technicians</option>
+      <option>Ahmad Fauzi</option>
+      <option>Budi Santoso</option>
+      <option>Citra Dewi</option>
+    </select>
+
+    <!-- Branch Filter -->
+    <select name="branch" class="filter-select min-h-[44px]" aria-label="Filter by branch">
+      <option value="">All Branches</option>
+      <option>Jakarta Pusat</option>
+      <option>Surabaya</option>
+      <option>Bandung</option>
+    </select>
+
+  </form>
+</div>
+
+<!-- Overdue Alert Banner -->
+<div class="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3" role="alert">
+  <span class="overdue-pulse flex-shrink-0 w-2.5 h-2.5 rounded-full bg-red-500"></span>
+  <svg class="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+  <p class="text-sm font-semibold text-red-700">
+    <strong>3 units are OVERDUE</strong> — exceeding the promised completion date. Immediate action required.
+  </p>
+  <a href="?status=overdue" class="ml-auto text-xs font-bold text-red-600 underline underline-offset-2 whitespace-nowrap hover:text-red-800">View Overdue</a>
+</div>
+
+<!-- ═══════════════════════════
+     SERVICE QUEUE TABLE — Desktop / Tablet
+═══════════════════════════ -->
+<div class="table-wrapper bg-white rounded-xl border border-slate-100 shadow-card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full" aria-label="Service ticket queue">
+      <thead>
+        <tr>
+          <th class="w-10 pl-5">
+            <input type="checkbox" class="w-4 h-4 rounded accent-navy-900" aria-label="Select all tickets"/>
+          </th>
+          <th>Ticket ID</th>
+          <th>Check-in Date</th>
+          <th>Customer</th>
+          <th>Device</th>
+          <th>Branch</th>
+          <th>Technician</th>
+          <th>Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- Row 1 – Diagnosing -->
+        <tr class="data-row">
+          <td class="pl-5"><input type="checkbox" class="w-4 h-4 rounded accent-navy-900" aria-label="Select SRV-0089"/></td>
+          <td>
+            <div>
+              <a href="{% url 'service_detail' pk=89 %}" class="font-bold text-navy-900 text-sm hover:underline font-mono">SRV-0089</a>
+              <p class="text-xs text-red-500 font-semibold mt-0.5">⚠ Overdue 2d</p>
+            </div>
+          </td>
+          <td class="text-sm text-slate-600 whitespace-nowrap">14 Jan 2025</td>
+          <td>
+            <div>
+              <p class="text-sm font-semibold text-slate-800">Budi Hartono</p>
+              <p class="text-xs text-slate-400">+62 812-1234-5678</p>
+            </div>
+          </td>
+          <td>
+            <div>
+              <p class="text-sm font-semibold text-slate-800">Samsung Galaxy S23</p>
+              <p class="text-xs text-slate-400 font-mono">SN: R5CT800ABCD</p>
+            </div>
+          </td>
+          <td class="text-sm text-slate-600">Jakarta Pusat</td>
+          <td>
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full bg-navy-100 flex items-center justify-center text-navy-900 text-xs font-bold flex-shrink-0">AF</div>
+              <span class="text-sm text-slate-700">Ahmad Fauzi</span>
+            </div>
+          </td>
+          <td>
+            <span class="badge-diagnosing inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span>
+              Diagnosing
+            </span>
+          </td>
+          <td>
+            <div class="flex items-center justify-center gap-1">
+              <a href="{% url 'service_detail' pk=89 %}"
+                 class="icon-btn icon-btn-view" title="View / Log Work" aria-label="View ticket SRV-0089">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </a>
+              <a href="{% url 'service_checkin_edit' pk=89 %}"
+                 class="icon-btn icon-btn-edit" title="Edit ticket" aria-label="Edit ticket SRV-0089">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </a>
+              <a href="{% url 'service_print_tag' pk=89 %}"
+                 class="icon-btn icon-btn-adj" title="Print service tag" aria-label="Print service tag SRV-0089">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+              </a>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Row 2 – Waiting for Parts -->
+        <tr class="data-row">
+          <td class="pl-5"><input type="checkbox" class="w-4 h-4 rounded accent-navy-900" aria-label="Select SRV-0088"/></td>
+          <td>
+            <div>
+              <a href="{% url 'service_detail' pk=88 %}" class="font-bold text-navy-900 text-sm hover:underline font-mono">SRV-0088</a>
+              <p class="text-xs text-amber-500 font-semibold mt-0.5">⏳ Waiting 4d</p>
+            </div>
+          </td>
+          <td class="text-sm text-slate-600 whitespace-nowrap">13 Jan 2025</td>
+          <td>
+            <div>
+              <p class="text-sm font-semibold text-slate-800">Siti Rahayu</p>
+              <p class="text-xs text-slate-400">+62 813-9876-5432</p>
+            </div>
+          </td>
+          <td>
+            <div>
+              <p class="text-sm font-semibold text-slate-800">Lenovo ThinkPad X1</p>
+              <p class="text-xs text-slate-400 font-mono">SN: PF2A7XB123</p>
+            </div>
+          </td>
+          <td class="text-sm text-slate-600">Surabaya</td>
+          <td>
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 text-xs font-bold flex-shrink-0">BS</div>
+              <span class="text-sm text-slate-700">Budi Santoso</span>
+            </div>
+          </td>
+          <td>
+            <span class="badge-waiting inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span>
+              Waiting Parts
+            </span>
+          </td>
+          <td>
+            <div class="flex items-center justify-center gap-1">
+              <a href="{% url 'service_detail' pk=88 %}" class="icon-btn icon-btn-view" aria-label="View SRV-0088">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </a>
+              <a href="{% url 'service_checkin_edit' pk=88 %}" class="icon-btn icon-btn-edit" aria-label="Edit SRV-0088">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </a>
+              <a href="{% url 'service_print_tag' pk=88 %}" class="icon-btn icon-btn-adj" aria-label="Print tag SRV-0088">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+              </a>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Row 3 – Ready for Pickup -->
+        <tr class="data-row">
+          <td class="pl-5"><input type="checkbox" class="w-4 h-4 rounded accent-navy-900" aria-label="Select SRV-0087"/></td>
+          <td>
+            <div>
+              <a href="{% url 'service_detail' pk=87 %}" class="font-bold text-navy-900 text-sm hover:underline font-mono">SRV-0087</a>
+              <p class="text-xs text-emerald-600 font-semibold mt-0.5">✓ Ready</p>
+            </div>
+          </td>
+          <td class="text-sm text-slate-600 whitespace-nowrap">12 Jan 2025</td>
+          <td>
+            <div>
+              <p class="text-sm font-semibold text-slate-800">Doni Prasetyo</p>
+              <p class="text-xs text-slate-400">+62 815-2345-6789</p>
+            </div>
+          </td>
+          <td>
+            <div>
+              <p class="text-sm font-semibold text-slate-800">iPhone 13 Pro</p>
+              <p class="text-xs text-slate-400 font-mono">IMEI: 356938035643809</p>
+            </div>
+          </td>
+          <td class="text-sm text-slate-600">Bandung</td>
+          <td>
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-xs font-bold flex-shrink-0">CD</div>
+              <span class="text-sm text-slate-700">Citra Dewi</span>
+            </div>
+          </td>
+          <td>
+            <span class="badge-ready inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+              Ready Pickup
+            </span>
+          </td>
+          <td>
+            <div class="flex items-center justify-center gap-1">
+              <a href="{% url 'service_detail' pk=87 %}" class="icon-btn icon-btn-view" aria-label="View SRV-0087">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </a>
+              <a href="{% url 'service_billing' pk=87 %}" class="icon-btn icon-btn-adj" aria-label="Go to billing SRV-0087" title="Finalize & Bill">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
+              </a>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Row 4 – Received -->
+        <tr class="data-row">
+          <td class="pl-5"><input type="checkbox" class="w-4 h-4 rounded accent-navy-900" aria-label="Select SRV-0086"/></td>
+          <td>
+            <span class="font-bold text-navy-900 text-sm font-mono">SRV-0086</span>
+          </td>
+          <td class="text-sm text-slate-600 whitespace-nowrap">15 Jan 2025</td>
+          <td>
+            <div>
+              <p class="text-sm font-semibold text-slate-800">Mega Wulandari</p>
+              <p class="text-xs text-slate-400">+62 821-5555-7777</p>
+            </div>
+          </td>
+          <td>
+            <div>
+              <p class="text-sm font-semibold text-slate-800">Xiaomi Redmi Note 12</p>
+              <p class="text-xs text-slate-400 font-mono">IMEI: 867328021354709</p>
+            </div>
+          </td>
+          <td class="text-sm text-slate-600">Jakarta Pusat</td>
+          <td>
+            <span class="text-xs text-slate-400 italic">Unassigned</span>
+          </td>
+          <td>
+            <span class="badge-received inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold">
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block"></span>
+              Received
+            </span>
+          </td>
+          <td>
+            <div class="flex items-center justify-center gap-1">
+              <a href="{% url 'service_detail' pk=86 %}" class="icon-btn icon-btn-view" aria-label="View SRV-0086">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </a>
+              <a href="{% url 'service_checkin_edit' pk=86 %}" class="icon-btn icon-btn-edit" aria-label="Edit SRV-0086">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </a>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Row 5 – Cancelled -->
+        <tr class="data-row opacity-60">
+          <td class="pl-5"><input type="checkbox" class="w-4 h-4 rounded accent-navy-900" aria-label="Select SRV-0085"/></td>
+          <td>
+            <span class="font-bold text-slate-500 text-sm font-mono line-through">SRV-0085</span>
+          </td>
+          <td class="text-sm text-slate-500 whitespace-nowrap">11 Jan 2025</td>
+          <td>
+            <p class="text-sm text-slate-500">Rudi Setiawan</p>
+          </td>
+          <td>
+            <p class="text-sm text-slate-500">OPPO Find X6</p>
+          </td>
+          <td class="text-sm text-slate-500">Surabaya</td>
+          <td><span class="text-xs text-slate-400">Ahmad Fauzi</span></td>
+          <td>
+            <span class="badge-cancelled inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-400 inline-block"></span>
+              Cancelled
+            </span>
+          </td>
+          <td>
+            <div class="flex items-center justify-center gap-1">
+              <a href="{% url 'service_detail' pk=85 %}" class="icon-btn icon-btn-view" aria-label="View SRV-0085">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </a>
+            </div>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4 border-t border-slate-100">
+    <p class="text-xs text-slate-500">Showing 1–5 of 24 tickets</p>
+    <div class="flex items-center gap-1.5" role="navigation" aria-label="Pagination">
+      <button class="page-btn" disabled aria-label="Previous">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <button class="page-btn active" aria-current="page">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <span class="text-slate-400 px-1">…</button>
+      <button class="page-btn">5</button>
+      <button class="page-btn" aria-label="Next">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     MOBILE: Service Cards
+═══════════════════════════ -->
+<div class="card-table" role="list" aria-label="Service ticket cards">
+
+  <!-- Card 1 – Diagnosing, Overdue -->
+  <div class="bg-white border-2 border-red-200 rounded-xl shadow-card p-4" role="listitem">
+    <div class="flex items-start justify-between mb-3">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="font-bold text-navy-900 font-mono text-sm">SRV-0089</span>
+          <span class="badge-diagnosing inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold">
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span>
+            Diagnosing
+          </span>
+        </div>
+        <p class="text-xs text-red-500 font-semibold">⚠ Overdue 2 days</p>
+      </div>
+      <span class="text-xs text-slate-400">14 Jan 2025</span>
+    </div>
+    <div class="flex items-start gap-3 mb-3 pb-3 border-b border-slate-100">
+      <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-xl flex-shrink-0">📱</div>
+      <div>
+        <p class="font-bold text-slate-800 text-sm leading-tight">Samsung Galaxy S23</p>
+        <p class="text-xs text-slate-400 font-mono">SN: R5CT800ABCD</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+      <div><p class="text-slate-400 mb-0.5">Customer</p><p class="font-semibold text-slate-700">Budi Hartono</p></div>
+      <div><p class="text-slate-400 mb-0.5">Branch</p><p class="font-semibold text-slate-700">Jakarta Pusat</p></div>
+      <div><p class="text-slate-400 mb-0.5">Technician</p><p class="font-semibold text-slate-700">Ahmad Fauzi</p></div>
+      <div><p class="text-slate-400 mb-0.5">Est. Cost</p><p class="font-semibold text-slate-700">Rp 350.000</p></div>
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'service_detail' pk=89 %}"
+         class="flex-1 flex items-center justify-center gap-1.5 bg-navy-900 text-white font-bold text-sm py-3 rounded-xl hover:bg-navy-800 transition-colors min-h-[48px]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        View & Log
+      </a>
+      <a href="{% url 'service_print_tag' pk=89 %}"
+         class="flex items-center justify-center gap-1.5 border border-slate-200 text-slate-600 font-bold text-sm px-4 rounded-xl hover:bg-slate-50 transition-colors min-h-[48px]"
+         aria-label="Print service tag">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- Card 2 – Ready for Pickup -->
+  <div class="bg-white border border-emerald-200 rounded-xl shadow-card p-4" role="listitem">
+    <div class="flex items-start justify-between mb-3">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="font-bold text-navy-900 font-mono text-sm">SRV-0087</span>
+          <span class="badge-ready inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+            Ready Pickup
+          </span>
+        </div>
+      </div>
+      <span class="text-xs text-slate-400">12 Jan 2025</span>
+    </div>
+    <div class="flex items-start gap-3 mb-3 pb-3 border-b border-slate-100">
+      <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-xl flex-shrink-0">📱</div>
+      <div>
+        <p class="font-bold text-slate-800 text-sm leading-tight">iPhone 13 Pro</p>
+        <p class="text-xs text-slate-400 font-mono">IMEI: 356938035643809</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+      <div><p class="text-slate-400 mb-0.5">Customer</p><p class="font-semibold text-slate-700">Doni Prasetyo</p></div>
+      <div><p class="text-slate-400 mb-0.5">Branch</p><p class="font-semibold text-slate-700">Bandung</p></div>
+      <div><p class="text-slate-400 mb-0.5">Total Bill</p><p class="font-bold text-emerald-700">Rp 750.000</p></div>
+      <div><p class="text-slate-400 mb-0.5">Technician</p><p class="font-semibold text-slate-700">Citra Dewi</p></div>
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'service_billing' pk=87 %}"
+         class="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 text-white font-bold text-sm py-3 rounded-xl hover:bg-emerald-700 transition-colors min-h-[48px]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
+        Finalize & Bill
+      </a>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
