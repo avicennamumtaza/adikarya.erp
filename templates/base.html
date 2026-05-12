@@ -714,6 +714,28 @@
         </a>
 
         <a
+          href="{% url 'service:service_queue' %}"
+          class="nav-item {% block nav_service %}{% endblock %}{% if request.path|slice:':9' == '/service/' %} active{% endif %}"
+          aria-label="Service"
+        >
+          <svg
+            style="width: 18px; height: 18px; flex-shrink: 0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M14.7 6.3l3 3-8.4 8.4H6.3v-3l8.4-8.4zm2.1-2.1a1.5 1.5 0 012.1 2.1l-1 1-3-3 1-1z"
+            />
+          </svg>
+          <span class="sidebar-label">Service</span>
+        </a>
+
+        <a
           href="{% url 'dashboard' %}"
           class="nav-item {% block nav_analytics %}{% endblock %}"
           aria-label="Analytics"
@@ -1016,7 +1038,7 @@
 
       <!-- ═══ PAGE CONTENT ═══ -->
       <main class="flex-1 p-4 sm:p-6 space-y-5" role="main" id="page-main">
-        {# ── BREADCRUMB ── #} {% block breadcrumb %}{% endblock %}
+        {# ── BREADCRUMB ── #} {% block breadcrumb %}{% endblock %} 
         {% block page_header %}{% endblock %} 
         {% if messages %}
         <div role="alert" aria-live="polite">
@@ -1041,7 +1063,8 @@
           </div>
           {% endfor %}
         </div>
-        {% endif %} {# ── MAIN CONTENT BLOCK ── #} {% block content %} {% endblock %}
+        {% endif %} {# ── MAIN CONTENT BLOCK ── #} 
+        {% block content %} {% endblock %}
       </main>
     </div>
 

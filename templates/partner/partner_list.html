@@ -195,7 +195,7 @@
 {# ── DATA TABLE — Desktop ── #}
 <div class="table-wrapper bg-white border border-slate-100 rounded-xl shadow-card overflow-hidden hidden sm:block">
   <div class="overflow-x-auto">
-    <table class="w-full" aria-label="Partner data table">
+    <table class="w-full min-w-full" aria-label="Partner data table">
       <thead>
         <tr>
           <th class="w-10 pl-5 py-4">
@@ -448,17 +448,17 @@
 
 <div class="table-wrapper bg-white border border-slate-100 rounded-xl shadow-card overflow-hidden">
   <div class="overflow-x-auto">
-    <table class="w-full" aria-label="Hutang table">
+    <table class="w-full min-w-full" aria-label="Hutang table">
       <thead>
         <tr>
-          <th>Tanggal</th>
-          <th>Invoice</th>
-          <th>Supplier</th>
-          <th>Due Date</th>
-          <th class="text-right">Total</th>
-          <th class="text-right">Outstanding</th>
-          <th class="text-center">Status</th>
-          <th class="text-center">Aksi</th>
+          <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Tanggal</th>
+          <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Invoice</th>
+          <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Supplier</th>
+          <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Due Date</th>
+          <th class="text-right text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Total</th>
+          <th class="text-right text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Outstanding</th>
+          <th class="text-center text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Status</th>
+          <th class="text-center text-xs font-bold text-slate-500 uppercase tracking-wider py-4 pr-5">Aksi</th>
         </tr>
       </thead>
       <tbody>
@@ -514,7 +514,7 @@
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
       </div>
     </div>
-    <p class="text-3xl font-extrabold text-white">Rp {{ piutang_total_outstanding|intcomma|default:"0" }}</p>
+    <p class="text-4xl font-extrabold text-white mb-2">Rp {{ piutang_total_outstanding|intcomma|default:"0" }}</p>
   </div>
   <div class="bg-white rounded-xl p-4 sm:p-5 border border-red-100 shadow-card fade-up fade-up-2">
     <div class="flex items-start justify-between mb-3">
@@ -572,30 +572,30 @@
 
 <div class="table-wrapper bg-white border border-slate-100 rounded-xl shadow-card overflow-hidden">
   <div class="overflow-x-auto">
-    <table class="w-full" aria-label="Piutang table">
+    <table class="w-full min-w-full" aria-label="Piutang table">
       <thead>
         <tr>
-          <th>Tanggal</th>
-          <th>Invoice</th>
-          <th>Customer</th>
-          <th>Due Date</th>
-          <th class="text-right">Total</th>
-          <th class="text-right">Outstanding</th>
-          <th class="text-center">Status</th>
-          <th class="text-center">Aksi</th>
+          <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Tanggal</th>
+          <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Invoice</th>
+          <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Customer</th>
+          <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Due Date</th>
+          <th class="text-right text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Total</th>
+          <th class="text-right text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Outstanding</th>
+          <th class="text-center text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Status</th>
+          <th class="text-center text-xs font-bold text-slate-500 uppercase tracking-wider py-4 pr-5">Aksi</th>
         </tr>
       </thead>
       <tbody>
         {% for item in receivables %}
         <tr class="data-row">
-          <td>{{ item.created_at|date:"d M Y" }}</td>
-          <td><span class="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-lg">{{ item.invoice_number }}</span></td>
-          <td>{{ item.contact.name|default:"-" }}</td>
-          <td>{% if item.due_date %}{{ item.due_date|date:"d M Y" }}{% else %}-{% endif %}</td>
-          <td class="text-right">Rp {{ item.total_amount|intcomma }}</td>
-          <td class="text-right font-semibold">Rp {{ item.outstanding|intcomma }}</td>
-          <td class="text-center"><span class="{{ item.status_badge }} inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold">{{ item.status_label }}</span></td>
-          <td class="text-center">
+          <td class="py-3">{{ item.created_at|date:"d M Y" }}</td>
+          <td class="py-3"><span class="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-lg">{{ item.invoice_number }}</span></td>
+          <td class="py-3">{{ item.contact.name|default:"-" }}</td>
+          <td class="py-3">{% if item.due_date %}{{ item.due_date|date:"d M Y" }}{% else %}-{% endif %}</td>
+          <td class="text-right py-3">Rp {{ item.total_amount|intcomma }}</td>
+          <td class="text-right font-semibold py-3">Rp {{ item.outstanding|intcomma }}</td>
+          <td class="text-center py-3"><span class="{{ item.status_badge }} inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold">{{ item.status_label }}</span></td>
+          <td class="text-center pr-5 py-3">
             <div class="flex items-center justify-center gap-1.5">
               <a href="{% url 'transaction:sales_detail' item.pk %}" class="icon-btn icon-btn-view" aria-label="Detail">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>

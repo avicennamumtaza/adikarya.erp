@@ -30,6 +30,13 @@ class TransactionDetail(models.Model):
     header = models.ForeignKey(
         TransactionHeader, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey('inventory.Product', on_delete=models.PROTECT)
+    related_service_ticket = models.ForeignKey(
+        'service.ServiceTicket',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transaction_items',
+    )
     qty = models.PositiveIntegerField()
     price_at_trx = models.DecimalField(max_digits=12, decimal_places=2)
     # Snapshot HPP tepat pada saat itu

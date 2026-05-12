@@ -1,0 +1,643 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ ticket.ticket_number }} – Finalize & Billing{% endblock %}
+{% block nav_service %}active{% endblock %}
+
+{% block topbar_search %}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+  <a href="{% url 'dashboard' %}"             class="hover:text-slate-700 transition-colors">Dashboard</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <a href="{% url 'service:service_queue' %}" class="hover:text-slate-700 transition-colors">Service Workshop</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <a href="{% url 'service:service_detail' pk=ticket.pk %}" class="hover:text-slate-700 transition-colors">{{ ticket.ticket_number }}</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <span class="text-slate-700 font-semibold">Finalize & Billing</span>
+</nav>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── SERVICE STATUS BADGES ── */
+  .badge-received   { background:#f1f5f9; color:#334155; }
+  .badge-repairing  { background:#ede9fe; color:#6d28d9; }
+  .badge-ready      { background:#d1fae5; color:#065f46; }
+
+  /* ── SECTION CARD ── */
+  .section-card {
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    overflow: hidden;
+  }
+  .section-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 18px; border-bottom: 1px solid #f1f5f9;
+    font-size: .9rem; font-weight: 700; color: #0f172a;
+  }
+  .section-header-icon {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    background: #0f172a; color: #fff; flex-shrink: 0;
+  }
+
+  /* ── FORM INPUTS LG (consistent with checkin/detail) ── */
+  .form-input-lg {
+    width: 100%; padding: 13px 16px;
+    border: 1.5px solid #e2e8f0; border-radius: 12px;
+    font-size: 1rem; color: #1e293b; outline: none;
+    font-family: inherit; background: #fff; min-height: 52px;
+    transition: border .15s, box-shadow .15s;
+  }
+  .form-input-lg:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.1); }
+  .form-input-lg:read-only { background: #f8fafc; color: #64748b; cursor: not-allowed; }
+
+  .form-select-lg {
+    appearance: none;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center;
+    width: 100%; padding: 13px 44px 13px 16px;
+    border: 1.5px solid #e2e8f0; border-radius: 12px;
+    font-size: 1rem; color: #1e293b; outline: none;
+    cursor: pointer; font-family: inherit; min-height: 52px;
+    transition: border .15s;
+  }
+  .form-select-lg:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.1); }
+
+  /* ── INVOICE PREVIEW CARD ── */
+  .invoice-preview {
+    background: linear-gradient(160deg,#0f172a 0%,#1e3a5f 100%);
+    border-radius: 16px; color: #fff; position: relative; overflow: hidden;
+  }
+  .invoice-preview::before {
+    content: ''; position: absolute;
+    width: 180px; height: 180px; border-radius: 50%;
+    background: rgba(255,255,255,.04);
+    bottom: -40px; right: -40px;
+  }
+  .invoice-preview::after {
+    content: ''; position: absolute;
+    width: 100px; height: 100px; border-radius: 50%;
+    background: rgba(255,255,255,.03);
+    top: -20px; left: -20px;
+  }
+
+  /* ── LINE ITEM TABLE ── */
+  .billing-table th {
+    font-size: .72rem; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: .05em;
+    padding: 10px 14px; background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0; white-space: nowrap;
+  }
+  .billing-table td {
+    padding: 12px 14px; border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle; font-size: .875rem; color: #1e293b;
+  }
+  .billing-table tr:last-child td { border-bottom: none; }
+  .billing-table .data-row:hover td { background: #f8fafc; }
+
+  /* ── PAYMENT METHOD RADIO CARD ── */
+  .pay-method-radio { display: none; }
+  .pay-method-label {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 6px; padding: 14px 10px;
+    border: 2px solid #e2e8f0; border-radius: 12px;
+    cursor: pointer; transition: all .15s; flex: 1;
+    min-height: 80px; font-size: .8rem; font-weight: 700;
+    color: #64748b; text-align: center;
+  }
+  .pay-method-radio:checked + .pay-method-label {
+    border-color: #0f172a; background: #f0f4ff; color: #0f172a;
+    box-shadow: 0 0 0 3px rgba(15,23,42,.1);
+  }
+  .pay-method-label:hover { border-color: #94a3b8; background: #f8fafc; }
+
+  /* ── SUMMARY ROWS ── */
+  .sum-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 0; border-bottom: 1px solid #f1f5f9; font-size: .9rem;
+  }
+  .sum-row:last-child { border-bottom: none; }
+  .sum-label { color: #64748b; font-weight: 500; }
+  .sum-value { color: #0f172a; font-weight: 700; text-align: right; }
+
+  /* ── FINALIZE BUTTON ── */
+  .finalize-btn {
+    width: 100%; min-height: 64px;
+    background: linear-gradient(135deg,#0f172a,#1e3a5f);
+    color: #fff; font-size: 1.0625rem; font-weight: 800;
+    border: none; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    cursor: pointer; letter-spacing: .02em;
+    box-shadow: 0 6px 20px rgba(15,23,42,.35);
+    transition: opacity .15s, transform .1s;
+  }
+  .finalize-btn:hover  { opacity: .92; transform: translateY(-1px); }
+  .finalize-btn:active { transform: translateY(0); }
+
+  /* ── INTEGRATION BADGE ── */
+  .integration-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #f0f4ff; border: 1.5px solid #c3d3ff;
+    color: #1730b3; border-radius: 8px;
+    padding: 5px 10px; font-size: .75rem; font-weight: 700;
+  }
+
+  /* ── CREDIT SECTION ── */
+  .credit-section {
+    background: #fffbeb; border: 1.5px solid #fde68a;
+    border-radius: 12px; padding: 14px;
+  }
+
+  /* ── CHANGE DISPLAY ── */
+  .change-box {
+    background: #f0fdf4; border: 1.5px solid #bbf7d0;
+    border-radius: 12px; padding: 12px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  /* ── TIMELINE (status steps) ── */
+  .step-bar { display: flex; align-items: center; gap: 0; }
+  .step-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px; flex: 1; position: relative;
+  }
+  .step-item:not(:last-child)::after {
+    content: ''; position: absolute; top: 18px; left: calc(50% + 18px);
+    width: calc(100% - 36px); height: 2px; background: #e2e8f0; z-index: 0;
+  }
+  .step-item:not(:last-child).step-done::after { background: #0f172a; }
+  .step-dot {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; z-index: 1; flex-shrink: 0;
+  }
+  .step-dot-done   { background: #0f172a; color: #fff; }
+  .step-dot-active { background: #6d28d9; color: #fff; box-shadow: 0 0 0 4px #ede9fe; }
+  .step-dot-todo   { background: #f1f5f9; color: #94a3b8; border: 2px solid #e2e8f0; }
+  .step-label { font-size: .72rem; font-weight: 600; color: #64748b; text-align: center; line-height: 1.3; }
+  .step-label.active { color: #6d28d9; font-weight: 700; }
+  .step-label.done   { color: #0f172a; }
+
+  /* ── QR BOX ── */
+  .qr-box {
+    width: 80px; height: 80px; background: #fff; border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; font-size: .6rem; font-weight: 600; color: #64748b; flex-shrink: 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ══════════════════════════════════════════
+   STATUS PROGRESS BAR
+══════════════════════════════════════════ #}
+<div class="bg-white border border-slate-100 rounded-xl shadow-card p-5 fade-up fade-up-1">
+  <p class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-4">Repair Journey</p>
+  <div class="step-bar">
+
+    <div class="step-item step-done">
+      <div class="step-dot step-dot-done" aria-label="Completed">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <span class="step-label done">Check-in<br/>14 Jan</span>
+    </div>
+
+    <div class="step-item step-done">
+      <div class="step-dot step-dot-done" aria-label="Completed">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <span class="step-label done">Diagnosis<br/>14 Jan</span>
+    </div>
+
+    <div class="step-item step-done">
+      <div class="step-dot step-dot-done" aria-label="Completed">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <span class="step-label done">Repairing<br/>15 Jan</span>
+    </div>
+
+    <div class="step-item">
+      <div class="step-dot step-dot-active" aria-label="Current step">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
+      </div>
+      <span class="step-label active">Billing ←</span>
+    </div>
+
+    <div class="step-item">
+      <div class="step-dot step-dot-todo" aria-label="Pending">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <span class="step-label">Settled<br/>Pending</span>
+    </div>
+
+  </div>
+</div>
+
+{# ══════════════════════════════════════════
+   MAIN BILLING LAYOUT
+══════════════════════════════════════════ #}
+<form method="POST" action="{% url 'service:service_finalize' pk=ticket.pk %}" novalidate id="billing-form">
+  {% csrf_token %}
+
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+
+    {# ─────────────────────────────────────────
+       LEFT (2/3): Invoice Preview + Line Items
+    ───────────────────────────────────────── #}
+    <div class="xl:col-span-2 space-y-5">
+
+      {# ── INVOICE HEADER PREVIEW ── #}
+      <div class="invoice-preview p-5 sm:p-6 fade-up fade-up-2">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-8 h-8 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-navy-900" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              </div>
+              <span class="font-extrabold text-white text-lg tracking-tight">Donezo</span>
+            </div>
+            <p class="text-xs text-slate-300 uppercase tracking-widest font-semibold mb-1">Service Invoice</p>
+            <p class="text-3xl font-extrabold text-white font-mono tracking-tight mb-1">{{ header.invoice_number }}</p>
+            <p class="text-xs text-slate-300">{% if header.is_finalized %}Finalized{% else %}Draft invoice{% endif %}</p>
+          </div>
+
+          {# QR placeholder #}
+          <div class="qr-box" aria-label="QR Code placeholder">
+            <svg class="w-10 h-10 text-slate-300" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M3 3h7v7H3V3zm1 1v5h5V4H4zm1 1h3v3H5V5zm8-2h7v7h-7V3zm1 1v5h5V4h-5zm1 1h3v3h-3V5zM3 13h7v7H3v-7zm1 1v5h5v-5H4zm1 1h3v3H5v-3zm8 0h2v2h-2v-2zm2 0h2v2h-2v-2zm2 0h2v2h-2v-2zm-4 2h2v2h-2v-2zm2 0h2v2h-2v-2zm2 0h2v2h-2v-2z"/>
+            </svg>
+            <span class="text-slate-400">QR Code</span>
+          </div>
+        </div>
+
+        {# Customer + Device summary #}
+        <div class="mt-5 pt-4 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div>
+            <p class="text-xs text-slate-400 font-semibold uppercase tracking-wide mb-1">Customer</p>
+            <p class="text-sm font-bold text-white">{{ ticket.customer.name }}</p>
+            <p class="text-xs text-slate-300">{{ ticket.customer.whatsapp }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 font-semibold uppercase tracking-wide mb-1">Device</p>
+            <p class="text-sm font-bold text-white">{{ ticket.device_name }}</p>
+            <p class="text-xs font-mono text-slate-300">{% if ticket.serial_number %}SN: {{ ticket.serial_number }}{% else %}—{% endif %}</p>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 font-semibold uppercase tracking-wide mb-1">Technician</p>
+            <p class="text-sm font-bold text-white">{% if ticket.technician %}{{ ticket.technician.get_full_name|default:ticket.technician.username }}{% else %}—{% endif %}</p>
+            <p class="text-xs text-slate-300">{{ ticket.branch.name }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 font-semibold uppercase tracking-wide mb-1">Invoice Date</p>
+            <p class="text-sm font-bold text-white">{% if ticket.checkin_date %}{{ ticket.checkin_date|date:"d M Y" }}{% else %}—{% endif %}</p>
+            <p class="text-xs text-slate-300">Ticket: {{ ticket.ticket_number }}</p>
+          </div>
+        </div>
+
+        {# Integration badges #}
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span class="integration-badge" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#e0e9ff;">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+            → Transaction Module
+          </span>
+          <span class="integration-badge" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#e0e9ff;">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            → Inventory ({{ parts_count }} parts deducted)
+          </span>
+          <span class="integration-badge" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#e0e9ff;">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            → Partner ({{ ticket.customer.name }})
+          </span>
+        </div>
+      </div>
+
+      {# ── BILLING LINE ITEMS ── #}
+      <div class="section-card fade-up fade-up-3">
+        <div class="section-header">
+          <div class="section-header-icon">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          </div>
+          Billing Line Items
+          <span class="ml-auto text-xs text-slate-400">Review before finalizing</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="billing-table w-full" aria-label="Billing line items">
+            <thead>
+              <tr>
+                <th class="text-left" style="min-width:180px">Description</th>
+                <th class="text-left">Type</th>
+                <th class="text-center">Qty</th>
+                <th class="text-right">Unit Price</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+
+              {% for item in items %}
+                <tr class="data-row">
+                  <td>
+                    {% if item.product.product_type == "SERVICE" %}
+                      <p class="font-semibold text-slate-800">{% if ticket.labor_description %}{{ ticket.labor_description }}{% else %}{{ item.product.name }}{% endif %}</p>
+                      <p class="text-xs text-slate-400 mt-0.5">Technician: {% if ticket.technician %}{{ ticket.technician.get_full_name|default:ticket.technician.username }}{% else %}—{% endif %}</p>
+                    {% else %}
+                      <p class="font-semibold text-slate-800">{{ item.product.name }}</p>
+                      <p class="text-xs text-slate-400 font-mono mt-0.5">SKU: {{ item.product.sku }}</p>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if item.product.product_type == "SERVICE" %}
+                      <span class="inline-flex items-center gap-1 bg-navy-50 text-navy-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-navy-200">Labor</span>
+                    {% else %}
+                      <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-amber-200">Spare Part</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-center font-semibold">{{ item.qty }}</td>
+                  <td class="text-right text-slate-700">Rp {{ item.price_at_trx }}</td>
+                  <td class="text-right font-bold text-slate-900">Rp {{ item.line_total }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center text-sm text-slate-500 py-6">No billing items yet.</td>
+                </tr>
+              {% endfor %}
+
+            </tbody>
+            <tfoot>
+              <tr class="bg-slate-50">
+                <td colspan="4" class="text-right font-semibold text-slate-600 py-3 px-4">Subtotal</td>
+                <td class="text-right font-bold text-slate-900 py-3 px-4">Rp {{ subtotal }}</td>
+              </tr>
+              <tr class="bg-slate-50">
+                <td colspan="4" class="text-right font-semibold text-slate-600 py-3 px-4">
+                  Discount
+                  <input type="number" name="discount" value="{{ discount }}" min="0" max="{{ subtotal }}"
+                         class="ml-2 w-28 text-right border border-slate-200 rounded-lg px-2 py-1 text-sm inline-block"
+                         aria-label="Discount amount in Rupiah"/>
+                  <span class="text-xs text-slate-400 ml-1">Rp</span>
+                </td>
+                <td class="text-right font-bold text-amber-600 py-3 px-4">— Rp {{ discount }}</td>
+              </tr>
+              <tr style="background:#f0fdf4; border-top:2px solid #bbf7d0;">
+                <td colspan="4" class="text-right py-4 px-4" style="font-size:1.0625rem;font-weight:800;color:#0f172a;">GRAND TOTAL</td>
+                <td class="text-right py-4 px-4" style="font-size:1.25rem;font-weight:800;color:#065f46;">Rp {{ grand_total }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      {# ── ADDITIONAL NOTES FOR INVOICE ── #}
+      <div class="section-card fade-up fade-up-4">
+        <div class="section-header">
+          <div class="section-header-icon" style="background:#475569;">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          </div>
+          Notes & Warranty for Customer
+        </div>
+        <div class="p-5 space-y-4">
+          <div>
+            <label class="form-label" for="invoice-notes">Invoice Notes (printed on invoice)</label>
+            <textarea id="invoice-notes" name="invoice_notes" rows="3"
+                      class="form-input-lg" style="resize:vertical;min-height:88px;"
+                      placeholder="e.g. Garansi spare part 30 hari. Unit bersih dari data pelanggan...">{% if ticket.invoice_notes %}{{ ticket.invoice_notes }}{% endif %}</textarea>
+          </div>
+          <div>
+            <label class="form-label" for="warranty-days">Warranty Period (days)</label>
+            <div class="relative">
+              <input type="number" id="warranty-days" name="warranty_days" value="{{ ticket.warranty_days }}"
+                     min="0" max="365" class="form-input-lg" style="padding-right:56px;"
+                     aria-label="Warranty period in days"/>
+              <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold pointer-events-none">hari</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>{# /left col #}
+
+    {# ─────────────────────────────────────────
+       RIGHT (1/3): Payment + Finalize Button
+    ───────────────────────────────────────── #}
+    <div class="space-y-5">
+
+      {# ── COST SUMMARY BOX ── #}
+      <div class="section-card fade-up fade-up-2">
+        <div class="section-header">
+          <div class="section-header-icon" style="background:#065f46;">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          Cost Breakdown
+        </div>
+        <div class="p-5">
+          <div class="sum-row">
+            <span class="sum-label">Biaya Part ({{ parts_count }} items)</span>
+            <span class="sum-value">Rp {{ parts_total }}</span>
+          </div>
+          <div class="sum-row">
+            <span class="sum-label">Biaya Jasa (Labor)</span>
+            <span class="sum-value">Rp {{ labor_total }}</span>
+          </div>
+          <div class="sum-row">
+            <span class="sum-label">Diskon</span>
+            <span class="sum-value text-amber-600">— Rp {{ discount }}</span>
+          </div>
+          <div class="sum-row" style="padding-top:10px;border-top:2px solid #e2e8f0;border-bottom:none;margin-top:4px;">
+            <span style="font-size:1rem;font-weight:800;color:#0f172a;">Total Tagihan</span>
+            <span style="font-size:1.25rem;font-weight:800;color:#065f46;">Rp {{ grand_total }}</span>
+          </div>
+        </div>
+      </div>
+
+      {# ── PAYMENT METHOD ── #}
+      <div class="section-card fade-up fade-up-3">
+        <div class="section-header">
+          <div class="section-header-icon">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          </div>
+          Payment Method <span class="text-red-500 ml-1">*</span>
+        </div>
+        <div class="p-4 space-y-4">
+
+          {# Method radio cards #}
+          <div class="flex gap-2" role="radiogroup" aria-label="Select payment method">
+            {# Cash #}
+                 <input type="radio" id="pay-cash"     name="payment_method" value="cash"
+                   class="pay-method-radio" required {% if not is_credit %}checked{% endif %} aria-required="true"/>
+            <label for="pay-cash" class="pay-method-label">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              Tunai
+            </label>
+
+            {# Transfer #}
+            <input type="radio" id="pay-transfer" name="payment_method" value="transfer"
+                   class="pay-method-radio"/>
+            <label for="pay-transfer" class="pay-method-label">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+              Transfer
+            </label>
+
+            {# QRIS #}
+            <input type="radio" id="pay-qris"     name="payment_method" value="qris"
+                   class="pay-method-radio"/>
+            <label for="pay-qris" class="pay-method-label">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+              QRIS
+            </label>
+
+            {# Credit #}
+            <input type="radio" id="pay-credit"   name="payment_method" value="credit"
+                   class="pay-method-radio" {% if is_credit %}checked{% endif %}/>
+            <label for="pay-credit" class="pay-method-label">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Kredit
+            </label>
+          </div>
+
+          {# Amount Paid #}
+          <div>
+            <label class="form-label" for="amount-paid">Uang Diterima <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm pointer-events-none">Rp</span>
+              <input type="number" id="amount-paid" name="amount_paid" value="{{ amount_paid_default }}"
+                     min="0" required
+                     class="form-input-lg" style="padding-left:40px;"
+                     aria-required="true" aria-label="Amount received from customer in Rupiah"/>
+            </div>
+            {# Quick fill buttons #}
+            <div class="flex gap-2 flex-wrap mt-2">
+              <button type="button" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-navy-50 hover:text-navy-900 text-slate-600 transition-colors">Rp 1.000.000</button>
+              <button type="button" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors">Rp 956.000 (Pas)</button>
+            </div>
+          </div>
+
+          {# Change / Kembalian #}
+          <div class="change-box">
+            <div class="flex items-center gap-2 text-emerald-700">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              <span class="text-sm font-semibold">Kembalian</span>
+            </div>
+            <span class="text-xl font-extrabold text-emerald-800">Rp {{ change_amount }}</span>
+          </div>
+
+          {# Credit/Piutang Toggle Section #}
+          <div class="credit-section">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="text-sm font-bold text-amber-800">Piutang / Kredit</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" name="is_credit" value="1" class="sr-only peer" {% if is_credit %}checked{% endif %}/>
+                <div class="w-10 h-5 bg-slate-200 rounded-full peer peer-focus:outline-none peer-checked:after:translate-x-5 peer-checked:bg-amber-500 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+              </label>
+            </div>
+            <div class="space-y-3">
+              <div>
+                <label class="form-label text-amber-700 text-xs" for="dp-amount">Uang Muka (DP)</label>
+                <div class="relative">
+                  <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm pointer-events-none">Rp</span>
+                      <input type="number" id="dp-amount" name="dp_amount" value="{{ header.amount_paid }}"
+                         min="0" class="form-input-lg" style="padding-left:40px;"
+                         aria-label="Down payment amount"/>
+                </div>
+              </div>
+              <div>
+                <label class="form-label text-amber-700 text-xs" for="due-date">Jatuh Tempo <span class="text-red-500">*</span></label>
+                  <input type="date" id="due-date" name="due_date" value="{% if header.due_date %}{{ header.due_date|date:"Y-m-d" }}{% endif %}"
+                       class="form-input-lg" style="border-color:#fde68a;"
+                       aria-label="Credit due date"/>
+              </div>
+              <div class="flex items-center justify-between bg-amber-100 rounded-xl px-3 py-2.5">
+                <span class="text-sm font-semibold text-amber-800">Sisa Piutang</span>
+                <span class="text-base font-extrabold text-amber-900">Rp {{ credit_remaining }}</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {# ── FINAL CHECKLIST ── #}
+      <div class="section-card fade-up fade-up-4">
+        <div class="section-header">
+          <div class="section-header-icon" style="background:#065f46;">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          Pre-Finalize Checklist
+        </div>
+        <div class="p-4 space-y-2.5">
+          {# Each checkbox is a confirmation from the technician / cashier #}
+          <label class="flex items-start gap-3 cursor-pointer p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+            <input type="checkbox" name="check_repair_done" value="1" required
+                   class="w-5 h-5 mt-0.5 accent-navy-900 flex-shrink-0" checked/>
+            <span class="text-sm font-medium text-slate-700">Perbaikan telah selesai 100% dan QC lulus</span>
+          </label>
+          <label class="flex items-start gap-3 cursor-pointer p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+            <input type="checkbox" name="check_parts_deducted" value="1" required
+                   class="w-5 h-5 mt-0.5 accent-navy-900 flex-shrink-0" checked/>
+            <span class="text-sm font-medium text-slate-700">Suku cadang sudah dikurangi dari stok Inventory</span>
+          </label>
+          <label class="flex items-start gap-3 cursor-pointer p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+            <input type="checkbox" name="check_customer_notified" value="1" required
+                   class="w-5 h-5 mt-0.5 accent-navy-900 flex-shrink-0" checked/>
+            <span class="text-sm font-medium text-slate-700">Pelanggan sudah dihubungi untuk pengambilan unit</span>
+          </label>
+          <label class="flex items-start gap-3 cursor-pointer p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+            <input type="checkbox" name="check_completeness_verified" value="1" required
+                   class="w-5 h-5 mt-0.5 accent-navy-900 flex-shrink-0"/>
+            <span class="text-sm font-medium text-slate-700">Kelengkapan aksesori sudah diverifikasi saat pengembalian</span>
+          </label>
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mt-2">
+            <p class="text-xs text-amber-800 font-medium leading-relaxed">
+              ⚠ <strong>Perhatian:</strong> Tombol Finalize akan secara otomatis membuat
+              <strong>TransactionHeader</strong> di modul Transaction, mengubah status tiket menjadi
+              <strong>"Ready for Pickup"</strong>, dan tidak dapat dibatalkan.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {# ═══════════════════════════════════
+         FINALIZE BUTTON – THE BIG ONE
+      ═══════════════════════════════════ #}
+      <div class="fade-up fade-up-4">
+        <button type="submit"
+                class="finalize-btn"
+                aria-label="Finalize service {{ ticket.ticket_number }} and generate invoice {{ header.invoice_number }}">
+          <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          <span class="text-center leading-tight">
+            FINALIZE &amp; GENERATE INVOICE
+            <span class="block text-xs font-semibold opacity-70 mt-0.5">{{ header.invoice_number }} · Rp {{ grand_total }}</span>
+          </span>
+        </button>
+
+        {# Secondary actions row #}
+        <div class="flex gap-2 mt-3">
+           <a href="{% url 'service:service_detail' pk=ticket.pk %}"
+             class="flex-1 flex items-center justify-center gap-2 border border-slate-200 text-slate-600 font-semibold text-sm py-3 rounded-xl hover:bg-slate-50 transition-colors min-h-[48px]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            Back to Worklog
+          </a>
+          <button type="submit" name="action" value="save_draft"
+                  class="flex-1 flex items-center justify-center gap-2 border border-navy-200 bg-navy-50 text-navy-800 font-semibold text-sm py-3 rounded-xl hover:bg-navy-100 transition-colors min-h-[48px]"
+                  aria-label="Save billing as draft">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+            Save Draft
+          </button>
+           <a href="{% url 'service:service_print_tag' pk=ticket.pk %}" target="_blank"
+             class="flex items-center justify-center gap-2 border border-slate-200 text-slate-600 font-semibold text-sm px-4 py-3 rounded-xl hover:bg-slate-50 transition-colors min-h-[48px]"
+             aria-label="Print service invoice">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          </a>
+        </div>
+      </div>
+
+    </div>{# /right col #}
+  </div>{# /grid #}
+</form>
+
+{% endblock %}
