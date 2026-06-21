@@ -1,0 +1,1 @@
+Get-ChildItem -Path . -Directory -Name "__pycache__" -Recurse | ForEach-Object { Remove-Item -Path $_ -Recurse -Force }
