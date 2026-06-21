@@ -23,8 +23,13 @@ DB_TO_UI_PRODUCT_TYPE = {
 UI_TO_DB_PRODUCT_TYPE = {value: key for key,
                          value in DB_TO_UI_PRODUCT_TYPE.items()}
 
-DEFAULT_CATEGORIES = ["Electronics", "Clothing",
-                      "Food & Beverage", "Stationery", "Home Goods"]
+DEFAULT_CATEGORIES = ["Flashdisk", "Keyboard",
+                      "Speaker", "Mouse", "Monitor",
+                      "Printer", "Motherboard", "Casing",
+                      "SSD", "RAM", "PSU", "Tinta",
+                      "Cartridge", "Laptop", "Switch",
+                      "Kabel", "Charger", "Headset",
+                      "Webcam", "Enclosure", "Router", ]
 
 
 def product_categories() -> list[str]:
@@ -51,6 +56,9 @@ class ProductForm(forms.Form):
     min_stock = forms.IntegerField(required=True, min_value=0)
     init_stock = forms.IntegerField(required=False, min_value=0)
     branch_assign = forms.IntegerField(required=False)
+    docs = forms.URLField(required=False, max_length=500)
+    photo = forms.ImageField(required=False)
+    clear_photo = forms.BooleanField(required=False)
 
     def clean_sell_price(self) -> Decimal:
         value = self.cleaned_data["sell_price"]
@@ -199,6 +207,7 @@ def initialize_product_form(product: Product | None = None) -> ProductForm:
                 "category": "",
                 "brand": "",
                 "notes": "",
+                "docs": "",
             }
         )
 
@@ -212,6 +221,7 @@ def initialize_product_form(product: Product | None = None) -> ProductForm:
             "notes": getattr(product, "notes", "") or "",
             "sell_price": product.selling_price,
             "min_stock": product.min_stock,
+            "docs": getattr(product, "docs", "") or "",
         }
     )
 
@@ -224,6 +234,13 @@ def save_product_form(form: ProductForm, product: Product | None = None) -> Prod
     instance.category = form.cleaned_data.get("category", "")
     instance.brand = form.cleaned_data.get("brand", "")
     instance.notes = form.cleaned_data.get("notes", "")
+    instance.docs = form.cleaned_data.get("docs", "")
+
+    if form.cleaned_data.get("clear_photo"):
+        instance.photo = None
+    elif form.cleaned_data.get("photo"):
+        instance.photo = form.cleaned_data["photo"]
+
     instance.selling_price = form.cleaned_data["sell_price"]
     instance.min_stock = form.cleaned_data["min_stock"]
     instance.save()

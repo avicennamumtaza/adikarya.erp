@@ -27,6 +27,8 @@ class Product(TimeStampedModel):
     category = models.CharField(max_length=100, blank=True, default="")
     brand = models.CharField(max_length=100, blank=True, default="")
     notes = models.TextField(blank=True, default="")
+    docs = models.URLField(max_length=500, blank=True, default="")
+    photo = models.ImageField(upload_to="products/", blank=True, null=True)
 
     # Cost & Pricing
     base_price = models.DecimalField(

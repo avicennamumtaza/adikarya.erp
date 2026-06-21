@@ -76,7 +76,7 @@ class ProductCreateView(View):
         return render(request, self.template_name, context)
 
     def post(self, request):
-        form = ProductForm(request.POST)
+        form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
             sku = (form.cleaned_data.get("sku") or "").strip()
             if sku and Product.objects.filter(sku=sku).exists():
@@ -112,7 +112,7 @@ class ProductUpdateView(View):
 
     def post(self, request, pk):
         product = get_object_or_404(Product, pk=pk)
-        form = ProductForm(request.POST)
+        form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
             sku = (form.cleaned_data.get("sku") or "").strip()
             if sku and Product.objects.filter(sku=sku).exclude(pk=product.pk).exists():
