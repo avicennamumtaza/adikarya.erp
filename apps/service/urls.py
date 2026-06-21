@@ -3,8 +3,6 @@ from django.urls import path
 from .views import (
     ServiceBillingView,
     ServiceFinalizeView,
-    ServiceAddLogView,
-    ServiceAddPartView,
     ServiceCheckinEditView,
     ServiceCheckinSaveView,
     ServiceCheckinView,
@@ -12,10 +10,9 @@ from .views import (
     ServiceExportView,
     ServicePrintTagView,
     ServiceQueueView,
-    ServiceUpdateLaborView,
+    ServiceIntakeUsbPrintView,
+    ServiceInvoiceUsbPrintView,
     ServiceUpdateStatusView,
-    ServiceAssignTechnicianView,
-    ServiceRemovePartView,
 )
 
 app_name = "service"
@@ -32,39 +29,21 @@ urlpatterns = [
         ServiceUpdateStatusView.as_view(),
         name="service_update_status",
     ),
-    path(
-        "detail/<int:pk>/add-log/",
-        ServiceAddLogView.as_view(),
-        name="service_add_log",
-    ),
-    path(
-        "detail/<int:pk>/add-part/",
-        ServiceAddPartView.as_view(),
-        name="service_add_part",
-    ),
-    path(
-        "detail/<int:pk>/remove-part/<int:detail_id>/",
-        ServiceRemovePartView.as_view(),
-        name="service_remove_part",
-    ),
-    path(
-        "detail/<int:pk>/update-labor/",
-        ServiceUpdateLaborView.as_view(),
-        name="service_update_labor",
-    ),
-    path(
-        "detail/<int:pk>/assign-technician/",
-        ServiceAssignTechnicianView.as_view(),
-        name="service_assign_technician",
-    ),
     path("checkin/<int:pk>/edit/", ServiceCheckinEditView.as_view(),
          name="service_checkin_edit"),
-    path("print-tag/<int:pk>/", ServicePrintTagView.as_view(),
-         name="service_print_tag"),
+    # path("print-tag/<int:pk>/", ServicePrintTagView.as_view(),
+    #      name="service_print_tag"),
+    path("print-usb/<int:pk>/", ServiceIntakeUsbPrintView.as_view(),
+         name="service_receipt_usb_print"),
     path("billing/<int:pk>/", ServiceBillingView.as_view(), name="service_billing"),
     path(
         "billing/<int:pk>/finalize/",
         ServiceFinalizeView.as_view(),
         name="service_finalize",
+    ),
+    path(
+        "billing/<int:pk>/usb-print/",
+        ServiceInvoiceUsbPrintView.as_view(),
+        name="service_invoice_usb_print",
     ),
 ]
