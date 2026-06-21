@@ -127,7 +127,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Rp {{ total_outstanding|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Rp {{ total_outstanding|floatformat:"0"|intcomma|default:"0" }}</p>
     <div class="stat-badge inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full">
       {{ outstanding_count }} invoice outstanding
     </div>
@@ -141,7 +141,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ overdue_total|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ overdue_total|floatformat:"0"|intcomma|default:"0" }}</p>
   </div>
 
   {# Jatuh Tempo Minggu Ini #}
@@ -152,7 +152,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ week_due|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ week_due|floatformat:"0"|intcomma|default:"0" }}</p>
   </div>
 
   {# Lunas Bulan Ini #}
@@ -163,7 +163,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ paid_month|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ paid_month|floatformat:"0"|intcomma|default:"0" }}</p>
   </div>
 </div>
 
@@ -241,9 +241,9 @@
             <p class="text-xs text-slate-500">{{ payable.created_at|date:"d M Y" }}</p>
             <p class="text-xs font-semibold {% if payable.status == 'overdue' %}text-red-600 font-bold{% else %}text-amber-600{% endif %} mt-0.5">{% if payable.status == 'overdue' %}⚠ {% endif %}Jatuh tempo: {{ payable.due_date|date:"d M Y" }}</p>
           </td>
-          <td class="text-right font-semibold text-slate-800">Rp {{ payable.total_amount|intcomma }}</td>
-          <td class="text-right text-emerald-700 font-semibold">Rp {{ payable.amount_paid|intcomma }}</td>
-          <td class="text-right font-bold {% if payable.status == 'overdue' %}text-red-600{% else %}text-amber-600{% endif %}">Rp {{ payable.outstanding|intcomma }}</td>
+          <td class="text-right font-semibold text-slate-800">Rp {{ payable.total_amount|floatformat:"0"|intcomma }}</td>
+          <td class="text-right text-emerald-700 font-semibold">Rp {{ payable.amount_paid|floatformat:"0"|intcomma }}</td>
+          <td class="text-right font-bold {% if payable.status == 'overdue' %}text-red-600{% else %}text-amber-600{% endif %}">Rp {{ payable.outstanding|floatformat:"0"|intcomma }}</td>
           <td class="text-center" style="min-width:100px;">
             <div class="debt-bar mx-auto" style="max-width:80px;">
               <div class="debt-bar-fill {% if payable.status == 'paid' %}paid{% endif %}" style="width:{{ payable.progress_pct }}%"></div>
@@ -275,7 +275,7 @@
       <tfoot>
         <tr class="bg-slate-50">
           <td colspan="5" class="px-4 py-3 font-bold text-slate-700 text-sm">TOTAL</td>
-          <td class="px-4 py-3 text-right font-extrabold text-red-600">Rp {{ total_outstanding|intcomma|default:"0" }}</td>
+          <td class="px-4 py-3 text-right font-extrabold text-red-600">Rp {{ total_outstanding|floatformat:"0"|intcomma|default:"0" }}</td>
           <td colspan="3"></td>
         </tr>
       </tfoot>
@@ -305,15 +305,15 @@
     <div class="grid grid-cols-3 gap-2 mb-3 text-center">
       <div class="bg-slate-50 rounded-xl p-2.5">
         <p class="text-xs text-slate-400 mb-0.5">Total</p>
-        <p class="font-bold text-slate-800 text-sm">Rp {{ payable.total_amount|intcomma }}</p>
+        <p class="font-bold text-slate-800 text-sm">Rp {{ payable.total_amount|floatformat:"0"|intcomma }}</p>
       </div>
       <div class="bg-emerald-50 rounded-xl p-2.5">
         <p class="text-xs text-slate-400 mb-0.5">Dibayar</p>
-        <p class="font-bold text-emerald-700 text-sm">Rp {{ payable.amount_paid|intcomma }}</p>
+        <p class="font-bold text-emerald-700 text-sm">Rp {{ payable.amount_paid|floatformat:"0"|intcomma }}</p>
       </div>
       <div class="bg-{% if payable.status == 'overdue' %}red{% else %}amber{% endif %}-50 rounded-xl p-2.5">
         <p class="text-xs text-slate-400 mb-0.5">Sisa</p>
-        <p class="font-bold text-{% if payable.status == 'overdue' %}red-600{% else %}amber-600{% endif %} text-sm">Rp {{ payable.outstanding|intcomma }}</p>
+        <p class="font-bold text-{% if payable.status == 'overdue' %}red-600{% else %}amber-600{% endif %} text-sm">Rp {{ payable.outstanding|floatformat:"0"|intcomma }}</p>
       </div>
     </div>
     <div class="debt-bar mb-1"><div class="debt-bar-fill" style="width:{{ payable.progress_pct }}%"></div></div>
@@ -421,7 +421,7 @@
             <input type="number"
                    id="modal-amount" name="amount"
                    placeholder="0"
-                   min="1"
+                   min="1" step="1"
                    class="modal-input" style="padding-left:2.5rem; font-size:1.125rem; font-weight:700;"
                    aria-label="Jumlah pembayaran"
                    required/>
@@ -446,19 +446,16 @@
           </button>
         </div>
 
-        {# Payment Method #}
+        {# Payment Account #}
         <div>
           <label class="form-label" for="modal-method">
-            Metode Pembayaran <span class="text-red-500">*</span>
+            Pembayaran Ke <span class="text-red-500">*</span>
           </label>
-          <select id="modal-method" name="method"
-                  class="modal-input" required>
-            <option value="transfer_bca">Transfer BCA</option>
-            <option value="transfer_mandiri">Transfer Mandiri</option>
-            <option value="transfer_bri">Transfer BRI</option>
-            <option value="giro">Giro</option>
-            <option value="tunai">Tunai</option>
-            <option value="cheque">Cek</option>
+          <select id="modal-method" name="financial_account" class="modal-input" required>
+            <option value="">— Pilih Sumber Pembayaran —</option>
+            {% for acc in accounts %}
+            <option value="{{ acc.pk }}">{{ acc.name }} ({{ acc.get_account_type_display }})</option>
+            {% endfor %}
           </select>
         </div>
 
@@ -508,7 +505,7 @@
 let _remaining = 0;
 
 function fmt(n){
-  return 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+  return 'Rp ' + Number(n || 0).toLocaleString('id-ID', {maximumFractionDigits: 0});
 }
 
 function openPayModal(poNum, supplier, total, paid, remaining){
@@ -532,7 +529,7 @@ function closePayModal(){
 }
 
 function fillFullPayment(){
-  document.getElementById('modal-amount').value = _remaining;
+  document.getElementById('modal-amount').value = Math.round(_remaining);
 }
 
 function fillHalfPayment(){
@@ -542,5 +539,23 @@ function fillHalfPayment(){
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape') closePayModal();
 });
+
+{% if form_data.po_number %}
+  const poNumber = "{{ form_data.po_number|escapejs }}";
+  // Find the button that opens this modal to grab the initial values
+  // We can query selector for it
+  const btnStr = `openPayModal('${poNumber}'`;
+  const btns = Array.from(document.querySelectorAll('button')).filter(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(btnStr));
+  if (btns.length > 0) {
+    btns[0].click();
+    setTimeout(() => {
+      document.getElementById('modal-amount').value = "{{ form_data.amount|escapejs }}";
+      const methodSel = document.getElementById('modal-method');
+      if (methodSel) methodSel.value = "{{ form_data.financial_account|escapejs }}";
+      document.getElementById('modal-ref').value = "{{ form_data.reference|escapejs }}";
+      document.getElementById('modal-notes').value = "{{ form_data.notes|escapejs }}";
+    }, 50);
+  }
+{% endif %}
 </script>
 {% endblock %}

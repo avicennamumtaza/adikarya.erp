@@ -179,7 +179,7 @@ Management{% endblock %} {% block nav_purchase %}active{% endblock %} {% block e
         </svg>
       </div>
     </div>
-    <p class="text-3xl font-extrabold text-white mb-2">Rp {{ stat_purchase_mtd|default:0|intcomma }}</p>
+    <p class="text-3xl font-extrabold text-white mb-2">Rp {{ stat_purchase_mtd|default:0|floatformat:"0"|intcomma }}</p>
     <div
       class="stat-badge inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
     >
@@ -227,7 +227,7 @@ Management{% endblock %} {% block nav_purchase %}active{% endblock %} {% block e
       </div>
     </div>
     <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">
-      Rp {{ stat_outstanding|default:0|intcomma }}
+      Rp {{ stat_outstanding|default:0|floatformat:"0"|intcomma }}
     </p>
     <div
       class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full"
@@ -345,7 +345,7 @@ Management{% endblock %} {% block nav_purchase %}active{% endblock %} {% block e
 </div>
 
 {% comment %} FILTER BAR {% endcomment %}
-<div class="bg-white border border-slate-100 rounded-xl p-3 sm:p-4 shadow-card">
+<div class="bg-white border border-slate-100 rounded-xl p-3 sm:p-4 shadow-card" x-data="{ importModalOpen: false }">
   <form
     method="GET"
     class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap"
@@ -472,27 +472,23 @@ Management{% endblock %} {% block nav_purchase %}active{% endblock %} {% block e
 
     <div class="flex-1 hidden sm:block"></div>
 
-    {# Export #}
+    {# Export Excel #}
     <a
-      href="{% url 'transaction:purchase_export' %}?{{ request.GET.urlencode }}"
+      href="{% url 'report:export_purchases' %}?{{ request.GET.urlencode }}"
       class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-2 rounded-xl bg-white hover:bg-slate-50 transition-colors whitespace-nowrap"
-      aria-label="Export CSV"
+      aria-label="Export Excel"
     >
-      <svg
-        class="w-4 h-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-        />
-      </svg>
-      Export
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      Export Excel
     </a>
+
+    {# Import #}
+    <button type="button" @click="importModalOpen = true"
+      class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-2 rounded-xl bg-white hover:bg-slate-50 transition-colors whitespace-nowrap"
+      aria-label="Import Excel">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L5 8m4-4v12"/></svg>
+      Import
+    </button>
 
     {# New PO button #}
     <a
@@ -515,6 +511,32 @@ Management{% endblock %} {% block nav_purchase %}active{% endblock %} {% block e
       </svg>
       <span class="hidden sm:inline">New Purchase</span>
     </a>
+
+    {# ── Import Modal ── #}
+    <div x-show="importModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" x-cloak>
+      <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" @click.outside="importModalOpen = false">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-slate-900">Import Data Pembelian</h3>
+          <button type="button" @click="importModalOpen = false" class="text-slate-400 hover:text-slate-700 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <p class="text-sm text-slate-500 mb-4">Upload file Excel (.xlsx) untuk mengimport data pembelian.</p>
+        <form method="POST" action="{% url 'report:import_purchases' %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'transaction:purchase_list' %}">
+          <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-6 mb-4 cursor-pointer hover:border-navy-300 transition-colors">
+            <svg class="w-8 h-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L5 8m4-4v12"/></svg>
+            <span class="text-sm text-slate-500 font-semibold">Klik untuk pilih file .xlsx</span>
+            <input type="file" name="file" accept=".xlsx" class="hidden" required>
+          </label>
+          <div class="flex gap-2 justify-end">
+            <button type="button" @click="importModalOpen = false" class="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">Batal</button>
+            <button type="submit" class="px-4 py-2 bg-navy-900 text-white text-sm font-bold rounded-xl hover:bg-navy-800 transition-colors">Import</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </form>
 </div>
 
@@ -576,7 +598,7 @@ Management{% endblock %} {% block nav_purchase %}active{% endblock %} {% block e
             </div>
           </td>
           <td class="text-sm text-slate-600">{{ purchase.branch.name|default:"-" }}</td>
-          <td class="text-right font-semibold text-slate-800">Rp {{ purchase.total_amount|intcomma }}</td>
+          <td class="text-right font-semibold text-slate-800">Rp {{ purchase.total_amount|floatformat:"0"|intcomma }}</td>
           <td class="text-center">
             <span
               class="{{ purchase.status_badge }} inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
@@ -764,9 +786,9 @@ Management{% endblock %} {% block nav_purchase %}active{% endblock %} {% block e
       class="flex items-center justify-between pt-3 border-t border-slate-100"
     >
       <div>
-        <p class="font-extrabold text-slate-900">Rp {{ purchase.total_amount|intcomma }}</p>
+        <p class="font-extrabold text-slate-900">Rp {{ purchase.total_amount|floatformat:"0"|intcomma }}</p>
         {% if purchase.outstanding > 0 %}
-        <p class="text-xs text-slate-400 mt-0.5">Sisa: Rp {{ purchase.outstanding|intcomma }}</p>
+        <p class="text-xs text-slate-400 mt-0.5">Sisa: Rp {{ purchase.outstanding|floatformat:"0"|intcomma }}</p>
         {% endif %}
       </div>
       <div class="flex gap-2">

@@ -326,7 +326,7 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
         >
           <option value="">— Pilih Supplier —</option>
           {% for s in suppliers %}
-          <option value="{{ s.pk }}">{{ s.name }}</option>
+          <option value="{{ s.pk }}" {% if form_data.supplier == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
           {% endfor %}
         </select>
       </div>
@@ -346,7 +346,7 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
         >
           <option value="">— Pilih Cabang —</option>
           {% for b in branches %}
-          <option value="{{ b.pk }}">{{ b.name }}</option>
+          <option value="{{ b.pk }}" {% if form_data.branch == b.pk|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
           {% endfor %}
         </select>
       </div>
@@ -457,8 +457,8 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
               type="number"
               id="id_shipping_cost"
               name="shipping_cost"
-              value="0"
-              min="0"
+              value="{{ form_data.shipping_cost|default:'0'|floatformat:'0' }}"
+              min="0" step="1"
               class="form-input"
               style="padding-left: 2.5rem; min-height: 44px"
               aria-label="Ongkos kirim"
@@ -478,8 +478,8 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
               type="number"
               id="id_other_fees"
               name="other_fees"
-              value="0"
-              min="0"
+              value="{{ form_data.other_fees|default:'0'|floatformat:'0' }}"
+              min="0" step="1"
               class="form-input"
               style="padding-left: 2.5rem; min-height: 44px"
               aria-label="Biaya lain-lain"
@@ -591,8 +591,8 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
                   type="radio"
                   name="payment_method"
                   value="CASH"
-                  checked
                   class="w-4 h-4 accent-navy-900"
+                  {% if form_data.payment_method != 'CREDIT' %}checked{% endif %}
                 />
                 <svg class="w-5 h-5 text-navy-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
@@ -608,6 +608,7 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
                   name="payment_method"
                   value="CREDIT"
                   class="w-4 h-4 accent-navy-900"
+                  {% if form_data.payment_method == 'CREDIT' %}checked{% endif %}
                 />
                 <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -615,6 +616,16 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
                 <span class="text-xs font-bold text-slate-600">Kredit</span>
               </label>
             </div>
+          </div>
+
+          <div>
+            <label class="form-label" for="id_financial_account">Rekening Pembayaran / Pengeluaran <span class="text-red-500">*</span></label>
+            <select id="id_financial_account" name="financial_account" class="form-input" style="min-height: 44px" required aria-required="true">
+              <option value="">— Pilih Sumber Pembayaran —</option>
+              {% for acc in accounts %}
+              <option value="{{ acc.pk }}" {% if form_data.financial_account == acc.pk|stringformat:"s" %}selected{% endif %}>{{ acc.name }} ({{ acc.get_account_type_display }})</option>
+              {% endfor %}
+            </select>
           </div>
 
           {# Amount Paid #}
@@ -631,8 +642,8 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
                 type="number"
                 id="id_amount_paid"
                 name="amount_paid"
-                value="0"
-                min="0"
+                value="{{ form_data.amount_paid|default:'0'|floatformat:'0' }}"
+                min="0" step="1"
                 class="form-input"
                 style="
                   padding-left: 2.5rem;
@@ -656,7 +667,7 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
               type="date"
               id="id_due_date"
               name="due_date"
-              value="{{ default_due_date|date:'Y-m-d' }}"
+              value="{% if form_data %}{{ form_data.due_date }}{% else %}{{ default_due_date|date:'Y-m-d' }}{% endif %}"
               class="form-input"
               style="min-height: 44px"
               aria-label="Tanggal jatuh tempo"
@@ -734,6 +745,9 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
 
   /* ── Product catalog from Django context ── */
   const PRODUCTS = JSON.parse('{{ products_json|escapejs }}');
+  const FORM_ITEMS = (function() {
+    try { return {{ form_items_json|safe }}; } catch(e) { return []; }
+  })();
 
   /* ── DOM refs ── */
   const tbody      = document.getElementById('items-tbody');
@@ -749,7 +763,7 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
 
   /* ── Helpers ── */
   function fmt(n) {
-    return 'Rp ' + Number(n).toLocaleString('id-ID');
+    return 'Rp ' + Number(n).toLocaleString('id-ID', {maximumFractionDigits: 0});
   }
 
   /* ── Recalculate everything ── */
@@ -869,7 +883,7 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
           <p style="font-size:.75rem;color:#94a3b8;font-family:monospace;">${p.sku}</p>
         </div>
         <div style="text-align:right;">
-          <p style="font-weight:700;color:#0f172a;font-size:.8125rem;">Rp ${Number(p.base_price).toLocaleString('id-ID')}</p>
+          <p style="font-weight:700;color:#0f172a;font-size:.8125rem;">Rp ${Number(p.base_price).toLocaleString('id-ID', {maximumFractionDigits: 0})}</p>
           <p style="font-size:.75rem;color:${p.stock > 0 ? '#16a34a' : '#dc2626'};">Stok: ${p.stock}</p>
         </div>`;
       item.addEventListener('mouseenter', () => item.style.background = '#f0f4ff');
@@ -926,7 +940,7 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
   }
 
   /* ── Add row ── */
-  function addRow() {
+  function addRow(initialData = null) {
     rowIndex++;
     const tr = document.createElement('tr');
     tr.setAttribute('data-row', rowIndex);
@@ -975,6 +989,17 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
       recalc();
       syncPaymentState();
     });
+
+    if (initialData) {
+      tr.querySelector('.js-product-id').value = initialData.product;
+      tr.querySelector('.js-qty').value = initialData.qty;
+      tr.querySelector('.js-cost').value = initialData.cost;
+      const p = PRODUCTS.find(x => String(x.id) === String(initialData.product));
+      if (p) {
+        tr.querySelector('.js-product-search').value = p.name;
+        tr.querySelector('.js-stock').value = p.stock;
+      }
+    }
 
     searchInput.focus();
     recalc();
@@ -1048,7 +1073,11 @@ Order{% endblock %} {% block nav_purchase %}active{% endblock %} {% block extra_
   window.addEventListener('resize', () => { if (dropdownOpen) positionDropdown(); });
 
   /* ── Init: add first row ── */
-  addRow();
+  if (FORM_ITEMS && FORM_ITEMS.length > 0) {
+    FORM_ITEMS.forEach(data => addRow(data));
+  } else {
+    addRow();
+  }
 
   /* ── Init: hide due date section if not credit ── */
   document.getElementById('due-date-section').style.display = 'none';
