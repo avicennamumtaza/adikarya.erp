@@ -203,7 +203,7 @@
         <select id="id_branch" name="branch" class="form-input" style="min-height:44px" required aria-required="true">
           <option value="">— Pilih Cabang —</option>
           {% for b in branches %}
-          <option value="{{ b.pk }}">{{ b.name }}</option>
+          <option value="{{ b.pk }}" {% if form_data.branch == b.pk|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
           {% endfor %}
         </select>
       </div>
@@ -213,7 +213,7 @@
         <select id="id_customer" name="customer" class="form-input" style="min-height:44px">
           <option value="">👤 Walk-in / Guest</option>
           {% for c in customers %}
-          <option value="{{ c.pk }}">{{ c.name }}{% if c.whatsapp %} – {{ c.whatsapp }}{% endif %}</option>
+          <option value="{{ c.pk }}" {% if form_data.customer == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}{% if c.whatsapp %} – {{ c.whatsapp }}{% endif %}</option>
           {% endfor %}
         </select>
       </div>
@@ -276,14 +276,24 @@
           <label class="form-label">Metode Pembayaran <span class="text-red-500">*</span></label>
           <div class="grid grid-cols-2 gap-2">
             <label class="pay-method-card flex items-center gap-2 p-3 rounded-xl cursor-pointer">
-              <input type="radio" name="payment_method" value="cash" checked class="w-4 h-4" />
+              <input type="radio" name="payment_method" value="cash" class="w-4 h-4" {% if form_data.payment_method != 'credit' %}checked{% endif %} />
               <span class="pay-method-title text-sm font-bold text-slate-700">Tunai</span>
             </label>
             <label class="pay-method-card flex items-center gap-2 p-3 rounded-xl cursor-pointer">
-              <input type="radio" name="payment_method" value="credit" class="w-4 h-4" />
+              <input type="radio" name="payment_method" value="credit" class="w-4 h-4" {% if form_data.payment_method == 'credit' %}checked{% endif %} />
               <span class="pay-method-title text-sm font-bold text-slate-700">Kredit (Piutang)</span>
             </label>
           </div>
+        </div>
+
+        <div>
+          <label class="form-label" for="id_financial_account">Pembayaran Ke <span class="text-red-500">*</span></label>
+          <select id="id_financial_account" name="financial_account" class="form-input" style="min-height:44px" required aria-required="true">
+            <option value="">— Pilih Tujuan Penerimaan —</option>
+            {% for acc in accounts %}
+            <option value="{{ acc.pk }}" {% if form_data.financial_account == acc.pk|stringformat:"s" %}selected{% endif %}>{{ acc.name }} ({{ acc.get_account_type_display }})</option>
+            {% endfor %}
+          </select>
         </div>
 
         <div id="credit-fields" class="bg-amber-50 border border-amber-200 rounded-xl p-4 hidden">
@@ -292,13 +302,13 @@
               <label class="form-label text-amber-700" for="id_dp_amount">Uang Muka (DP)</label>
               <div class="relative">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold pointer-events-none">Rp</span>
-                <input type="number" id="id_dp_amount" name="dp_amount" value="0" min="0" class="form-input" style="padding-left:2.5rem;min-height:44px" />
+                <input type="number" id="id_dp_amount" name="dp_amount" value="{{ form_data.dp_amount|default:'0'|floatformat:'0' }}" min="0" step="1" class="form-input" style="padding-left:2.5rem;min-height:44px" />
               </div>
               <p class="text-xs text-slate-500 mt-1">Dianggap pembayaran awal, sisanya jadi piutang.</p>
             </div>
             <div>
               <label class="form-label text-amber-700" for="id_due_date">Jatuh Tempo</label>
-              <input type="date" id="id_due_date" name="due_date" class="form-input" style="min-height:44px" />
+              <input type="date" id="id_due_date" name="due_date" value="{{ form_data.due_date|default:'' }}" class="form-input" style="min-height:44px" />
               <p class="text-xs text-slate-500 mt-1">Opsional, untuk menandai overdue.</p>
             </div>
           </div>
@@ -351,6 +361,10 @@
     try { return {{ products_json|safe }}; } catch (e) { return []; }
   })();
 
+  const FORM_ITEMS = (function() {
+    try { return {{ form_items_json|safe }}; } catch(e) { return []; }
+  })();
+
   const productById = new Map(PRODUCTS.map(p => [String(p.id), p]));
 
   function parseNum(v) {
@@ -360,7 +374,7 @@
 
   function rupiah(n) {
     const v = Math.round(parseNum(n));
-    return 'Rp ' + v.toLocaleString('id-ID');
+    return 'Rp ' + v.toLocaleString('id-ID', {maximumFractionDigits: 0});
   }
 
   function makeProductOptions() {
@@ -376,7 +390,7 @@
 
   let rowCounter = 0;
 
-  function addRow() {
+  function addRow(initialData = null) {
     rowCounter += 1;
     const idx = rowCounter;
 
@@ -397,10 +411,10 @@
         <input class="item-input js-qty" type="number" min="1" step="1" name="qty_${idx}" value="1" required aria-required="true" style="text-align:center; max-width:110px; margin:0 auto;" />
       </td>
       <td class="text-right">
-        <input class="item-input js-price" type="number" min="0" step="0.01" name="price_${idx}" value="0" required aria-required="true" style="text-align:right;" />
+        <input class="item-input js-price" type="number" min="0" step="1" name="price_${idx}" value="0" required aria-required="true" style="text-align:right;" />
       </td>
       <td class="text-right">
-        <input class="item-input js-disc" type="number" min="0" max="100" step="0.01" name="disc_${idx}" value="0" style="text-align:right; max-width:110px; margin-left:auto;" />
+        <input class="item-input js-disc" type="number" min="0" max="100" step="1" name="disc_${idx}" value="0" style="text-align:right; max-width:110px; margin-left:auto;" />
       </td>
       <td class="text-right">
         <input class="item-input js-subtotal" type="text" value="Rp 0" readonly />
@@ -419,12 +433,24 @@
     const priceInput = tr.querySelector('.js-price');
     const discInput = tr.querySelector('.js-disc');
 
+    if (initialData) {
+      productSel.value = initialData.product;
+      qtyInput.value = initialData.qty;
+      priceInput.value = String(Math.round(parseNum(initialData.price)));
+      discInput.value = String(Math.round(parseNum(initialData.disc)));
+      
+      // Update SKU/Stock visually based on selected product
+      const p = productById.get(initialData.product);
+      tr.querySelector('.js-sku').textContent = p ? `SKU: ${p.sku}` : '';
+      tr.querySelector('.js-stock').textContent = p ? String(p.stock ?? '-') : '-';
+    }
+
     productSel.addEventListener('change', () => {
       const p = productById.get(productSel.value);
       tr.querySelector('.js-sku').textContent = p ? `SKU: ${p.sku}` : '';
       tr.querySelector('.js-stock').textContent = p ? String(p.stock ?? '-') : '-';
       if (p) {
-        const price = parseNum(p.selling_price);
+        const price = Math.round(parseNum(p.selling_price));
         if (priceInput.value === '0' || priceInput.value === '' || parseNum(priceInput.value) <= 0) {
           priceInput.value = String(price);
         }
@@ -552,8 +578,13 @@
     }
   });
 
-  // Start with 1 empty row
-  addRow();
+  // Init rows from form_data if available
+  if (FORM_ITEMS && FORM_ITEMS.length > 0) {
+    FORM_ITEMS.forEach(data => addRow(data));
+  } else {
+    addRow();
+  }
+  
   toggleCreditFields();
 </script>
 

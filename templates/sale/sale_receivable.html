@@ -131,7 +131,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Rp {{ total_receivable|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Rp {{ total_receivable|floatformat:"0"|intcomma|default:"0" }}</p>
     <div class="stat-badge inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full">
       Semua piutang aktif
     </div>
@@ -145,7 +145,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ overdue_total|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ overdue_total|floatformat:"0"|intcomma|default:"0" }}</p>
     <div class="inline-flex items-center gap-1 bg-red-50 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full">
       Melewati jatuh tempo
     </div>
@@ -159,7 +159,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ week_due|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ week_due|floatformat:"0"|intcomma|default:"0" }}</p>
     <div class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full">
       Jatuh tempo dlm 7 hr
     </div>
@@ -173,7 +173,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ collected_month|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ collected_month|floatformat:"0"|intcomma|default:"0" }}</p>
     <div class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2 py-0.5 rounded-full">
       Pembayaran piutang
     </div>
@@ -251,11 +251,11 @@
               {{ trx.invoice_number }}
             </a>
           </td>
-          <td class="text-right font-semibold text-slate-800">Rp {{ trx.total_amount|intcomma }}</td>
+          <td class="text-right font-semibold text-slate-800">Rp {{ trx.total_amount|floatformat:"0"|intcomma }}</td>
           <td class="text-right">
-            <span class="font-extrabold {% if trx.status == 'overdue' %}text-red-600{% else %}text-amber-600{% endif %}">Rp {{ trx.outstanding|intcomma }}</span>
+            <span class="font-extrabold {% if trx.status == 'overdue' %}text-red-600{% else %}text-amber-600{% endif %}">Rp {{ trx.outstanding|floatformat:"0"|intcomma }}</span>
             {% if trx.amount_paid > 0 %}
-            <p class="text-xs text-slate-400 mt-0.5">Bayar: Rp {{ trx.amount_paid|intcomma }}</p>
+            <p class="text-xs text-slate-400 mt-0.5">Bayar: Rp {{ trx.amount_paid|floatformat:"0"|intcomma }}</p>
             {% else %}
             <p class="text-xs text-red-400 font-semibold mt-0.5">Belum ada pembayaran</p>
             {% endif %}
@@ -357,11 +357,11 @@
     <div class="grid grid-cols-2 gap-3 mb-3 text-sm">
       <div>
         <p class="text-xs text-slate-400 font-semibold">Total Invoice</p>
-        <p class="font-bold text-slate-800">Rp {{ trx.total_amount|intcomma }}</p>
+        <p class="font-bold text-slate-800">Rp {{ trx.total_amount|floatformat:"0"|intcomma }}</p>
       </div>
       <div>
         <p class="text-xs text-slate-400 font-semibold">Sisa Piutang</p>
-        <p class="font-extrabold {% if trx.status == 'overdue' %}text-red-600{% else %}text-amber-600{% endif %}">Rp {{ trx.outstanding|intcomma }}</p>
+        <p class="font-extrabold {% if trx.status == 'overdue' %}text-red-600{% else %}text-amber-600{% endif %}">Rp {{ trx.outstanding|floatformat:"0"|intcomma }}</p>
       </div>
       <div>
         <p class="text-xs text-slate-400 font-semibold">Jatuh Tempo</p>
@@ -416,9 +416,9 @@
     <div class="mx-6 mt-5 {% if trx.status == 'overdue' %}bg-red-50 border-red-200{% else %}bg-amber-50 border-amber-200{% endif %} border rounded-xl p-4 flex items-center justify-between">
       <div>
         <p class="text-xs font-semibold {% if trx.status == 'overdue' %}text-red-600{% else %}text-amber-600{% endif %} uppercase tracking-wide">Sisa Piutang {% if trx.status == 'overdue' %}(OVERDUE){% endif %}</p>
-        <p class="text-2xl font-extrabold {% if trx.status == 'overdue' %}text-red-700{% else %}text-amber-700{% endif %} mt-1">Rp {{ trx.outstanding|intcomma }}</p>
+        <p class="text-2xl font-extrabold {% if trx.status == 'overdue' %}text-red-700{% else %}text-amber-700{% endif %} mt-1">Rp {{ trx.outstanding|floatformat:"0"|intcomma }}</p>
         {% if trx.amount_paid > 0 %}
-        <p class="text-xs text-slate-400 mt-1">Sudah dibayar: Rp {{ trx.amount_paid|intcomma }}</p>
+        <p class="text-xs text-slate-400 mt-1">Sudah dibayar: Rp {{ trx.amount_paid|floatformat:"0"|intcomma }}</p>
         {% endif %}
       </div>
       {% if trx.status == 'overdue' %}
@@ -445,16 +445,28 @@
           </label>
           <div class="relative">
             <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm pointer-events-none">Rp</span>
-            <input type="number" id="pay{{ trx.pk }}-amount" name="amount"
-                   placeholder="0" min="1" max="{{ trx.outstanding|stringformat:'f'|slice:':-3'|default:0 }}" required
+                 <input type="number" id="pay{{ trx.pk }}-amount" name="amount"
+                   placeholder="0" min="1" step="1" max="{{ trx.outstanding|floatformat:'0' }}" required
                    class="modal-input" style="padding-left:2.75rem;font-size:1.0625rem;font-weight:700;"
                    aria-label="Jumlah pembayaran diterima"/>
           </div>
           {# Quick fill buttons #}
           <div class="flex gap-2 flex-wrap mt-2">
-            <button type="button" onclick="document.getElementById('pay{{ trx.pk }}-amount').value = Math.floor({{ trx.outstanding|stringformat:'f'|slice:':-3'|default:0 }} / 2)" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-navy-100 hover:text-navy-900 text-slate-600 transition-colors">50%</button>
-            <button type="button" onclick="document.getElementById('pay{{ trx.pk }}-amount').value = {{ trx.outstanding|stringformat:'f'|slice:':-3'|default:0 }}" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors">Lunas (100%)</button>
+            <button type="button" onclick="document.getElementById('pay{{ trx.pk }}-amount').value = Math.floor({{ trx.outstanding|floatformat:'0' }} / 2)" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-navy-100 hover:text-navy-900 text-slate-600 transition-colors">50%</button>
+            <button type="button" onclick="document.getElementById('pay{{ trx.pk }}-amount').value = {{ trx.outstanding|floatformat:'0' }}" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors">Lunas (100%)</button>
           </div>
+        </div>
+
+        <div>
+          <label class="form-label" for="pay{{ trx.pk }}-account">
+            Pembayaran Ke <span class="text-red-500">*</span>
+          </label>
+          <select id="pay{{ trx.pk }}-account" name="financial_account" class="modal-input" required>
+            <option value="">— Pilih Tujuan Penerimaan —</option>
+            {% for acc in accounts %}
+            <option value="{{ acc.pk }}">{{ acc.name }} ({{ acc.get_account_type_display }})</option>
+            {% endfor %}
+          </select>
         </div>
 
         <div>
@@ -484,4 +496,29 @@
 </div>
 {% endfor %}
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+{% if form_data.invoice_number %}
+  const invNum = "{{ form_data.invoice_number|escapejs }}";
+  const inputEl = document.querySelector(`input[name="invoice_number"][value="${invNum}"]`);
+  if (inputEl) {
+    const modal = inputEl.closest('.modal-overlay');
+    if (modal) {
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        const amountEl = modal.querySelector('input[name="amount"]');
+        if (amountEl) amountEl.value = "{{ form_data.amount|escapejs }}";
+        
+        const accountEl = modal.querySelector('select[name="financial_account"]');
+        if (accountEl) accountEl.value = "{{ form_data.financial_account|escapejs }}";
+        
+        const notesEl = modal.querySelector('textarea[name="notes"]');
+        if (notesEl) notesEl.value = "{{ form_data.notes|escapejs }}";
+      }, 50);
+    }
+  }
+{% endif %}
+</script>
 {% endblock %}
