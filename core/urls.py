@@ -16,14 +16,21 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
-from django.views.generic import RedirectView
+from django.conf import settings
+from django.conf.urls.static import static
+from apps.report.views import AnalyticsDashboardView
 
 urlpatterns = [
-    path('dashboard/', RedirectView.as_view(url='/',
-         permanent=False), name='dashboard'),
+    path('dashboard/', AnalyticsDashboardView.as_view(), name='dashboard'),
     path('', include('apps.transaction.urls')),
     path('partners/', include('apps.partner.urls')),
     path('inventory/', include('apps.inventory.urls')),
     path('service/', include('apps.service.urls')),
+    path('finance/', include('apps.finance.urls')),
+    path('report/', include('apps.report.urls')),
+    path('global/', include('apps.global.urls')),
     path('admin/', admin.site.urls),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
