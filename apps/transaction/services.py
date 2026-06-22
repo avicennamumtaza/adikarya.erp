@@ -10,7 +10,8 @@ from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
-from apps.finance.models import PaymentLog
+from apps.finance.services import FinanceService
+from apps.finance.models import FinancialAccount
 from apps.inventory.models import Product, Stock
 from apps.partner.models import Contact
 
@@ -593,12 +594,13 @@ def create_purchase(
     due_date,
     items: list[PurchaseItemInput],
     landed_total: Decimal,
+    financial_account: FinancialAccount | None = None,
     created_by=None,
 ) -> TransactionHeader:
     allocations = allocate_landed_cost(items, landed_total)
     items_total = sum((item.subtotal for item in items), Decimal("0"))
     total_amount = items_total + landed_total
-    amount_paid = total_amount if payment_method == "CASH" else Decimal("0")
+    amount_paid = total_amount if payment_method in ["CASH", "TRANSFER"] else Decimal("0")
 
     with transaction.atomic():
         header = TransactionHeader.objects.create(
@@ -608,7 +610,7 @@ def create_purchase(
             trx_type="PURCHASE",
             payment_method=payment_method,
             total_amount=total_amount,
-            amount_paid=amount_paid,
+            amount_paid=Decimal("0"),
             due_date=due_date,
             is_finalized=True,
             created_by=created_by,
@@ -624,18 +626,24 @@ def create_purchase(
                 cost_at_trx=unit_cost,
             )
             process_purchase_item(item.product, branch, item.qty, unit_cost)
+            
+        # outstanding = total_amount
+        supplier.current_balance -= total_amount
+        supplier.save(update_fields=["current_balance", "updated_at"])
 
         if amount_paid > 0:
-            PaymentLog.objects.create(
-                transaction=header,
-                amount_paid=amount_paid,
-                note="Pembayaran tunai saat pembelian.",
+            if not financial_account:
+                acc_type = 'BANK' if payment_method.upper() == 'TRANSFER' else 'CASH'
+                financial_account = FinancialAccount.objects.filter(account_type=acc_type, is_active=True).first()
+            if not financial_account:
+                financial_account = FinancialAccount.objects.filter(is_active=True).first()
+                
+            FinanceService.pay_payable(
+                invoice=header,
+                amount=amount_paid,
+                source_account=financial_account,
+                note="Pembayaran awal pembelian."
             )
-
-        outstanding = total_amount - amount_paid
-        if outstanding > 0:
-            supplier.current_balance -= outstanding
-            supplier.save(update_fields=["current_balance", "updated_at"])
 
     return header
 
@@ -661,6 +669,7 @@ def create_sale(
     due_date,
     items: list[SalesItemInput],
     amount_paid: Decimal,
+    financial_account: FinancialAccount | None = None,
     created_by=None,
 ) -> TransactionHeader:
     total_amount = sum((item.subtotal for item in items), Decimal("0"))
@@ -675,7 +684,7 @@ def create_sale(
             trx_type="SALE",
             payment_method=payment_method,
             total_amount=total_amount,
-            amount_paid=amount_paid,
+            amount_paid=Decimal("0"),
             due_date=due_date,
             is_finalized=True,
             created_by=created_by,
@@ -691,17 +700,22 @@ def create_sale(
             )
             process_sale_item(item.product, branch, item.qty)
 
-        if amount_paid > 0:
-            PaymentLog.objects.create(
-                transaction=header,
-                amount_paid=amount_paid,
-                note="Pembayaran awal penjualan.",
-            )
+        customer.current_balance += total_amount
+        customer.save(update_fields=["current_balance", "updated_at"])
 
-        outstanding = total_amount - amount_paid
-        if outstanding > 0:
-            customer.current_balance += outstanding
-            customer.save(update_fields=["current_balance", "updated_at"])
+        if amount_paid > 0:
+            if not financial_account:
+                acc_type = 'BANK' if payment_method.upper() == 'TRANSFER' else 'CASH'
+                financial_account = FinancialAccount.objects.filter(account_type=acc_type, is_active=True).first()
+            if not financial_account:
+                financial_account = FinancialAccount.objects.filter(is_active=True).first()
+                
+            FinanceService.receive_receivable(
+                invoice=header,
+                amount=amount_paid,
+                destination_account=financial_account,
+                note="Pembayaran awal penjualan."
+            )
 
     return header
 
@@ -710,6 +724,7 @@ def record_purchase_payment(
     *,
     header: TransactionHeader,
     amount: Decimal,
+    financial_account: FinancialAccount | None = None,
     note: str = "",
 ) -> TransactionHeader:
     if amount <= 0:
@@ -722,17 +737,17 @@ def record_purchase_payment(
         return header
 
     with transaction.atomic():
-        PaymentLog.objects.create(
-            transaction=header,
-            amount_paid=applied,
+        if not financial_account:
+            financial_account = FinancialAccount.objects.filter(account_type='CASH', is_active=True).first()
+        if not financial_account:
+            financial_account = FinancialAccount.objects.filter(is_active=True).first()
+            
+        FinanceService.pay_payable(
+            invoice=header,
+            amount=applied,
+            source_account=financial_account,
             note=note,
         )
-        header.amount_paid = header.amount_paid + applied
-        header.save(update_fields=["amount_paid", "updated_at"])
-
-        supplier = header.contact
-        supplier.current_balance += applied
-        supplier.save(update_fields=["current_balance", "updated_at"])
 
     return header
 
@@ -741,6 +756,7 @@ def record_sale_payment(
     *,
     header: TransactionHeader,
     amount: Decimal,
+    financial_account: FinancialAccount | None = None,
     note: str = "",
 ) -> TransactionHeader:
     if amount <= 0:
@@ -752,17 +768,17 @@ def record_sale_payment(
         return header
 
     with transaction.atomic():
-        PaymentLog.objects.create(
-            transaction=header,
-            amount_paid=applied,
+        if not financial_account:
+            financial_account = FinancialAccount.objects.filter(account_type='CASH', is_active=True).first()
+        if not financial_account:
+            financial_account = FinancialAccount.objects.filter(is_active=True).first()
+            
+        FinanceService.receive_receivable(
+            invoice=header,
+            amount=applied,
+            destination_account=financial_account,
             note=note,
         )
-        header.amount_paid = header.amount_paid + applied
-        header.save(update_fields=["amount_paid", "updated_at"])
-
-        customer = header.contact
-        customer.current_balance -= applied
-        customer.save(update_fields=["current_balance", "updated_at"])
 
     return header
 

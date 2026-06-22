@@ -9,7 +9,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
 
-from apps.finance.models import PaymentLog
+from apps.finance.models import FinancialTransaction, FinancialAccount
+from apps.common.escpos_builder import EscposBuilder, WindowsUsbEscposPrinter
 from apps.inventory.models import Branch, Product
 from apps.partner.models import Contact
 
@@ -90,6 +91,24 @@ class PurchaseCreateView(View):
             }
             for p in products_qs
         ])
+        form_data = request.session.pop('form_data', {})
+        form_items = []
+        if form_data:
+            indices = []
+            for key in form_data.keys():
+                if key.startswith("item_product_"):
+                    indices.append(key.split("_")[-1])
+            for idx in sorted(set(indices)):
+                product = form_data.get(f"item_product_{idx}")
+                qty = form_data.get(f"item_qty_{idx}")
+                cost = form_data.get(f"item_cost_{idx}")
+                if product:
+                    form_items.append({
+                        "product": product,
+                        "qty": qty,
+                        "cost": cost,
+                    })
+
         context = {
             "suppliers": Contact.objects.filter(
                 contact_type__in=["SUPPLIER", "BOTH"]
@@ -97,17 +116,24 @@ class PurchaseCreateView(View):
             "branches": Branch.objects.filter(is_active=True).order_by("name"),
             "products": products_qs,
             "products_json": products_json,
+            "accounts": FinancialAccount.objects.filter(account_type__in=['CASH', 'BANK'], is_active=True).order_by('name'),
             "today": timezone.now().date().isoformat(),
             "default_due_date": timezone.now().date() + timedelta(days=7),
+            "form_data": form_data,
+            "form_items_json": json.dumps(form_items),
         }
         return render(request, self.template_name, context)
 
     def post(self, request):
+        def _handle_error(msg):
+            messages.error(request, msg)
+            request.session['form_data'] = request.POST.dict()
+            return redirect("transaction:purchase_create")
+            
         supplier_id = request.POST.get("supplier")
         branch_id = request.POST.get("branch")
         if not supplier_id or not branch_id:
-            messages.error(request, "Supplier dan cabang wajib diisi.")
-            return redirect("transaction:purchase_create")
+            return _handle_error("Supplier dan cabang wajib diisi.")
 
         supplier = get_object_or_404(Contact, pk=supplier_id)
         branch = get_object_or_404(Branch, pk=branch_id)
@@ -116,6 +142,7 @@ class PurchaseCreateView(View):
         if errors:
             for error in errors:
                 messages.error(request, error)
+            request.session['form_data'] = request.POST.dict()
             return redirect("transaction:purchase_create")
 
         shipping = Decimal(request.POST.get("shipping_cost") or "0")
@@ -139,6 +166,12 @@ class PurchaseCreateView(View):
             except ValueError:
                 due_date = None
 
+        financial_account = None
+        account_id = request.POST.get("financial_account")
+        if account_id:
+            financial_account = FinancialAccount.objects.filter(
+                pk=account_id).first()
+
         invoice_number = PurchaseService.generate_invoice_number()
         header = PurchaseService.create_purchase(
             invoice_number=invoice_number,
@@ -148,6 +181,7 @@ class PurchaseCreateView(View):
             due_date=due_date,
             items=items,
             landed_total=landed_total,
+            financial_account=financial_account,
             created_by=request.user if request.user.is_authenticated else None,
         )
 
@@ -155,6 +189,7 @@ class PurchaseCreateView(View):
             PurchaseService.record_payment(
                 header=header,
                 amount=amount_paid,
+                financial_account=financial_account,
                 note="Pembayaran awal saat pembelian.",
             )
 
@@ -262,11 +297,12 @@ class PurchasePayablesView(View):
             total=Coalesce(
                 Sum(F("total_amount") - F("amount_paid")), Decimal("0"))
         )["total"]
-        paid_month = PaymentLog.objects.filter(
-            payment_date__month=today.month,
-            payment_date__year=today.year,
-            transaction__trx_type="PURCHASE",
-        ).aggregate(total=Coalesce(Sum("amount_paid"), Decimal("0")))["total"]
+        paid_month = FinancialTransaction.objects.filter(
+            date__month=today.month,
+            date__year=today.year,
+            ref_invoice__trx_type="PURCHASE",
+            is_void=False,
+        ).aggregate(total=Coalesce(Sum("amount"), Decimal("0")))["total"]
         outstanding_count = base_qs.count()
 
         total_outstanding = _normalize_money(total_outstanding)
@@ -284,17 +320,23 @@ class PurchasePayablesView(View):
             "week_due": week_due,
             "paid_month": paid_month,
             "outstanding_count": outstanding_count,
+            "accounts": FinancialAccount.objects.filter(account_type__in=['CASH', 'BANK'], is_active=True).order_by('name'),
+            "form_data": request.session.pop('form_data', {}),
         }
         return render(request, self.template_name, context)
 
 
 class PurchasePayView(View):
     def post(self, request):
+        def _handle_error(msg):
+            messages.error(request, msg)
+            request.session['form_data'] = request.POST.dict()
+            return redirect("transaction:purchase_payables")
+            
         invoice_number = request.POST.get("po_number")
         amount_raw = request.POST.get("amount")
         if not invoice_number or not amount_raw:
-            messages.error(request, "Nomor invoice dan jumlah wajib diisi.")
-            return redirect("transaction:purchase_payables")
+            return _handle_error("Nomor invoice dan jumlah wajib diisi.")
 
         purchase = get_object_or_404(
             TransactionHeader, invoice_number=invoice_number, trx_type="PURCHASE"
@@ -302,8 +344,7 @@ class PurchasePayView(View):
         try:
             amount = Decimal(amount_raw)
         except Exception:
-            messages.error(request, "Jumlah pembayaran tidak valid.")
-            return redirect("transaction:purchase_payables")
+            return _handle_error("Jumlah pembayaran tidak valid.")
 
         method = request.POST.get("method") or ""
         reference = request.POST.get("reference") or ""
@@ -311,8 +352,14 @@ class PurchasePayView(View):
         note_parts = [p for p in [method, reference, notes] if p]
         note = " | ".join(note_parts)
 
+        financial_account = None
+        account_id = request.POST.get("financial_account")
+        if account_id:
+            financial_account = FinancialAccount.objects.filter(
+                pk=account_id).first()
+
         PurchaseService.record_payment(
-            header=purchase, amount=amount, note=note)
+            header=purchase, amount=amount, financial_account=financial_account, note=note)
         messages.success(request, "Pembayaran hutang berhasil disimpan.")
         return redirect("transaction:purchase_payables")
 
@@ -434,6 +481,27 @@ class SalesCreateView(View):
                 for p in products_qs
             ]
         )
+        
+        form_data = request.session.pop('form_data', {})
+        form_items = []
+        if form_data:
+            indices = []
+            for key in form_data.keys():
+                if key.startswith("product_id_"):
+                    indices.append(key.split("_")[-1])
+            for idx in sorted(set(indices)):
+                product = form_data.get(f"product_id_{idx}")
+                qty = form_data.get(f"qty_{idx}")
+                price = form_data.get(f"price_{idx}")
+                disc = form_data.get(f"disc_{idx}", "0")
+                if product:
+                    form_items.append({
+                        "product": product,
+                        "qty": qty,
+                        "price": price,
+                        "disc": disc,
+                    })
+                    
         context = {
             "customers": Contact.objects.filter(
                 contact_type__in=["CUSTOMER", "BOTH"]
@@ -441,15 +509,22 @@ class SalesCreateView(View):
             "branches": Branch.objects.filter(is_active=True).order_by("name"),
             "products": products_qs,
             "products_json": products_json,
+            "accounts": FinancialAccount.objects.filter(account_type__in=['CASH', 'BANK'], is_active=True).order_by('name'),
             "today": timezone.now().date().isoformat(),
+            "form_data": form_data,
+            "form_items_json": json.dumps(form_items),
         }
         return render(request, self.template_name, context)
 
     def post(self, request):
+        def _handle_error(msg):
+            messages.error(request, msg)
+            request.session['form_data'] = request.POST.dict()
+            return redirect("transaction:sales_pos")
+            
         branch_id = request.POST.get("branch")
         if not branch_id:
-            messages.error(request, "Cabang wajib diisi.")
-            return redirect("transaction:sales_pos")
+            return _handle_error("Cabang wajib diisi.")
 
         branch = get_object_or_404(Branch, pk=branch_id)
         customer_id = (request.POST.get("customer") or "").strip()
@@ -463,6 +538,7 @@ class SalesCreateView(View):
         if errors:
             for error in errors:
                 messages.error(request, error)
+            request.session['form_data'] = request.POST.dict()
             return redirect("transaction:sales_pos")
 
         payment_method_raw = (request.POST.get("payment_method") or "").lower()
@@ -491,6 +567,12 @@ class SalesCreateView(View):
         else:
             amount_paid = items_total
 
+        financial_account = None
+        account_id = request.POST.get("financial_account")
+        if account_id:
+            financial_account = FinancialAccount.objects.filter(
+                pk=account_id).first()
+
         invoice_number = SalesService.generate_invoice_number()
         try:
             header = SalesService.create_sale(
@@ -501,11 +583,11 @@ class SalesCreateView(View):
                 due_date=due_date,
                 items=items,
                 amount_paid=amount_paid,
+                financial_account=financial_account,
                 created_by=request.user if request.user.is_authenticated else None,
             )
         except ValueError as exc:
-            messages.error(request, str(exc))
-            return redirect("transaction:sales_pos")
+            return _handle_error(str(exc))
 
         messages.success(request, "Transaksi penjualan berhasil disimpan.")
         return redirect("transaction:sales_detail", pk=header.pk)
@@ -602,11 +684,12 @@ class SalesReceivablesView(View):
             total=Coalesce(
                 Sum(F("total_amount") - F("amount_paid")), Decimal("0"))
         )["total"]
-        collected_month = PaymentLog.objects.filter(
-            payment_date__month=today.month,
-            payment_date__year=today.year,
-            transaction__trx_type="SALE",
-        ).aggregate(total=Coalesce(Sum("amount_paid"), Decimal("0")))["total"]
+        collected_month = FinancialTransaction.objects.filter(
+            date__month=today.month,
+            date__year=today.year,
+            ref_invoice__trx_type="SALE",
+            is_void=False,
+        ).aggregate(total=Coalesce(Sum("amount"), Decimal("0")))["total"]
 
         total_receivable = _normalize_money(total_receivable)
         overdue_total = _normalize_money(overdue_total)
@@ -622,17 +705,23 @@ class SalesReceivablesView(View):
             "overdue_total": overdue_total,
             "week_due": week_due,
             "collected_month": collected_month,
+            "accounts": FinancialAccount.objects.filter(account_type__in=['CASH', 'BANK'], is_active=True).order_by('name'),
+            "form_data": request.session.pop('form_data', {}),
         }
         return render(request, self.template_name, context)
 
 
 class SalesPayView(View):
     def post(self, request):
+        def _handle_error(msg):
+            messages.error(request, msg)
+            request.session['form_data'] = request.POST.dict()
+            return redirect("transaction:sales_receivables")
+            
         invoice_number = request.POST.get("invoice_number")
         amount_raw = request.POST.get("amount")
         if not invoice_number or not amount_raw:
-            messages.error(request, "Nomor invoice dan jumlah wajib diisi.")
-            return redirect("transaction:sales_receivables")
+            return _handle_error("Nomor invoice dan jumlah wajib diisi.")
 
         sale = get_object_or_404(
             TransactionHeader, invoice_number=invoice_number, trx_type="SALE"
@@ -640,11 +729,17 @@ class SalesPayView(View):
         try:
             amount = Decimal(amount_raw)
         except Exception:
-            messages.error(request, "Jumlah pembayaran tidak valid.")
-            return redirect("transaction:sales_receivables")
+            return _handle_error("Jumlah pembayaran tidak valid.")
+
+        financial_account = None
+        account_id = request.POST.get("financial_account")
+        if account_id:
+            financial_account = FinancialAccount.objects.filter(
+                pk=account_id).first()
 
         note = request.POST.get("notes") or ""
-        SalesService.record_payment(header=sale, amount=amount, note=note)
+        SalesService.record_payment(
+            header=sale, amount=amount, financial_account=financial_account, note=note)
         messages.success(request, "Pembayaran piutang berhasil disimpan.")
         return redirect("transaction:sales_receivables")
 
@@ -673,3 +768,42 @@ class SalesPrintView(View):
             "is_print": True,
         }
         return render(request, "sale/sale_detail.html", context)
+
+
+def _print_usb_receipt(request, payload, label):
+    printer = WindowsUsbEscposPrinter()
+    result = printer.send(payload)
+    messages.success(
+        request,
+        f"{label} terkirim ke printer USB: {result.printer_name}.",
+    )
+
+
+class PurchaseUsbPrintView(View):
+    def get(self, request, pk):
+        purchase = get_object_or_404(
+            TransactionHeader.objects.select_related("contact", "branch"), pk=pk
+        )
+        payload = EscposBuilder().build_transaction_receipt(
+            purchase,
+            items=purchase.items.select_related("product").all(),
+            title="STRUK PEMBELIAN",
+        )
+        _print_usb_receipt(
+            request, payload, f"Struk pembelian {purchase.invoice_number}")
+        return redirect("transaction:purchase_detail", pk=purchase.pk)
+
+
+class SalesUsbPrintView(View):
+    def get(self, request, pk):
+        sale = get_object_or_404(
+            TransactionHeader.objects.select_related("contact", "branch"), pk=pk
+        )
+        payload = EscposBuilder().build_transaction_receipt(
+            sale,
+            items=sale.items.select_related("product").all(),
+            title="STRUK PENJUALAN",
+        )
+        _print_usb_receipt(
+            request, payload, f"Struk penjualan {sale.invoice_number}")
+        return redirect("transaction:sales_detail", pk=sale.pk)
