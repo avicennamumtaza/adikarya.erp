@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     {# ── PAGE TITLE ── #}
-    <title>{% block title %}Donezo{% endblock %} – Donezo</title>
+    <title>{% block title %}Adikarya{% endblock %} – Adikarya</title>
 
     {# ── TAILWIND ── #}
     <script src="https://cdn.tailwindcss.com"></script>
@@ -57,6 +57,7 @@
 
     {# ── GLOBAL STYLES ── #}
     <style>
+      [x-cloak] { display: none !important; }
       /* ── RESET & BASE ── */
       *,
       *::before,
@@ -565,7 +566,7 @@
           </div>
           <span
             class="sidebar-logo-text font-extrabold text-navy-900 text-lg tracking-tight"
-            >Donezo</span
+            >Adikarya</span
           >
         </a>
         {% comment %}
@@ -598,12 +599,34 @@
         aria-label="Primary"
       >
         <p
-          class="sidebar-section-label font-semibold text-xs text-slate-400 uppercase tracking-widest px-3 mb-2"
+          class="sidebar-section-label font-semibold text-xs text-slate-400 uppercase tracking-widest px-3 mb-3"
         >
           Menu
         </p>
 
         <a
+          href="{% url 'dashboard' %}"
+          class="nav-item {% block nav_analytics %}{% endblock %}"
+          aria-label="Analytics"
+        >
+          <svg
+            style="width: 18px; height: 18px; flex-shrink: 0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
+          </svg>
+          <span class="sidebar-label">Dashboard</span>
+        </a>
+
+        {% comment %} <a
           href="{% url 'dashboard' %}"
           class="nav-item {% block nav_dashboard %}{% endblock %}"
           aria-label="Dashboard"
@@ -623,7 +646,7 @@
             />
           </svg>
           <span class="sidebar-label">Dashboard</span>
-        </a>
+        </a> {% endcomment %}
 
         <a
           href="{% url 'transaction:purchase_list' %}"
@@ -736,9 +759,9 @@
         </a>
 
         <a
-          href="{% url 'dashboard' %}"
-          class="nav-item {% block nav_analytics %}{% endblock %}"
-          aria-label="Analytics"
+          href="{% url 'finance:dashboard' %}"
+          class="nav-item {% block nav_finance %}{% endblock %}{% if request.path|slice:':9' == '/finance/' %} active{% endif %}"
+          aria-label="Finance"
         >
           <svg
             style="width: 18px; height: 18px; flex-shrink: 0"
@@ -751,13 +774,57 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <span class="sidebar-label">Analytics</span>
+          <span class="sidebar-label">Finance</span>
         </a>
 
         <a
+          href="{% url 'report:data_hub' %}"
+          class="nav-item {% block nav_report %}{% endblock %}{% if request.path|slice:':8' == '/report/' %} active{% endif %}"
+          aria-label="Data Hub"
+        >
+          <svg
+            style="width: 18px; height: 18px; flex-shrink: 0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 17l4 4 4-4m-4-5v9M3 10l3-3m0 0l3 3M6 7v10M17"
+            />
+          </svg>
+          <span class="sidebar-label">Data Hub</span>
+        </a>
+
+        <a
+          href="{% url 'global:dashboard' %}"
+          class="nav-item {% block nav_global %}{% endblock %}{% if request.path|slice:':8' == '/global/' %} active{% endif %}"
+          aria-label="Global Content"
+        >
+          <svg
+            style="width: 18px; height: 18px; flex-shrink: 0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span class="sidebar-label">Global Content</span>
+        </a>
+
+        {% comment %} <a
           href="{% url 'dashboard' %}"
           class="nav-item {% block nav_team %}{% endblock %}"
           aria-label="Team"
@@ -777,7 +844,7 @@
             />
           </svg>
           <span class="sidebar-label">Team</span>
-        </a>
+        </a> {% endcomment %}
 
         {% comment %}
         <div class="my-3"></div>
@@ -789,7 +856,7 @@
         </p>
         {% endcomment %}
 
-        <a
+        {% comment %} <a
           href="{% url 'dashboard' %}"
           class="nav-item {% block nav_settings %}{% endblock %}"
           aria-label="Settings"
@@ -855,7 +922,7 @@
             />
           </svg>
           <span class="sidebar-label">Logout</span>
-        </a>
+        </a> {% endcomment %}
       </nav>
 
       <!-- CTA Download -->
@@ -934,7 +1001,7 @@
               </svg>
             </button>
             <!-- Global search slot (hidden on mobile, pages can override) -->
-            <div class="relative hidden sm:block">
+            {% comment %} <div class="relative hidden sm:block">
               <svg
                 class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
                 fill="none"
@@ -958,7 +1025,7 @@
                 aria-label="Global search"
               />
               {% endblock %}
-            </div>
+            </div> {% endcomment %}
           </div>
 
           <!-- Right: breadcrumb slot + actions -->

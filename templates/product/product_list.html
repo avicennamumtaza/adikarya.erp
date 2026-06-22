@@ -83,7 +83,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-1">Rp {{ stat_value|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-1">Rp {{ stat_value|floatformat:"0"|intcomma|default:"0" }}</p>
     <p class="text-xs text-slate-400">Across all branches</p>
   </div>
 
@@ -111,7 +111,7 @@
 </div>
 
 {# ── FILTER / CONTROL BAR ── #}
-<div class="bg-white rounded-xl border border-slate-100 shadow-card p-3 sm:p-4">
+<div class="bg-white rounded-xl border border-slate-100 shadow-card p-3 sm:p-4" x-data="{ importModalOpen: false }">
   <form method="GET" class="flex flex-col sm:flex-row gap-3">
 
     <div class="relative flex-1 min-w-0">
@@ -141,12 +141,44 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
         <span class="hidden sm:inline">Add Product</span>
       </a>
-      <a href="{% url 'product_export' %}?{{ request.GET.urlencode }}"
+      <a href="{% url 'report:export_products' %}?{{ request.GET.urlencode }}"
          class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 transition-colors"
-         aria-label="Export CSV">
+         aria-label="Export Excel">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-        CSV
+        Excel
       </a>
+      <button type="button" @click="importModalOpen = true"
+         class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 transition-colors"
+         aria-label="Import Excel">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L5 8m4-4v12"/></svg>
+        Import
+      </button>
+    </div>
+
+    {# ── Import Modal ── #}
+    <div x-show="importModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" x-cloak>
+      <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" @click.outside="importModalOpen = false">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-slate-900">Import Data Produk</h3>
+          <button type="button" @click="importModalOpen = false" class="text-slate-400 hover:text-slate-700 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <p class="text-sm text-slate-500 mb-4">Upload file Excel (.xlsx) untuk mengimport data produk.</p>
+        <form method="POST" action="{% url 'report:import_products' %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'product_list' %}">
+          <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-6 mb-4 cursor-pointer hover:border-navy-300 transition-colors">
+            <svg class="w-8 h-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L5 8m4-4v12"/></svg>
+            <span class="text-sm text-slate-500 font-semibold">Klik untuk pilih file .xlsx</span>
+            <input type="file" name="file" accept=".xlsx" class="hidden" required>
+          </label>
+          <div class="flex gap-2 justify-end">
+            <button type="button" @click="importModalOpen = false" class="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">Batal</button>
+            <button type="submit" class="px-4 py-2 bg-navy-900 text-white text-sm font-bold rounded-xl hover:bg-navy-800 transition-colors">Import</button>
+          </div>
+        </form>
+      </div>
     </div>
   </form>
 </div>
@@ -179,22 +211,33 @@
           </td>
           <td>
             <div class="flex items-center gap-3">
+              {% if product.photo %}
+              <img src="{{ product.photo.url }}" class="w-9 h-9 object-cover rounded-xl flex-shrink-0" alt="{{ product.name }} photo"/>
+              {% else %}
               <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 text-lg">
                 {{ product.emoji|default:"📦" }}
               </div>
+              {% endif %}
               <div>
                 <a href="{% url 'product_detail' product.pk %}"
                    class="font-semibold text-slate-800 text-sm hover:text-navy-700 transition-colors leading-tight">
                   {{ product.name }}
                 </a>
-                <p class="text-xs text-slate-400 leading-tight">{{ product.brand|default:"—" }}</p>
+                <div class="flex items-center gap-2">
+                  <p class="text-xs text-slate-400 leading-tight">{{ product.brand|default:"—" }}</p>
+                  {% if product.docs %}
+                  <a href="{{ product.docs }}" target="_blank" class="text-navy-600 hover:text-navy-800 flex items-center" title="Spesifikasi / Dokumentasi Resmi">
+                    <svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                  </a>
+                  {% endif %}
+                </div>
               </div>
             </div>
           </td>
           <td><span class="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">{{ product.sku }}</span></td>
           <td><span class="text-sm text-slate-600">{{ product.category }}</span></td>
-          <td class="text-right text-sm text-slate-600">Rp {{ product.base_price|intcomma|default:"0" }}</td>
-          <td class="text-right font-semibold text-slate-800 text-sm">Rp {{ product.sell_price|intcomma|default:"0" }}</td>
+          <td class="text-right text-sm text-slate-600">Rp {{ product.base_price|floatformat:"0"|intcomma|default:"0" }}</td>
+          <td class="text-right font-semibold text-slate-800 text-sm">Rp {{ product.sell_price|floatformat:"0"|intcomma|default:"0" }}</td>
           <td class="text-center">
             <div>
               <p class="text-sm font-semibold text-slate-800">{{ product.stock }} <span class="text-xs text-slate-400 font-normal">units</span></p>
@@ -285,9 +328,20 @@
   <div class="bg-white border border-slate-100 rounded-xl shadow-card p-4" role="listitem">
     <div class="flex items-start justify-between mb-3">
       <div class="flex items-center gap-3">
+        {% if product.photo %}
+        <img src="{{ product.photo.url }}" class="w-10 h-10 object-cover rounded-xl flex-shrink-0" alt="{{ product.name }} photo"/>
+        {% else %}
         <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 text-xl">{{ product.emoji|default:"📦" }}</div>
+        {% endif %}
         <div>
-          <p class="font-bold text-slate-800 text-sm leading-tight">{{ product.name }}</p>
+          <div class="flex items-center gap-1.5">
+            <p class="font-bold text-slate-800 text-sm leading-tight">{{ product.name }}</p>
+            {% if product.docs %}
+            <a href="{{ product.docs }}" target="_blank" class="text-navy-600 hover:text-navy-800" title="Spesifikasi / Dokumentasi Resmi">
+              <svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            </a>
+            {% endif %}
+          </div>
           <p class="font-mono text-xs text-slate-400 mt-0.5">{{ product.sku }}</p>
         </div>
       </div>
@@ -302,8 +356,8 @@
     <div class="grid grid-cols-2 gap-2 text-xs mb-3">
       <div><p class="text-slate-400 mb-0.5">Category</p><p class="font-semibold text-slate-700">{{ product.category }}</p></div>
       <div><p class="text-slate-400 mb-0.5">Stock</p><p class="font-semibold text-slate-700">{{ product.stock }} units</p></div>
-      <div><p class="text-slate-400 mb-0.5">Sell Price</p><p class="font-bold text-slate-800">Rp {{ product.sell_price|intcomma|default:"0" }}</p></div>
-      <div><p class="text-slate-400 mb-0.5">Base Price</p><p class="text-slate-600">Rp {{ product.base_price|intcomma|default:"0" }}</p></div>
+      <div><p class="text-slate-400 mb-0.5">Sell Price</p><p class="font-bold text-slate-800">Rp {{ product.sell_price|floatformat:"0"|intcomma|default:"0" }}</p></div>
+      <div><p class="text-slate-400 mb-0.5">Base Price</p><p class="text-slate-600">Rp {{ product.base_price|floatformat:"0"|intcomma|default:"0" }}</p></div>
     </div>
     <div class="flex gap-2 pt-3 border-t border-slate-100">
       <a href="{% url 'product_detail' product.pk %}"

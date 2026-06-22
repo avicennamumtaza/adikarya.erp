@@ -1,0 +1,136 @@
+{% extends 'global/base.html' %}
+{% load static %}
+{% block head_title %}Kontak &amp; Lokasi — {{ company.name|default:'Zona Komputer' }} Bojonegoro{% endblock %}
+{% block meta_description %}Hubungi dan kunjungi {{ company.name|default:'Zona Komputer' }} di {{ company.address|default:'Jl. Veteran No. 10, Bojonegoro' }}. WhatsApp, telepon, dan lokasi lengkap tersedia di sini.{% endblock %}
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="grid-bg-dark"></div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="tag mb-4">KONTAK &amp; LOKASI</div>
+    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--white);margin-bottom:1rem;">Hubungi &amp;<br><span style="color:var(--yellow);">Kunjungi Kami</span></h1>
+    <p style="color:rgba(255,255,255,.7);font-size:1rem;line-height:1.7;max-width:540px;">Punya pertanyaan, ingin konsultasi, atau mau booking servis? Kami siap membantu.</p>
+  </div>
+</div>
+
+<!-- CONTACT INFO + FORM -->
+<section class="section-pad" style="background:var(--white);">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid lg:grid-cols-2 gap-10">
+
+      <div class="space-y-5">
+        {% if company.address %}
+        <div class="card-brutal-navy p-6 flex gap-4 reveal">
+          <span style="font-size:1.8rem;flex-shrink:0;">📍</span>
+          <div>
+            <h4 style="font-size:.95rem;color:var(--yellow);margin-bottom:.3rem;">Alamat Toko</h4>
+            <p style="color:rgba(255,255,255,.75);font-size:.875rem;line-height:1.6;">{{ company.address }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if company.phone or company.whatsapp %}
+        <div class="card-brutal p-6 flex gap-4 reveal" style="background:var(--yellow);">
+          <span style="font-size:1.8rem;flex-shrink:0;">📞</span>
+          <div>
+            <h4 style="font-size:.95rem;margin-bottom:.3rem;">Telepon / WhatsApp</h4>
+            <p style="color:#333;font-size:.875rem;line-height:1.6;">{{ company.phone|default:company.whatsapp }}<br><span style="color:#555;">Respon cepat untuk konsultasi &amp; booking</span></p>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if company.operational_hours %}
+        <div class="card-brutal p-6 flex gap-4 reveal">
+          <span style="font-size:1.8rem;flex-shrink:0;">🕒</span>
+          <div>
+            <h4 style="font-size:.95rem;margin-bottom:.3rem;">Jam Operasional</h4>
+            <p style="color:#555;font-size:.875rem;line-height:1.6;">{{ company.operational_hours }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if company.email %}
+        <div class="card-brutal p-6 flex gap-4 reveal" style="background:var(--green);">
+          <span style="font-size:1.8rem;flex-shrink:0;">✉️</span>
+          <div>
+            <h4 style="font-size:.95rem;margin-bottom:.3rem;">Email</h4>
+            <p style="color:#333;font-size:.875rem;line-height:1.6;">{{ company.email }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if company.instagram_url or company.facebook_url or company.tiktok_url %}
+        <div class="card-brutal p-6 reveal">
+          <h4 style="font-size:.95rem;margin-bottom:1rem;">Ikuti Kami</h4>
+          <div class="flex gap-3">
+            {% if company.instagram_url %}<a href="{{ company.instagram_url }}" target="_blank" class="btn-secondary btn-sm" style="flex:1;justify-content:center;">Instagram</a>{% endif %}
+            {% if company.facebook_url %}<a href="{{ company.facebook_url }}" target="_blank" class="btn-secondary btn-sm" style="flex:1;justify-content:center;">Facebook</a>{% endif %}
+            {% if company.tiktok_url %}<a href="{{ company.tiktok_url }}" target="_blank" class="btn-secondary btn-sm" style="flex:1;justify-content:center;">TikTok</a>{% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="space-y-5">
+        {% if company.maps_url %}
+        <div class="card-brutal p-0 overflow-hidden reveal">
+          <iframe
+            src="{{ company.maps_url }}"
+            width="100%" height="280" style="border:0;display:block;" loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade" title="Lokasi {{ company.name|default:'Zona Komputer' }} Bojonegoro">
+          </iframe>
+        </div>
+        <a href="{{ company.maps_url }}" target="_blank" class="btn-navy w-full justify-center">Buka di Google Maps →</a>
+        {% endif %}
+
+        <div style="background:var(--cream);border:var(--border-w) solid var(--black);box-shadow:var(--shadow-size) var(--shadow-size) 0 var(--black);padding:1.75rem;" class="reveal">
+          <h3 style="font-size:1.1rem;margin-bottom:1.25rem;">Atau Kirim Pesan</h3>
+          {% if messages %}
+          <div style="margin-bottom:1rem;">
+            {% for msg in messages %}
+            <div style="background:{% if msg.tags == 'success' %}var(--green){% else %}var(--pink){% endif %};border:var(--border-w) solid var(--black);padding:.75rem;font-size:.85rem;font-weight:700;">{{ msg }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <form method="post" action="{% url 'global:kontak' %}">
+            {% csrf_token %}
+            <div class="mb-4">
+              <label class="label-brutal">Nama</label>
+              <input type="text" name="name" class="input-brutal" placeholder="Nama Anda" required/>
+            </div>
+            <div class="mb-4">
+              <label class="label-brutal">Email / No. WhatsApp</label>
+              <input type="text" name="contact_info" class="input-brutal" placeholder="email@anda.com atau 08xx-xxxx-xxxx" required/>
+            </div>
+            <div class="mb-4">
+              <label class="label-brutal">Subjek</label>
+              <select name="subject" class="input-brutal" style="cursor:pointer;" required>
+                <option value="">-- Pilih subjek --</option>
+                <option value="Pertanyaan Produk">Pertanyaan Produk</option>
+                <option value="Pertanyaan Servis">Pertanyaan Servis</option>
+                <option value="Kerja Sama / Lainnya">Kerja Sama / Lainnya</option>
+              </select>
+            </div>
+            <div class="mb-5">
+              <label class="label-brutal">Pesan</label>
+              <textarea name="message" class="input-brutal" placeholder="Tulis pesan Anda di sini..." required></textarea>
+            </div>
+            <button type="submit" class="btn-primary w-full justify-center">Kirim Pesan →</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="padding:4rem 0;background:var(--navy);">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <h2 style="font-size:clamp(1.6rem,3.5vw,2.4rem);color:var(--white);margin-bottom:1rem;">Lebih Cepat? Langsung Chat Kami</h2>
+    <p style="color:rgba(255,255,255,.65);font-size:.9rem;margin-bottom:1.5rem;">Klik tombol di bawah untuk chat langsung via WhatsApp.</p>
+    {% if company.whatsapp %}<a href="https://wa.me/{{ company.whatsapp }}" target="_blank" class="btn-primary">💬 Chat WhatsApp Sekarang</a>{% endif %}
+  </div>
+</section>
+
+{% endblock %}

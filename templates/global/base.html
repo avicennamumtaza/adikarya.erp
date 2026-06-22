@@ -1,0 +1,161 @@
+{% load static %}<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>{% block head_title %}Zona Komputer Bojonegoro{% endblock %}</title>
+<meta name="description" content="{% block meta_description %}Toko komputer, laptop, printer dan servis terpercaya di Bojonegoro.{% endblock %}"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="{% static 'global/style.css' %}"/>
+{% block head_extra %}{% endblock %}
+</head>
+<body>
+
+<!-- ══ TOP INFO BAR ══ -->
+<div class="topbar">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between gap-4 overflow-hidden">
+    <div class="flex items-center gap-4 sm:gap-6">
+      {% if company.address %}<span class="hidden sm:inline">📍 {{ company.address }}</span>{% endif %}
+      {% if company.operational_hours %}<span>🕒 {{ company.operational_hours }}</span>{% endif %}
+    </div>
+    {% if company.whatsapp %}
+    {% with company.whatsapp|stringformat:"s" as wa_raw %}
+    <a href="https://wa.me/62{% if wa_raw|slice:':1' == '0' %}{{ wa_raw|slice:'1:' }}{% else %}{{ wa_raw }}{% endif %}" target="_blank">📞 {{ company.phone|default:company.whatsapp }} — Chat WA</a>
+    {% endwith %}
+    {% endif %}
+  </div>
+</div>
+
+<!-- ══ NAV ══ -->
+<nav>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <a href="{% url 'global:home' %}" class="flex items-center gap-2 no-underline">
+      <div style="width:36px;height:36px;background:var(--yellow);border:2px solid var(--black);display:flex;align-items:center;justify-content:center;">
+        <span style="font-family:'Archivo Black',sans-serif;font-size:1rem;color:var(--black)">Z</span>
+      </div>
+      <span style="font-family:'Archivo Black',sans-serif;font-size:1.15rem;color:var(--white);letter-spacing:-.01em;">ZONA KOMPUTER</span>
+    </a>
+    <ul class="hidden xl:flex gap-4 items-center" style="list-style:none">
+      <li><a href="{% url 'global:home' %}" data-nav class="nav-link{% if active_page == 'index' %} active{% endif %}">Beranda</a></li>
+      <li><a href="{% url 'global:produk' %}" data-nav class="nav-link{% if active_page == 'produk' %} active{% endif %}">Produk</a></li>
+      <li><a href="{% url 'global:layanan' %}" data-nav class="nav-link{% if active_page == 'layanan' %} active{% endif %}">Layanan</a></li>
+      <li><a href="{% url 'global:promo' %}" data-nav class="nav-link{% if active_page == 'promo' %} active{% endif %}">Promo</a></li>
+      <li><a href="{% url 'global:galeri' %}" data-nav class="nav-link{% if active_page == 'galeri' %} active{% endif %}">Galeri</a></li>
+      <li><a href="{% url 'global:testimoni' %}" data-nav class="nav-link{% if active_page == 'testimoni' %} active{% endif %}">Testimoni</a></li>
+      <li><a href="{% url 'global:blog' %}" data-nav class="nav-link{% if active_page == 'blog' %} active{% endif %}">Blog</a></li>
+      <li><a href="{% url 'global:faq' %}" data-nav class="nav-link{% if active_page == 'faq' %} active{% endif %}">FAQ</a></li>
+      <li><a href="{% url 'global:tentang' %}" data-nav class="nav-link{% if active_page == 'tentang' %} active{% endif %}">Tentang</a></li>
+      <li><a href="{% url 'global:kontak' %}" data-nav class="nav-link{% if active_page == 'kontak' %} active{% endif %}">Kontak</a></li>
+    </ul>
+    <div class="flex items-center gap-3">
+      <a href="{% url 'global:layanan' %}#booking" class="btn-primary hidden xl:inline-flex btn-sm">Booking Servis</a>
+      <button class="xl:hidden" style="color:white;background:none;border:none;cursor:pointer;" onclick="toggleMobileNav()" aria-label="Menu">
+        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="mobileNav" class="xl:hidden" style="flex-direction:column;background:var(--navy);border-top:2px solid var(--black);padding:1rem;max-height:75vh;overflow-y:auto;">
+    <a href="{% url 'global:home' %}" data-nav style="color:{% if active_page == 'index' %}var(--yellow){% else %}white{% endif %};text-decoration:none;font-weight:700;padding:.5rem 0;display:block;">Beranda</a>
+    <a href="{% url 'global:produk' %}" data-nav style="color:{% if active_page == 'produk' %}var(--yellow){% else %}white{% endif %};text-decoration:none;font-weight:700;padding:.5rem 0;display:block;">Produk</a>
+    <a href="{% url 'global:layanan' %}" data-nav style="color:{% if active_page == 'layanan' %}var(--yellow){% else %}white{% endif %};text-decoration:none;font-weight:700;padding:.5rem 0;display:block;">Layanan</a>
+    <a href="{% url 'global:promo' %}" data-nav style="color:{% if active_page == 'promo' %}var(--yellow){% else %}white{% endif %};text-decoration:none;font-weight:700;padding:.5rem 0;display:block;">Promo</a>
+    <a href="{% url 'global:galeri' %}" data-nav style="color:{% if active_page == 'galeri' %}var(--yellow){% else %}white{% endif %};text-decoration:none;font-weight:700;padding:.5rem 0;display:block;">Galeri</a>
+    <a href="{% url 'global:testimoni' %}" data-nav style="color:{% if active_page == 'testimoni' %}var(--yellow){% else %}white{% endif %};text-decoration:none;font-weight:700;padding:.5rem 0;display:block;">Testimoni</a>
+    <a href="{% url 'global:blog' %}" data-nav style="color:{% if active_page == 'blog' %}var(--yellow){% else %}white{% endif %};text-decoration:none;font-weight:700;padding:.5rem 0;display:block;">Blog</a>
+    <a href="{% url 'global:faq' %}" data-nav style="color:{% if active_page == 'faq' %}var(--yellow){% else %}white{% endif %};text-decoration:none;font-weight:700;padding:.5rem 0;display:block;">FAQ</a>
+    <a href="{% url 'global:tentang' %}" data-nav style="color:{% if active_page == 'tentang' %}var(--yellow){% else %}white{% endif %};text-decoration:none;font-weight:700;padding:.5rem 0;display:block;">Tentang Kami</a>
+    <a href="{% url 'global:kontak' %}" data-nav style="color:{% if active_page == 'kontak' %}var(--yellow){% else %}white{% endif %};text-decoration:none;font-weight:700;padding:.5rem 0;display:block;">Kontak</a>
+    <a href="{% url 'global:layanan' %}#booking" class="btn-primary justify-center" style="margin-top:.75rem;">Booking Servis Sekarang</a>
+  </div>
+</nav>
+
+{% if messages %}
+<div style="max-width:1280px;margin:0 auto;padding:.5rem 1rem;">
+  {% for msg in messages %}
+  <div style="background:{% if msg.tags == 'success' %}var(--green){% else %}var(--pink){% endif %};border:var(--border-w) solid var(--black);padding:.75rem 1rem;font-size:.85rem;font-weight:700;display:flex;align-items:center;gap:.5rem;">
+    <span>{{ msg }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% block content %}{% endblock %}
+
+<!-- ══ FOOTER ══ -->
+<footer style="background:var(--black);border-top:var(--border-w) solid var(--black);padding:4rem 0 2rem;">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-10 mb-10">
+      <div class="lg:col-span-2">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;">
+          <div style="width:36px;height:36px;background:var(--yellow);border:2px solid var(--yellow);display:flex;align-items:center;justify-content:center;">
+            <span style="font-family:'Archivo Black',sans-serif;font-size:1rem;color:var(--black)">Z</span>
+          </div>
+          <span style="font-family:'Archivo Black',sans-serif;font-size:1.2rem;color:var(--white)">ZONA KOMPUTER</span>
+        </div>
+        <p style="color:rgba(255,255,255,.5);font-size:.875rem;line-height:1.7;max-width:280px;">{{ company.short_description|default:'Toko komputer, laptop &amp; printer di Bojonegoro. Melayani penjualan, servis, dan upgrade dengan jujur dan bergaransi — sudah dipercaya lebih dari 25 tahun.' }}</p>
+        <div class="flex gap-3 mt-5">
+          {% if company.whatsapp %}
+          <a href="https://wa.me/{{ company.whatsapp }}" target="_blank" style="width:34px;height:34px;background:var(--green);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;color:var(--black);text-decoration:none;font-weight:700;font-size:1rem;" title="WhatsApp">☎</a>
+          {% endif %}
+          {% if company.instagram_url %}
+          <a href="{{ company.instagram_url }}" target="_blank" style="width:34px;height:34px;background:transparent;border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);text-decoration:none;font-weight:700;font-size:.8rem;" class="hover:border-white hover:text-white transition-colors" title="Instagram">ig</a>
+          {% endif %}
+          {% if company.facebook_url %}
+          <a href="{{ company.facebook_url }}" target="_blank" style="width:34px;height:34px;background:transparent;border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);text-decoration:none;font-weight:700;font-size:.8rem;" class="hover:border-white hover:text-white transition-colors" title="Facebook">fb</a>
+          {% endif %}
+          {% if company.tiktok_url %}
+          <a href="{{ company.tiktok_url }}" target="_blank" style="width:34px;height:34px;background:transparent;border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);text-decoration:none;font-weight:700;font-size:.8rem;" class="hover:border-white hover:text-white transition-colors" title="TikTok">tt</a>
+          {% endif %}
+        </div>
+      </div>
+      <div>
+        <p style="font-family:'Archivo Black',sans-serif;color:var(--white);font-size:.85rem;margin-bottom:1rem;letter-spacing:.04em;">HALAMAN UTAMA</p>
+        <ul style="list-style:none;">
+          <li style="margin-bottom:.6rem;"><a href="{% url 'global:home' %}" style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.875rem;" class="hover:text-white transition-colors">Beranda</a></li>
+          <li style="margin-bottom:.6rem;"><a href="{% url 'global:produk' %}" style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.875rem;" class="hover:text-white transition-colors">Produk</a></li>
+          <li style="margin-bottom:.6rem;"><a href="{% url 'global:layanan' %}" style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.875rem;" class="hover:text-white transition-colors">Layanan &amp; Servis</a></li>
+          <li><a href="{% url 'global:promo' %}" style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.875rem;" class="hover:text-white transition-colors">Promo</a></li>
+        </ul>
+      </div>
+      <div>
+        <p style="font-family:'Archivo Black',sans-serif;color:var(--white);font-size:.85rem;margin-bottom:1rem;letter-spacing:.04em;">INFORMASI</p>
+        <ul style="list-style:none;">
+          <li style="margin-bottom:.6rem;"><a href="{% url 'global:tentang' %}" style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.875rem;" class="hover:text-white transition-colors">Tentang Kami</a></li>
+          <li style="margin-bottom:.6rem;"><a href="{% url 'global:galeri' %}" style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.875rem;" class="hover:text-white transition-colors">Galeri</a></li>
+          <li style="margin-bottom:.6rem;"><a href="{% url 'global:testimoni' %}" style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.875rem;" class="hover:text-white transition-colors">Testimoni</a></li>
+          <li><a href="{% url 'global:blog' %}" style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.875rem;" class="hover:text-white transition-colors">Blog &amp; Tips</a></li>
+        </ul>
+      </div>
+      <div>
+        <p style="font-family:'Archivo Black',sans-serif;color:var(--white);font-size:.85rem;margin-bottom:1rem;letter-spacing:.04em;">BANTUAN</p>
+        <ul style="list-style:none;">
+          <li style="margin-bottom:.6rem;"><a href="{% url 'global:faq' %}" style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.875rem;" class="hover:text-white transition-colors">FAQ</a></li>
+          <li style="margin-bottom:.6rem;"><a href="{% url 'global:kontak' %}" style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.875rem;" class="hover:text-white transition-colors">Kontak &amp; Lokasi</a></li>
+          <li><a href="{% url 'global:layanan' %}#booking" style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.875rem;" class="hover:text-white transition-colors">Booking Servis</a></li>
+        </ul>
+        {% if company.address or company.operational_hours %}
+        <p style="color:rgba(255,255,255,.35);font-size:.8rem;margin-top:1rem;line-height:1.6;">{% if company.address %}📍 {{ company.address }}<br>{% endif %}{% if company.operational_hours %}🕒 {{ company.operational_hours }}{% endif %}</p>
+        {% endif %}
+      </div>
+    </div>
+    <div style="border-top:1px solid rgba(255,255,255,.1);padding-top:1.5rem;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:1rem;">
+      <p style="color:rgba(255,255,255,.35);font-size:.8rem;">© 2026 {{ company.name|default:'Zona Komputer' }} — Bojonegoro. Seluruh hak cipta dilindungi.</p>
+      <div style="display:flex;gap:1.5rem;">
+        <a href="#" style="color:rgba(255,255,255,.35);text-decoration:none;font-size:.8rem;" class="hover:text-white transition-colors">Kebijakan Privasi</a>
+        <a href="#" style="color:rgba(255,255,255,.35);text-decoration:none;font-size:.8rem;" class="hover:text-white transition-colors">Syarat &amp; Ketentuan</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ══ WHATSAPP FLOATING BUTTON ══ -->
+{% if company.whatsapp %}
+{% with company.whatsapp|stringformat:"s" as wa_raw %}
+<a href="https://wa.me/62{% if wa_raw|slice:':1' == '0' %}{{ wa_raw|slice:'1:' }}{% else %}{{ wa_raw }}{% endif %}" target="_blank" class="wa-float" aria-label="Chat WhatsApp" title="Chat via WhatsApp">💬</a>
+{% endwith %}
+{% endif %}
+
+<script src="{% static 'global/main.js' %}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

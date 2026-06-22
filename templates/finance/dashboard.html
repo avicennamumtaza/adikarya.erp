@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Finance Dashboard{% endblock %}
+{% block nav_finance %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+  .page-tab{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;font-size:.8125rem;font-weight:600;color:#64748b;text-decoration:none;transition:background .15s,color .15s;white-space:nowrap}
+  .page-tab:hover{background:#fff;color:#1e293b}
+  .page-tab.active{background:#fff;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .badge-in{background:#dcfce7;color:#065f46}.badge-out{background:#fee2e2;color:#991b1b}.badge-transfer{background:#e0e7ff;color:#3730a3}
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+  <a href="{% url 'dashboard' %}" class="hover:text-slate-700 transition-colors">Dashboard</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <span class="text-slate-700 font-semibold">Finance</span>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" x-data="{ importModalOpen: false }">
+  <div>
+    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Finance Dashboard</h1>
+    <p class="text-sm text-slate-500 mt-0.5">Ringkasan arus kas dan catatan keuangan per akun.</p>
+  </div>
+  <div class="flex flex-wrap items-center gap-2">
+    {% if accounts %}
+    <div class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto shrink-0" role="tablist" aria-label="Financial accounts">
+      {% for acc in accounts %}
+      <a href="{% url 'finance:dashboard' %}?tab={{ acc.pk }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}"
+         class="page-tab {% if active_tab == acc.pk|stringformat:'s' %}active{% endif %} whitespace-nowrap" role="tab">
+        {% if acc.account_type == 'CASH' %}
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        {% else %}
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>
+        {% endif %}
+        {{ acc.name }}
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <a href="{% url 'report:export_finance' %}{% if request.GET.tab %}?tab={{ request.GET.tab }}{% endif %}"
+       class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 transition-colors shrink-0">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      Export Excel
+    </a>
+    <button type="button" @click="importModalOpen = true"
+       class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 transition-colors shrink-0">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L5 8m4-4v12"/></svg>
+      Import
+    </button>
+    <a href="{% url 'finance:transaction_create' %}" class="flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-navy transition-all shrink-0">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Catat Transaksi
+    </a>
+  </div>
+
+  {# ── Import Modal ── #}
+  <div x-show="importModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" x-cloak>
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" @click.outside="importModalOpen = false">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-slate-900">Import Data Keuangan</h3>
+        <button type="button" @click="importModalOpen = false" class="text-slate-400 hover:text-slate-700 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <p class="text-sm text-slate-500 mb-4">Upload file Excel (.xlsx) untuk mengimport data keuangan.</p>
+      <form method="POST" action="{% url 'report:import_finance' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'finance:dashboard' %}">
+        <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-6 mb-4 cursor-pointer hover:border-navy-300 transition-colors">
+          <svg class="w-8 h-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L5 8m4-4v12"/></svg>
+          <span class="text-sm text-slate-500 font-semibold">Klik untuk pilih file .xlsx</span>
+          <input type="file" name="file" accept=".xlsx" class="hidden" required>
+        </label>
+        <div class="flex gap-2 justify-end">
+          <button type="button" @click="importModalOpen = false" class="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-navy-900 text-white text-sm font-bold rounded-xl hover:bg-navy-800 transition-colors">Import</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{# ── STAT CARDS ── #}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+  {# Net Worth #}
+  <div class="stat-card-dark rounded-xl p-4 sm:p-5 fade-up fade-up-1">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Net Worth</p>
+      <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+    </div>
+    <p class="text-3xl font-extrabold text-white mb-2">Rp {{ account_summary.net_worth|intcomma }}</p>
+    <div class="stat-badge inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full">Kekayaan bersih</div>
+  </div>
+
+  {# Inflow #}
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-emerald-100 shadow-card fade-up fade-up-2">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Uang Masuk</p>
+      <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ cash_flow_data.total_inflow|intcomma }}</p>
+    <div class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2 py-0.5 rounded-full">{{ start_date|date:"d M" }} – {{ end_date|date:"d M Y" }}</div>
+  </div>
+
+  {# Outflow #}
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-red-100 shadow-card fade-up fade-up-3">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-red-600 uppercase tracking-wide">Uang Keluar</p>
+      <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-600 flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ cash_flow_data.total_outflow|intcomma }}</p>
+    <div class="inline-flex items-center gap-1 bg-red-50 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full">{{ start_date|date:"d M" }} – {{ end_date|date:"d M Y" }}</div>
+  </div>
+
+  {# Active Account Balance #}
+  <div class="bg-white rounded-xl p-4 sm:p-5 border border-blue-100 shadow-card fade-up fade-up-4">
+    <div class="flex items-start justify-between mb-3">
+      <p class="text-xs font-semibold text-blue-600 uppercase tracking-wide">Saldo {{ active_account.name|default:"—" }}</p>
+      <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+      </div>
+    </div>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {% if active_account %}{{ active_account.balance|intcomma }}{% else %}0{% endif %}</p>
+    <div class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded-full">{{ tab_stat_count }} Records</div>
+  </div>
+</div>
+
+{% if active_account %}
+{# ── FILTER BAR ── #}
+<div class="bg-white border border-slate-100 rounded-xl p-3 sm:p-4 shadow-card">
+  <form method="GET" class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+    <input type="hidden" name="tab" value="{{ active_tab }}"/>
+    <div class="relative flex-1 min-w-0">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Cari catatan, invoice, kategori..." class="search-input w-full" style="width:100%" aria-label="Search"/>
+    </div>
+    <select name="trx_type" class="filter-select" aria-label="Filter tipe" onchange="this.form.submit()">
+      <option value="">Semua Tipe</option>
+      <option value="IN" {% if request.GET.trx_type == 'IN' %}selected{% endif %}>Masuk</option>
+      <option value="OUT" {% if request.GET.trx_type == 'OUT' %}selected{% endif %}>Keluar</option>
+      <option value="TRANSFER" {% if request.GET.trx_type == 'TRANSFER' %}selected{% endif %}>Transfer</option>
+    </select>
+    <div class="flex items-center gap-2">
+      <input type="date" name="date_from" value="{{ request.GET.date_from|default:start_date|date:'Y-m-d' }}" class="filter-select" aria-label="Dari tanggal"/>
+      <span class="text-slate-400 text-sm">–</span>
+      <input type="date" name="date_to" value="{{ request.GET.date_to|default:end_date|date:'Y-m-d' }}" class="filter-select" aria-label="Sampai tanggal"/>
+    </div>
+    <button type="submit" class="flex items-center gap-1.5 bg-navy-900 hover:bg-navy-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors shadow-navy">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
+      Filter
+    </button>
+    <a href="{% url 'finance:dashboard' %}?tab={{ active_tab }}" class="text-xs text-slate-400 hover:text-slate-700 transition-colors">Reset</a>
+    <span class="sm:ml-auto text-xs text-slate-400">
+      {% if tab_transactions %}Menampilkan <strong class="text-slate-700">{{ tab_transactions.start_index|default:"0" }}–{{ tab_transactions.end_index|default:"0" }}</strong> dari {{ tab_transactions.paginator.count|default:"0" }} catatan{% endif %}
+    </span>
+  </form>
+</div>
+
+{# ── DESKTOP TABLE ── #}
+<div class="table-wrapper bg-white border border-slate-100 rounded-xl shadow-card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-full divide-y divide-slate-100" aria-label="Transaction table">
+      <thead>
+        <tr>
+          <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider py-4 pl-5">Tanggal</th>
+          <th class="text-center text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Tipe</th>
+          <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Kategori</th>
+          <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Deskripsi &amp; Referensi</th>
+          <th class="text-right text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Nominal</th>
+          <th class="text-right text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Saldo</th>
+          <th class="text-center text-xs font-bold text-slate-500 uppercase tracking-wider py-4 pr-5">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for trx in tab_transactions %}
+        <tr class="data-row">
+          <td class="pl-5 py-3">
+            <p class="font-semibold text-slate-800 text-sm">{{ trx.date|date:"d M Y" }}</p>
+            <p class="text-xs text-slate-400">{{ trx.date|date:"H:i" }}</p>
+          </td>
+          <td class="text-center py-3">
+            {% if trx.direction == 'IN' %}
+            <span class="badge-in inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Masuk
+            </span>
+            {% else %}
+            <span class="badge-out inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Keluar
+            </span>
+            {% endif %}
+            {% if trx.transaction_type == 'TRANSFER' %}
+            <span class="badge-transfer inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ml-1">Transfer</span>
+            {% endif %}
+          </td>
+          <td class="py-3">
+            <span class="text-sm font-semibold text-slate-700">{{ trx.category.name|default:"Tanpa Kategori" }}</span>
+          </td>
+          <td class="py-3">
+            <div class="max-w-xs">
+              {% if trx.ref_invoice %}
+              <a href="{% if trx.ref_invoice.trx_type == 'SALE' %}{% url 'transaction:sales_detail' trx.ref_invoice.pk %}{% else %}{% url 'transaction:purchase_detail' trx.ref_invoice.pk %}{% endif %}" class="text-blue-600 hover:underline font-medium text-sm">{{ trx.ref_invoice.invoice_number }}</a>
+              {% endif %}
+              <p class="text-xs text-slate-400 mt-0.5 truncate">{{ trx.note|default:"-"|truncatechars:60 }}</p>
+              {% if trx.transaction_type == 'TRANSFER' %}
+              <p class="text-xs text-slate-400 mt-0.5">
+                {% if trx.direction == 'IN' %}Dari {{ trx.source_account.name }}{% else %}Ke {{ trx.destination_account.name }}{% endif %}
+              </p>
+              {% endif %}
+            </div>
+          </td>
+          <td class="text-right py-3">
+            <p class="font-bold whitespace-nowrap {% if trx.direction == 'IN' %}text-emerald-600{% else %}text-rose-600{% endif %}">
+              {% if trx.direction == 'IN' %}+{% else %}-{% endif %} Rp {{ trx.amount|intcomma }}
+            </p>
+            {% if trx.fee > 0 %}
+            <p class="text-xs text-rose-500 mt-0.5">Fee: Rp {{ trx.fee|intcomma }}</p>
+            {% endif %}
+          </td>
+          <td class="text-right py-3">
+            <p class="font-bold whitespace-nowrap text-slate-700">
+              Rp {{ trx.running_balance|intcomma }}
+            </p>
+          </td>
+          <td class="text-center pr-5 py-3">
+            <a href="{% url 'finance:transaction_detail' trx.pk %}?tab={{ active_tab }}" class="icon-btn icon-btn-view" aria-label="Detail">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center py-16">
+            <svg class="w-12 h-12 text-slate-200 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <p class="font-bold text-slate-600 mb-1">Belum ada Records</p>
+            <p class="text-sm text-slate-400">Tidak ada transaksi untuk akun ini pada periode yang dipilih.</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if tab_transactions.has_other_pages %}
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4 border-t border-slate-100">
+    <p class="text-xs text-slate-500">Halaman {{ tab_transactions.number }} dari {{ tab_transactions.paginator.num_pages }}</p>
+    <div class="flex items-center gap-1.5" role="navigation" aria-label="Pagination">
+      {% if tab_transactions.has_previous %}
+      <a href="?tab={{ active_tab }}&page={{ tab_transactions.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.trx_type %}&trx_type={{ request.GET.trx_type }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" class="page-btn" aria-label="Previous">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </a>
+      {% else %}
+      <button disabled class="page-btn"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+      {% endif %}
+
+      {% for num in tab_transactions.paginator.page_range %}
+        {% if tab_transactions.number == num %}
+        <a href="#" class="page-btn active" aria-current="page">{{ num }}</a>
+        {% elif num > tab_transactions.number|add:'-3' and num < tab_transactions.number|add:'3' %}
+        <a href="?tab={{ active_tab }}&page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.trx_type %}&trx_type={{ request.GET.trx_type }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" class="page-btn">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if tab_transactions.has_next %}
+      <a href="?tab={{ active_tab }}&page={{ tab_transactions.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.trx_type %}&trx_type={{ request.GET.trx_type }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}" class="page-btn" aria-label="Next">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </a>
+      {% else %}
+      <button disabled class="page-btn"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{# ── MOBILE CARDS ── #}
+<div class="card-table" role="list" aria-label="Transactions">
+  {% for trx in tab_transactions %}
+  <div class="bg-white border border-slate-100 rounded-xl shadow-card p-4" role="listitem">
+    <div class="flex items-start justify-between mb-3">
+      <div>
+        {% if trx.ref_invoice %}
+        <span class="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">{{ trx.ref_invoice.invoice_number }}</span>
+        {% endif %}
+        <p class="font-bold text-slate-800 mt-1.5">{{ trx.category.name|default:"Tanpa Kategori" }}</p>
+        <p class="text-xs text-slate-400">{{ trx.date|date:"d M Y" }} · {{ trx.date|date:"H:i" }}</p>
+      </div>
+      {% if trx.direction == 'IN' %}
+      <span class="badge-in inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shrink-0">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Masuk
+      </span>
+      {% else %}
+      <span class="badge-out inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shrink-0">
+        <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Keluar
+      </span>
+      {% endif %}
+    </div>
+    <p class="text-xs text-slate-400 mb-3 truncate">{{ trx.note|default:"-"|truncatechars:80 }}</p>
+    <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+      <div>
+        <p class="font-extrabold {% if trx.direction == 'IN' %}text-emerald-600{% else %}text-rose-600{% endif %}">
+          {% if trx.direction == 'IN' %}+{% else %}-{% endif %} Rp {{ trx.amount|intcomma }}
+        </p>
+        <p class="text-[11px] text-slate-500 font-semibold mt-0.5">Saldo: Rp {{ trx.running_balance|intcomma }}</p>
+      </div>
+      <a href="{% url 'finance:transaction_detail' trx.pk %}?tab={{ active_tab }}" class="icon-btn icon-btn-view" aria-label="Detail">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+      </a>
+    </div>
+  </div>
+  {% empty %}
+  <div class="bg-white rounded-xl border border-slate-100 shadow-card py-12 text-center">
+    <p class="font-bold text-slate-600 mb-1">Belum ada Records</p>
+    <p class="text-sm text-slate-400">Tidak ada transaksi pada periode ini.</p>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+{# No accounts #}
+<div class="bg-white rounded-xl border border-slate-100 shadow-card py-16 text-center">
+  <svg class="w-16 h-16 text-slate-200 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+  <p class="font-bold text-slate-600 mb-1 text-lg">Belum ada akun keuangan</p>
+  <p class="text-sm text-slate-400">Silakan tambahkan akun keuangan terlebih dahulu melalui admin.</p>
+</div>
+{% endif %}
+
+{% endblock %}

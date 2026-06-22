@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ ticket.ticket_number }} – Tanda Terima Servis</title>
+    <style>
+      @page {
+        size: 80mm auto;
+        margin: 0;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: #fff;
+        color: #111827;
+      }
+      .sheet {
+        width: 80mm;
+        margin: 0 auto;
+        padding: 10mm 6mm;
+        box-sizing: border-box;
+      }
+      .center {
+        text-align: center;
+      }
+      .title {
+        font-size: 14px;
+        font-weight: 700;
+        margin: 2px 0;
+      }
+      .small {
+        font-size: 10px;
+        line-height: 1.45;
+      }
+      .rule {
+        border-top: 1px dashed #94a3b8;
+        margin: 8px 0;
+      }
+      .section {
+        font-size: 11px;
+        font-weight: 700;
+        margin: 8px 0 4px;
+      }
+      .row {
+        font-size: 10px;
+        line-height: 1.45;
+        margin: 2px 0;
+      }
+    </style>
+  </head>
+  <body onload="window.print()">
+    <div class="sheet">
+      <div class="center">
+        <div class="title">ADIKARYA COMPUTER</div>
+        <div class="small">Jl. Laras Liris 30 Lamongan</div>
+        <div class="small">Telp: 0812-3456-7890</div>
+      </div>
+      <div class="rule"></div>
+      <div class="center title">TANDA TERIMA SERVIS</div>
+      <div class="rule"></div>
+
+      <div class="row">
+        <strong>No. Tiket:</strong> {{ ticket.ticket_number }}
+      </div>
+      <div class="row">
+        <strong>Tanggal:</strong> {{ ticket.created_at|date:"d/m/Y H:i" }}
+      </div>
+      <div class="row">
+        <strong>Pelanggan:</strong> {{ ticket.customer.name }}
+      </div>
+      <div class="row">
+        <strong>No. HP:</strong> {{ ticket.customer.whatsapp }}
+      </div>
+      <div class="row"><strong>Cabang:</strong> {{ ticket.branch.name }}</div>
+
+      <div class="section">DATA PERANGKAT</div>
+      <div class="row"><strong>Barang:</strong> {{ ticket.device_name }}</div>
+      {% if ticket.device_type %}
+      <div class="row"><strong>Jenis:</strong> {{ ticket.device_type }}</div>
+      {% endif %} {% if ticket.device_brand %}
+      <div class="row"><strong>Merek:</strong> {{ ticket.device_brand }}</div>
+      {% endif %} {% if ticket.serial_number %}
+      <div class="row"><strong>S/N:</strong> {{ ticket.serial_number }}</div>
+      {% endif %} {% if ticket.device_color %}
+      <div class="row"><strong>Warna:</strong> {{ ticket.device_color }}</div>
+      {% endif %}
+
+      <div class="section">KELENGKAPAN</div>
+      <div class="row">
+        {% if ticket.completeness %}{{ ticket.completeness|join:", " }}{% else
+        %}-{% endif %}
+      </div>
+      {% if ticket.completeness_notes %}
+      <div class="row">Catatan: {{ ticket.completeness_notes }}</div>
+      {% endif %}
+
+      <div class="section">KELUHAN</div>
+      <div class="small">{{ ticket.complaint|linebreaksbr }}</div>
+
+      <div class="rule"></div>
+      <div class="small">
+        1. Tanda terima ini harus dibawa saat pengambilan barang.<br />
+        2. Barang yang tidak diambil dalam 30 hari di luar tanggung jawab
+        kami.<br />
+        3. Garansi servis berlaku {{ ticket.warranty_days|default:14 }} hari.
+      </div>
+    </div>
+  </body>
+</html>

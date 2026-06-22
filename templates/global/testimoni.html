@@ -1,0 +1,71 @@
+{% extends 'global/base.html' %}
+{% load static %}
+{% block head_title %}Testimoni Pelanggan — {{ company.name|default:'Zona Komputer' }} Bojonegoro{% endblock %}
+{% block meta_description %}Apa kata pelanggan tentang {{ company.name|default:'Zona Komputer' }} Bojonegoro? Baca pengalaman nyata mereka menggunakan layanan servis dan produk kami.{% endblock %}
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="grid-bg-dark"></div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="tag mb-4">TESTIMONI</div>
+    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--white);margin-bottom:1rem;">Apa Kata<br><span style="color:var(--yellow);">Pelanggan Kami</span></h1>
+    <p style="color:rgba(255,255,255,.7);font-size:1rem;line-height:1.7;max-width:540px;">Kepercayaan pelanggan adalah aset terbesar kami selama lebih dari 25 tahun melayani Bojonegoro.</p>
+  </div>
+</div>
+
+<!-- RATING SUMMARY -->
+{% if testimonials %}
+<section style="background:var(--yellow);border-bottom:var(--border-w) solid var(--black);padding:2.5rem 0;">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid sm:grid-cols-3 gap-6 text-center">
+      <div>
+        <p class="stat-num" style="font-size:3rem;color:var(--black);">4.9 / 5</p>
+        <p style="color:#333;font-size:.85rem;">★★★★★ Rating Google Review</p>
+      </div>
+      <div>
+        <p class="stat-num" style="font-size:3rem;color:var(--black);">{{ testimonials|length }}+</p>
+        <p style="color:#333;font-size:.85rem;">Ulasan dari pelanggan</p>
+      </div>
+      <div>
+        <p class="stat-num" style="font-size:3rem;color:var(--black);">98%</p>
+        <p style="color:#333;font-size:.85rem;">Pelanggan merekomendasikan kami</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- TESTIMONI GRID -->
+<section class="section-pad" style="background:var(--white);">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {% for t in testimonials %}
+      <div class="card-brutal p-6 reveal">
+        <div style="color:var(--yellow);font-size:1rem;margin-bottom:.75rem;">{% for i in "12345"|slice:t.rating %}★{% endfor %}</div>
+        <p style="color:#333;font-size:.875rem;line-height:1.65;margin-bottom:1.25rem;">{{ t.content }}</p>
+        <div style="display:flex;align-items:center;gap:.75rem;border-top:2px solid var(--black);padding-top:1rem;">
+          <div style="width:36px;height:36px;background:var(--navy);border:2px solid var(--black);display:flex;align-items:center;justify-content:center;color:var(--yellow);font-family:'Archivo Black',sans-serif;font-size:.85rem;">{{ t.avatar_initial|default:t.customer_name|first }}</div>
+          <div><p style="font-weight:700;font-size:.85rem;">{{ t.customer_name }}</p>{% if t.customer_role %}<p style="font-size:.7rem;color:#666;">{{ t.customer_role }}</p>{% endif %}</div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="card-brutal p-8 text-center reveal" style="grid-column:1/-1;">
+        <div style="font-size:3rem;margin-bottom:1rem;">💬</div>
+        <h3 style="font-size:1.2rem;margin-bottom:.5rem;">Belum Ada Testimoni</h3>
+        <p style="color:#666;font-size:.9rem;">Testimoni dari pelanggan akan ditampilkan di sini.</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if testimonials %}
+    <div class="card-brutal-navy p-8 mt-10 reveal text-center">
+      <h3 style="font-size:1.2rem;color:var(--yellow);margin-bottom:.75rem;">Sudah jadi pelanggan kami?</h3>
+      <p style="color:rgba(255,255,255,.7);font-size:.9rem;margin-bottom:1.5rem;">Bagikan pengalaman Anda — ulasan jujur Anda sangat membantu pelanggan baru lainnya.</p>
+      <a href="#" class="btn-primary">Tulis Ulasan di Google →</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

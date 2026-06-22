@@ -1,0 +1,76 @@
+{% extends 'global/base.html' %}
+{% load static %}
+{% block head_title %}Blog &amp; Tips Komputer — {{ company.name|default:'Zona Komputer' }} Bojonegoro{% endblock %}
+{% block meta_description %}Tips perawatan laptop, solusi masalah komputer umum, dan informasi seputar teknologi dari tim teknisi {{ company.name|default:'Zona Komputer' }} Bojonegoro.{% endblock %}
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="grid-bg-dark"></div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="tag mb-4">BLOG &amp; TIPS</div>
+    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--white);margin-bottom:1rem;">Tips &amp; Informasi<br><span style="color:var(--yellow);">Seputar Komputer</span></h1>
+    <p style="color:rgba(255,255,255,.7);font-size:1rem;line-height:1.7;max-width:540px;">Kumpulan tips perawatan, solusi masalah umum, dan informasi teknologi — ditulis oleh tim teknisi {{ company.name|default:'Zona Komputer' }}.</p>
+  </div>
+</div>
+
+<!-- FEATURED + ALL ARTICLES -->
+<section class="section-pad" style="background:var(--white);">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    {% if featured_article %}
+    <div class="card-brutal-navy p-0 overflow-hidden reveal mb-12" style="display:grid;grid-template-columns:1fr;">
+      <div class="grid lg:grid-cols-2">
+        <div style="background:var(--yellow);display:flex;align-items:center;justify-content:center;padding:3rem;border-right:0;">
+          {% if featured_article.icon %}<span style="font-size:5rem;">{{ featured_article.icon }}</span>{% else %}<span style="font-size:5rem;">📄</span>{% endif %}
+        </div>
+        <div class="p-8">
+          <span class="tag-pink" style="font-size:.65rem;margin-bottom:1rem;display:inline-block;">ARTIKEL UNGGULAN</span>
+          <h2 style="font-size:1.5rem;color:var(--white);margin-bottom:.75rem;line-height:1.3;">{{ featured_article.title }}</h2>
+          <p style="color:rgba(255,255,255,.7);font-size:.9rem;line-height:1.7;margin-bottom:1.5rem;">{{ featured_article.excerpt|default:featured_article.content|truncatewords:40 }}</p>
+          {% if company.whatsapp %}<a href="https://wa.me/{{ company.whatsapp }}?text=Halo%2C%20saya%20mau%20tanya%20soal%20{{ featured_article.title|urlencode }}" target="_blank" class="btn-primary btn-sm">Konsultasi →</a>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="title-bar">
+      <div class="tag-navy">SEMUA ARTIKEL</div>
+      <h2 style="font-size:clamp(1.4rem,2.5vw,2rem);font-family:'Archivo Black',sans-serif;">Baca Tips Terbaru Kami</h2>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for article in articles %}
+      <article class="card-brutal p-0 overflow-hidden reveal">
+        <div style="background:var(--cream);padding:2rem;display:flex;align-items:center;justify-content:center;font-size:2.5rem;border-bottom:var(--border-w) solid var(--black);">
+          {% if article.icon %}{{ article.icon }}{% else %}📄{% endif %}
+        </div>
+        <div class="p-5">
+          {% if article.category %}<span class="tag" style="font-size:.6rem;margin-bottom:.6rem;display:inline-block;">{{ article.category.name|upper }}</span>{% endif %}
+          <h3 style="font-size:1rem;margin-bottom:.5rem;line-height:1.4;">{{ article.title }}</h3>
+          <p style="color:#666;font-size:.82rem;line-height:1.6;margin-bottom:1rem;">{{ article.excerpt|default:article.content|truncatewords:20 }}</p>
+          <a href="#" style="font-size:.8rem;font-weight:700;color:var(--navy);text-decoration:none;">Baca selengkapnya →</a>
+        </div>
+      </article>
+      {% empty %}
+      <div class="card-brutal p-8 text-center reveal" style="grid-column:1/-1;">
+        <div style="font-size:3rem;margin-bottom:1rem;">✍️</div>
+        <h3 style="font-size:1.2rem;margin-bottom:.5rem;">Belum Ada Artikel</h3>
+        <p style="color:#666;font-size:.9rem;">Artikel dan tips akan segera hadir. Pantau terus halaman ini.</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if not articles %}
+    <div class="card-brutal-yellow p-6 mt-10 reveal flex gap-4 items-start">
+      <span style="font-size:1.5rem;flex-shrink:0;">✍️</span>
+      <div>
+        <h4 style="font-size:1rem;margin-bottom:.4rem;">Artikel di atas adalah draf judul &amp; ringkasan</h4>
+        <p style="color:#333;font-size:.85rem;line-height:1.6;">Setiap artikel sebaiknya dikembangkan menjadi 300–600 kata dengan kata kunci lokal secara natural (misalnya "...jika masalah berlanjut, bawa ke tempat service laptop Bojonegoro terpercaya seperti {{ company.name|default:'Zona Komputer' }}") agar mudah ditemukan di Google.</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

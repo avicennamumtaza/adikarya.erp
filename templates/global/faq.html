@@ -1,0 +1,49 @@
+{% extends 'global/base.html' %}
+{% load static %}
+{% block head_title %}FAQ — Pertanyaan Umum | {{ company.name|default:'Zona Komputer' }} Bojonegoro{% endblock %}
+{% block meta_description %}Pertanyaan yang sering diajukan tentang layanan servis, garansi, jam operasional, dan pembayaran di {{ company.name|default:'Zona Komputer' }} Bojonegoro.{% endblock %}
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="grid-bg-dark"></div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="tag mb-4">FAQ</div>
+    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--white);margin-bottom:1rem;">Pertanyaan yang<br><span style="color:var(--yellow);">Sering Diajukan</span></h1>
+    <p style="color:rgba(255,255,255,.7);font-size:1rem;line-height:1.7;max-width:540px;">Tidak menemukan jawaban yang Anda cari? Hubungi kami langsung via WhatsApp.</p>
+  </div>
+</div>
+
+<!-- FAQ LIST -->
+<section class="section-pad" style="background:var(--white);">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    {% for faq in faqs %}
+    <div class="faq-item{% if forloop.first %} open{% endif %}">
+      <div class="faq-question" onclick="toggleFaq(this)">
+        <span>{{ faq.question }}</span><span class="faq-icon">+</span>
+      </div>
+      <div class="faq-answer">
+        <p>{{ faq.answer }}</p>
+      </div>
+    </div>
+    {% empty %}
+    <div class="card-brutal p-8 text-center reveal">
+      <div style="font-size:3rem;margin-bottom:1rem;">💬</div>
+      <h3 style="font-size:1.2rem;margin-bottom:.5rem;">Belum Ada Pertanyaan</h3>
+      <p style="color:#666;font-size:.9rem;">FAQ akan ditambahkan segera. Jika ada pertanyaan, hubungi kami langsung.</p>
+    </div>
+    {% endfor %}
+
+  </div>
+
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
+    <div class="card-brutal-yellow p-8 text-center reveal">
+      <h3 style="font-size:1.2rem;margin-bottom:.75rem;">Masih ada pertanyaan lain?</h3>
+      <p style="color:#333;font-size:.9rem;margin-bottom:1.5rem;">Tim kami siap membantu menjawab pertanyaan Anda secara langsung.</p>
+      {% if company.whatsapp %}<a href="https://wa.me/{{ company.whatsapp }}" target="_blank" class="btn-navy">Chat via WhatsApp →</a>{% endif %}
+    </div>
+  </div>
+</section>
+
+{% endblock %}

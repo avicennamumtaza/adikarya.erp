@@ -225,6 +225,46 @@
                   placeholder="Additional product notes..."
                   style="resize:vertical;">{{ form.notes.value|default:'' }}</textarea>
       </div>
+
+      {# Docs Link #}
+      <div>
+        <label class="form-label" for="id_docs">Official Documentation / Spec Link</label>
+        <input id="id_docs"
+               name="docs"
+               type="url"
+               value="{{ form.docs.value|default:'' }}"
+               placeholder="e.g. https://example.com/spec-sheet.pdf"
+               class="form-input {% if form.docs.errors %}error{% endif %}"
+               autocomplete="off"/>
+        {% if form.docs.errors %}
+          <p class="form-error visible">{{ form.docs.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      {# Photo Upload #}
+      <div>
+        <label class="form-label" for="id_photo">Product Photo</label>
+        {% if product and product.photo %}
+          <div class="flex items-center gap-3 mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <img src="{{ product.photo.url }}" class="w-16 h-16 object-cover rounded-lg border border-slate-300" alt="{{ product.name }} thumbnail"/>
+            <div>
+              <p class="text-xs font-semibold text-slate-700">Current Photo</p>
+              <label class="inline-flex items-center gap-2 mt-1 cursor-pointer">
+                <input type="checkbox" name="clear_photo" id="id_clear_photo" class="w-4 h-4 rounded accent-red-600"/>
+                <span class="text-xs text-red-600 font-bold">Remove current photo</span>
+              </label>
+            </div>
+          </div>
+        {% endif %}
+        <input id="id_photo"
+               name="photo"
+               type="file"
+               accept="image/*"
+               class="form-input p-2 text-sm {% if form.photo.errors %}error{% endif %}"/>
+        {% if form.photo.errors %}
+          <p class="form-error visible">{{ form.photo.errors.0 }}</p>
+        {% endif %}
+      </div>
     </div>
 
     {% comment %} ══════════════════════════════════
@@ -266,14 +306,14 @@
           </label>
           <div class="relative">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold pointer-events-none">Rp</span>
-            <input id="id_sell_price"
+                 <input id="id_sell_price"
                    name="sell_price"
                    type="number"
-                   value="{{ form.sell_price.value|default:'' }}"
+                   value="{% if form.sell_price.value %}{{ form.sell_price.value|floatformat:'0' }}{% endif %}"
                    placeholder="0"
                    class="form-input pl-9 {% if form.sell_price.errors %}error{% endif %}"
                    aria-required="true"
-                   min="0"/>
+                   min="0" step="1"/>
           </div>
           {% if form.sell_price.errors %}
             <p class="form-error visible">{{ form.sell_price.errors.0 }}</p>
@@ -335,7 +375,7 @@
                    value="{{ form.init_stock.value|default:'0' }}"
                    placeholder="0"
                    class="form-input pr-16"
-                   min="0"/>
+                   min="0" step="1"/>
             <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">units</span>
           </div>
         </div>

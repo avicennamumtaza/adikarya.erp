@@ -1,0 +1,304 @@
+{% extends 'global/base.html' %}
+{% load static %}
+{% block head_title %}Layanan Servis — {{ company.name|default:'Zona Komputer' }} Bojonegoro | Laptop, PC, Printer, Jaringan{% endblock %}
+{% block meta_description %}Servis laptop, PC, printer, dan jaringan di Bojonegoro. Diagnosa gratis, estimasi biaya jelas, garansi servis 30 hari. Teknisi berpengalaman 25+ tahun.{% endblock %}
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="grid-bg-dark"></div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="tag mb-4">LAYANAN &amp; SERVIS</div>
+    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--white);margin-bottom:1rem;">Servis Laptop, PC<br>&amp; Printer <span style="color:var(--yellow);">di Bojonegoro</span></h1>
+    <p style="color:rgba(255,255,255,.7);font-size:1rem;line-height:1.7;max-width:540px;">Diagnosa dulu, estimasi biaya jelas, baru kami kerjakan. Garansi servis 30 hari untuk setiap pekerjaan. Tidak ada biaya kejutan.</p>
+    <div class="flex gap-3 mt-6 flex-wrap">
+      <a href="#booking" class="btn-primary">Booking Servis Online →</a>
+      {% if company.whatsapp %}<a href="https://wa.me/{{ company.whatsapp }}" target="_blank" class="btn-secondary">Konsultasi via WA</a>{% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- LAYANAN LIST -->
+<section class="section-pad" style="background:var(--white);">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-14">
+      <div class="tag mb-4">APA YANG KAMI KERJAKAN</div>
+      <h2 style="font-size:clamp(2rem,4vw,3rem);line-height:1.1;color:var(--black);">Semua Keluhan<br><span style="background:var(--yellow);padding:0 .25rem;">Kami Tangani</span></h2>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="card-brutal p-6 reveal">
+        <div style="width:48px;height:48px;background:var(--yellow);border:2px solid var(--black);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem;">🔩</div>
+        <h3 style="font-size:1.05rem;margin-bottom:.75rem;color:var(--black);">Servis Hardware</h3>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:.4rem;">
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Laptop / PC mati total</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Layar blank / bergaris / pecah</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Keyboard tidak berfungsi</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Port USB / charger rusak</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Laptop mati / overheating</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Kena air / tumpahan cairan</li>
+        </ul>
+      </div>
+
+      <div class="card-brutal p-6 reveal" style="background:var(--navy);">
+        <div style="width:48px;height:48px;background:var(--pink);border:2px solid var(--black);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem;">💿</div>
+        <h3 style="font-size:1.05rem;margin-bottom:.75rem;color:var(--yellow);">Servis Software</h3>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:.4rem;">
+          <li class="flex gap-2" style="font-size:.85rem;color:rgba(255,255,255,.8);"><span class="check-light">✓</span> Install ulang Windows / Linux</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:rgba(255,255,255,.8);"><span class="check-light">✓</span> Install driver + software</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:rgba(255,255,255,.8);"><span class="check-light">✓</span> Bersih virus &amp; malware</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:rgba(255,255,255,.8);"><span class="check-light">✓</span> Atasi Blue Screen / crash</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:rgba(255,255,255,.8);"><span class="check-light">✓</span> Lupa password Windows</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:rgba(255,255,255,.8);"><span class="check-light">✓</span> Optimasi performa sistem</li>
+        </ul>
+      </div>
+
+      <div class="card-brutal p-6 reveal">
+        <div style="width:48px;height:48px;background:var(--green);border:2px solid var(--black);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem;">⚡</div>
+        <h3 style="font-size:1.05rem;margin-bottom:.75rem;color:var(--black);">Upgrade Performa</h3>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:.4rem;">
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Ganti HDD ke SSD (+ kloning)</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Tambah / upgrade RAM</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Upgrade VGA untuk gaming/desain</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Ganti baterai laptop</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Tambah storage eksternal</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Konsultasi upgrade gratis</li>
+        </ul>
+      </div>
+
+      <div class="card-brutal p-6 reveal" style="background:var(--yellow);">
+        <div style="width:48px;height:48px;background:var(--navy);border:2px solid var(--black);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem;">💾</div>
+        <h3 style="font-size:1.05rem;margin-bottom:.75rem;color:var(--black);">Recovery Data</h3>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:.4rem;">
+          <li class="flex gap-2" style="font-size:.85rem;color:#333;"><span class="check">✓</span> Data terhapus tidak sengaja</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#333;"><span class="check">✓</span> HDD / SSD rusak / tidak terbaca</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#333;"><span class="check">✓</span> Partisi hilang / terformat</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#333;"><span class="check">✓</span> Flashdisk / memory card error</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#333;"><span class="check">✓</span> Recovery setelah kena virus</li>
+        </ul>
+      </div>
+
+      <div class="card-brutal p-6 reveal">
+        <div style="width:48px;height:48px;background:var(--cream);border:2px solid var(--black);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem;">🖨️</div>
+        <h3 style="font-size:1.05rem;margin-bottom:.75rem;color:var(--black);">Servis Printer</h3>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:.4rem;">
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Head tersumbat / hasil bergaris</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Catridge / tinta bermasalah</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Paper jam / kertas macet</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Printer tidak terdeteksi PC</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Isi ulang &amp; pasang infus tinta</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:#444;"><span class="check">✓</span> Semua merek: Epson, Canon, HP</li>
+        </ul>
+      </div>
+
+      <div class="card-brutal p-6 reveal" style="background:var(--navy);">
+        <div style="width:48px;height:48px;background:var(--green);border:2px solid var(--black);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem;">🌐</div>
+        <h3 style="font-size:1.05rem;margin-bottom:.75rem;color:var(--yellow);">Jaringan &amp; WiFi</h3>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:.4rem;">
+          <li class="flex gap-2" style="font-size:.85rem;color:rgba(255,255,255,.8);"><span class="check-light">✓</span> Pasang &amp; setting router WiFi</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:rgba(255,255,255,.8);"><span class="check-light">✓</span> Instalasi jaringan LAN kantor</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:rgba(255,255,255,.8);"><span class="check-light">✓</span> Perkuat sinyal WiFi (extender)</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:rgba(255,255,255,.8);"><span class="check-light">✓</span> Troubleshoot koneksi internet</li>
+          <li class="flex gap-2" style="font-size:.85rem;color:rgba(255,255,255,.8);"><span class="check-light">✓</span> Setting sharing printer jaringan</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROSES SERVIS -->
+<section class="section-pad section-striped" style="background:var(--cream);">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-14">
+      <div class="tag mb-4">ALUR PENGERJAAN</div>
+      <h2 style="font-size:clamp(2rem,4vw,3rem);line-height:1.1;color:var(--black);">Proses Servis yang<br><span style="color:var(--navy);">Jelas dari Awal Sampai Selesai</span></h2>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div class="card-brutal p-6 reveal text-center">
+        <div class="step-num mx-auto mb-3">1</div>
+        <h4 style="font-size:.9rem;margin-bottom:.4rem;">Konsultasi</h4>
+        <p style="color:#555;font-size:.8rem;line-height:1.5;">Ceritakan keluhan via WA atau datang langsung ke toko.</p>
+      </div>
+      <div class="card-brutal p-6 reveal text-center" style="background:var(--yellow);">
+        <div class="step-num mx-auto mb-3">2</div>
+        <h4 style="font-size:.9rem;margin-bottom:.4rem;">Diagnosa</h4>
+        <p style="color:#333;font-size:.8rem;line-height:1.5;">Teknisi memeriksa kondisi perangkat secara menyeluruh.</p>
+      </div>
+      <div class="card-brutal p-6 reveal text-center" style="background:var(--navy);">
+        <div class="step-num mx-auto mb-3" style="background:var(--yellow);color:var(--black);">3</div>
+        <h4 style="font-size:.9rem;margin-bottom:.4rem;color:var(--white);">Estimasi Biaya</h4>
+        <p style="color:rgba(255,255,255,.7);font-size:.8rem;line-height:1.5;">Kami informasikan kisaran biaya &amp; waktu sebelum mulai.</p>
+      </div>
+      <div class="card-brutal p-6 reveal text-center">
+        <div class="step-num mx-auto mb-3">4</div>
+        <h4 style="font-size:.9rem;margin-bottom:.4rem;">Pengerjaan</h4>
+        <p style="color:#555;font-size:.8rem;line-height:1.5;">Perbaikan oleh teknisi berpengalaman, update via WA.</p>
+      </div>
+      <div class="card-brutal p-6 reveal text-center" style="background:var(--green);">
+        <div class="step-num mx-auto mb-3">5</div>
+        <h4 style="font-size:.9rem;margin-bottom:.4rem;">Selesai &amp; Garansi</h4>
+        <p style="color:#333;font-size:.8rem;line-height:1.5;">Perangkat dikembalikan + kartu garansi servis 30 hari.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ESTIMASI HARGA -->
+<section class="section-pad" style="background:var(--white);">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="title-bar">
+      <div class="tag-navy">ESTIMASI BIAYA</div>
+      <h2 style="font-size:clamp(1.5rem,3vw,2.2rem);color:var(--black);font-family:'Archivo Black',sans-serif;">Gambaran Biaya Servis (Bukan Harga Final)</h2>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="card-brutal p-5 reveal flex justify-between items-center gap-3">
+        <span style="font-size:.9rem;font-weight:600;">Install ulang Windows + Driver</span>
+        <span class="font-mono tag" style="font-size:.75rem;white-space:nowrap;">Rp 75–100rb</span>
+      </div>
+      <div class="card-brutal p-5 reveal flex justify-between items-center gap-3">
+        <span style="font-size:.9rem;font-weight:600;">Bersih + ganti thermal paste</span>
+        <span class="font-mono tag" style="font-size:.75rem;white-space:nowrap;">Rp 80–120rb</span>
+      </div>
+      <div class="card-brutal p-5 reveal flex justify-between items-center gap-3">
+        <span style="font-size:.9rem;font-weight:600;">Upgrade SSD (jasa pasang + klon)</span>
+        <span class="font-mono tag" style="font-size:.75rem;white-space:nowrap;">Rp 100–150rb</span>
+      </div>
+      <div class="card-brutal p-5 reveal flex justify-between items-center gap-3">
+        <span style="font-size:.9rem;font-weight:600;">Upgrade / tambah RAM</span>
+        <span class="font-mono tag" style="font-size:.75rem;white-space:nowrap;">Rp 50–75rb</span>
+      </div>
+      <div class="card-brutal p-5 reveal flex justify-between items-center gap-3">
+        <span style="font-size:.9rem;font-weight:600;">Ganti baterai laptop</span>
+        <span class="font-mono tag" style="font-size:.75rem;white-space:nowrap;">Rp 75rb (jasa)</span>
+      </div>
+      <div class="card-brutal p-5 reveal flex justify-between items-center gap-3">
+        <span style="font-size:.9rem;font-weight:600;">Bersih virus + malware</span>
+        <span class="font-mono tag" style="font-size:.75rem;white-space:nowrap;">Rp 75–100rb</span>
+      </div>
+      <div class="card-brutal p-5 reveal flex justify-between items-center gap-3">
+        <span style="font-size:.9rem;font-weight:600;">Servis printer (head/catridge)</span>
+        <span class="font-mono tag" style="font-size:.75rem;white-space:nowrap;">Rp 75–150rb</span>
+      </div>
+      <div class="card-brutal p-5 reveal flex justify-between items-center gap-3">
+        <span style="font-size:.9rem;font-weight:600;">Recovery data (storage normal)</span>
+        <span class="font-mono tag" style="font-size:.75rem;white-space:nowrap;">Mulai Rp 150rb</span>
+      </div>
+      <div class="card-brutal p-5 reveal flex justify-between items-center gap-3">
+        <span style="font-size:.9rem;font-weight:600;">Setting / pasang router WiFi</span>
+        <span class="font-mono tag" style="font-size:.75rem;white-space:nowrap;">Rp 100–200rb</span>
+      </div>
+    </div>
+    <div class="card-brutal-yellow p-5 mt-6 reveal">
+      <p style="font-size:.85rem;color:#333;line-height:1.7;">⚠️ <strong>Catatan:</strong> Tabel di atas adalah gambaran biaya untuk kerusakan umum. Harga final tetap mengikuti hasil diagnosa teknisi. Sparepart/komponen pengganti belum termasuk dalam estimasi di atas. Kami selalu informasikan biaya sebelum pengerjaan dimulai — tidak ada biaya kejutan.</p>
+    </div>
+  </div>
+</section>
+
+<!-- BOOKING FORM -->
+<section id="booking" class="section-pad" style="background:var(--navy);">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-10">
+      <div class="tag mb-4">BOOKING ONLINE</div>
+      <h2 style="font-size:clamp(2rem,4vw,3rem);line-height:1.1;color:var(--white);">Booking Servis<br><span style="color:var(--yellow);">Tanpa Antri Panjang</span></h2>
+      <p style="color:rgba(255,255,255,.65);margin-top:.75rem;font-size:.95rem;">Isi form di bawah, dan tim kami akan konfirmasi jadwal via WhatsApp dalam waktu kurang dari 1 jam di hari kerja.</p>
+    </div>
+
+    <div style="background:var(--white);border:var(--border-w) solid var(--black);box-shadow:var(--shadow-lg) var(--shadow-lg) 0 var(--black);padding:2.5rem;">
+      <form onsubmit="return handleFormSubmit(event)">
+        <div class="grid sm:grid-cols-2 gap-5 mb-5">
+          <div>
+            <label class="label-brutal">Nama Lengkap *</label>
+            <input type="text" class="input-brutal" placeholder="Nama Anda" required/>
+          </div>
+          <div>
+            <label class="label-brutal">Nomor WhatsApp *</label>
+            <input type="tel" class="input-brutal" placeholder="08xx-xxxx-xxxx" required/>
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-5 mb-5">
+          <div>
+            <label class="label-brutal">Jenis Perangkat *</label>
+            <select class="input-brutal" required style="cursor:pointer;">
+              <option value="">-- Pilih jenis --</option>
+              <option>Laptop</option>
+              <option>PC / Desktop</option>
+              <option>Printer</option>
+              <option>Monitor</option>
+              <option>Lainnya</option>
+            </select>
+          </div>
+          <div>
+            <label class="label-brutal">Merek &amp; Tipe</label>
+            <input type="text" class="input-brutal" placeholder="Contoh: ASUS VivoBook 14"/>
+          </div>
+        </div>
+        <div class="mb-5">
+          <label class="label-brutal">Deskripsi Keluhan *</label>
+          <textarea class="input-brutal" placeholder="Ceritakan masalah yang Anda alami dengan detail..." required></textarea>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-5 mb-5">
+          <div>
+            <label class="label-brutal">Rencana Kedatangan</label>
+            <input type="date" class="input-brutal"/>
+          </div>
+          <div>
+            <label class="label-brutal">Layanan Antar-Jemput?</label>
+            <select class="input-brutal" style="cursor:pointer;">
+              <option>Tidak, saya datang sendiri</option>
+              <option>Ya, minta dijemput (area Bojonegoro kota)</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary w-full justify-center" style="font-size:1rem;padding:1rem;">Kirim Booking Servis →</button>
+      </form>
+      <p style="color:#888;font-size:.75rem;margin-top:1rem;text-align:center;">Form ini hanya untuk jadwal awal. Konfirmasi final via WhatsApp setelah mengirim form.</p>
+    </div>
+  </div>
+</section>
+
+<!-- GARANSI -->
+<section class="section-pad" style="background:var(--yellow);">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid lg:grid-cols-3 gap-6 items-start">
+      <div class="lg:col-span-2">
+        <div class="tag-navy mb-5">JAMINAN SERVIS</div>
+        <h2 style="font-size:clamp(2rem,4vw,3rem);line-height:1.1;color:var(--black);margin-bottom:1.5rem;">Garansi Servis 30 Hari —<br>Tertulis, Bukan Janji</h2>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div class="card-brutal p-5">
+            <div style="font-size:1.5rem;margin-bottom:.5rem;">🛡️</div>
+            <h4 style="font-size:.9rem;margin-bottom:.3rem;">Garansi Servis</h4>
+            <p style="color:#555;font-size:.82rem;line-height:1.5;">Jika keluhan yang sama muncul kembali dalam 30 hari, kami perbaiki ulang tanpa biaya tambahan.</p>
+          </div>
+          <div class="card-brutal p-5">
+            <div style="font-size:1.5rem;margin-bottom:.5rem;">⚙️</div>
+            <h4 style="font-size:.9rem;margin-bottom:.3rem;">Garansi Sparepart</h4>
+            <p style="color:#555;font-size:.82rem;line-height:1.5;">Sparepart yang kami pasang bergaransi dari distributor resmi sesuai ketentuan masing-masing produk.</p>
+          </div>
+          <div class="card-brutal p-5">
+            <div style="font-size:1.5rem;margin-bottom:.5rem;">📋</div>
+            <h4 style="font-size:.9rem;margin-bottom:.3rem;">Kartu Servis</h4>
+            <p style="color:#555;font-size:.82rem;line-height:1.5;">Setiap pekerjaan dilengkapi kartu/bukti servis berisi rincian pekerjaan, biaya, dan masa garansi.</p>
+          </div>
+          <div class="card-brutal p-5">
+            <div style="font-size:1.5rem;margin-bottom:.5rem;">🤝</div>
+            <h4 style="font-size:.9rem;margin-bottom:.3rem;">Tanpa Biaya Kejutan</h4>
+            <p style="color:#555;font-size:.82rem;line-height:1.5;">Persetujuan biaya dilakukan sebelum pengerjaan dimulai. Tidak ada tagihan yang belum Anda setujui.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card-brutal-navy p-8 reveal">
+        <h3 style="font-size:1.2rem;color:var(--yellow);margin-bottom:1.25rem;">Hubungi Kami Sekarang</h3>
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          {% if company.whatsapp %}<a href="https://wa.me/{{ company.whatsapp }}" target="_blank" class="btn-primary w-full justify-center">💬 Chat WhatsApp</a>{% endif %}
+          {% if company.phone %}<a href="tel:+{{ company.phone }}" class="btn-secondary w-full justify-center">📞 Telepon Langsung</a>{% endif %}
+          <a href="#booking" class="btn-secondary w-full justify-center">📅 Booking Online</a>
+        </div>
+        <div style="border-top:2px solid rgba(255,255,255,.2);margin-top:1.5rem;padding-top:1.25rem;">
+          <p style="color:rgba(255,255,255,.6);font-size:.8rem;line-height:1.6;">📍 {{ company.address|default:'Jl. Veteran No. 10, Bojonegoro' }}<br>🕒 {{ company.operational_hours|default:'Senin – Sabtu, 08.00–17.00' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

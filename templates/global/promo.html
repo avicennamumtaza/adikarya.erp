@@ -1,0 +1,68 @@
+{% extends 'global/base.html' %}
+{% load static %}
+{% block head_title %}Promo &amp; Penawaran Spesial — {{ company.name|default:'Zona Komputer' }} Bojonegoro{% endblock %}
+{% block meta_description %}Cek promo terbaru {{ company.name|default:'Zona Komputer' }} Bojonegoro — diskon servis, paket bundling laptop, upgrade SSD murah, dan penawaran spesial lainnya.{% endblock %}
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="page-header" style="background:var(--yellow);">
+  <div class="grid-bg"></div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="tag-navy mb-4">PROMO &amp; PENAWARAN</div>
+    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--black);margin-bottom:1rem;">Penawaran Spesial<br><span style="color:var(--navy);">Bulan Ini</span></h1>
+    <p style="color:#333;font-size:1rem;line-height:1.7;max-width:540px;">Diskon, bundling, dan paket hemat — semua tersedia untuk waktu terbatas. Jangan sampai ketinggalan!</p>
+  </div>
+</div>
+
+<!-- PROMO AKTIF -->
+<section class="section-pad" style="background:var(--white);">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="title-bar">
+      <div class="tag">🔥 PROMO AKTIF</div>
+      <h2 style="font-size:clamp(1.4rem,2.5vw,2rem);font-family:'Archivo Black',sans-serif;">Berlaku sampai akhir bulan ini</h2>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for promo in active_promos %}
+      <div class="card-brutal p-0 overflow-hidden reveal">
+        <div style="background:var(--navy);padding:1.5rem;border-bottom:var(--border-w) solid var(--black);">
+          <div class="tag" style="font-size:.6rem;margin-bottom:.75rem;">{{ promo.category|upper|default:'PENAWARAN' }}</div>
+          <h3 style="font-size:1.1rem;color:var(--white);">{{ promo.title }}</h3>
+        </div>
+        <div class="p-6">
+          <p style="color:#444;font-size:.875rem;line-height:1.7;margin-bottom:1rem;">{{ promo.description }}</p>
+          {% if promo.benefits_list %}
+          <div style="margin-bottom:1.25rem;">
+            {% for line in promo.benefits_list %}
+            <div style="display:flex;gap:.5rem;font-size:.85rem;padding:.2rem 0;"><span class="check">✓</span> {{ line }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if promo.discount_text %}
+          <div style="background:var(--yellow);border:2px solid var(--black);padding:.5rem 1rem;display:inline-block;font-family:'Archivo Black',sans-serif;font-size:.8rem;margin-bottom:1rem;">{{ promo.discount_text }}</div>
+          {% endif %}
+          {% if company.whatsapp %}
+          <a href="https://wa.me/{{ company.whatsapp }}?text={{ promo.wa_text|urlencode|default:'Halo, saya tertarik promo ini' }}" target="_blank" class="btn-primary w-full justify-center btn-sm">{{ promo.call_to_action|default:'Klaim Promo ini' }} →</a>
+          {% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <div class="card-brutal p-8 text-center reveal" style="grid-column:1/-1;">
+        <div style="font-size:3rem;margin-bottom:1rem;">🎉</div>
+        <h3 style="font-size:1.2rem;margin-bottom:.5rem;">Belum Ada Promo Aktif</h3>
+        <p style="color:#666;font-size:.9rem;">Saat ini belum ada promo yang tersedia. Pantau terus halaman ini atau chat WhatsApp kami untuk info promo terbaru.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="padding:4rem 0;background:var(--black);">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <p style="color:rgba(255,255,255,.6);font-size:.85rem;margin-bottom:.5rem;">Promo bisa berubah sewaktu-waktu. Pastikan tanya via WhatsApp untuk konfirmasi ketersediaan.</p>
+    {% if company.whatsapp %}<a href="https://wa.me/{{ company.whatsapp }}" target="_blank" class="btn-primary">Konfirmasi Promo via WhatsApp →</a>{% endif %}
+  </div>
+</section>
+
+{% endblock %}

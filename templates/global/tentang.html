@@ -1,0 +1,152 @@
+{% extends 'global/base.html' %}
+{% load static %}
+{% block head_title %}Tentang Kami — {{ company.name|default:'Zona Komputer' }} Bojonegoro | 25+ Tahun Melayani{% endblock %}
+{% block meta_description %}Kenali lebih dekat {{ company.name|default:'Zona Komputer' }} — toko komputer terpercaya di Bojonegoro sejak 1999. Teknisi berpengalaman, jujur, dan bergaransi.{% endblock %}
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="grid-bg-dark"></div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="tag mb-4">TENTANG KAMI</div>
+    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--white);margin-bottom:1rem;">Lebih dari 25 Tahun<br><span style="color:var(--yellow);">Menjadi Mitra Teknologi</span><br>Warga Bojonegoro</h1>
+    <p style="color:rgba(255,255,255,.7);font-size:1rem;line-height:1.7;max-width:540px;">Kami bukan hanya toko — kami adalah tempat pelanggan bisa bertanya, dipercaya, dan mendapatkan solusi yang jujur untuk setiap kebutuhan komputernya.</p>
+  </div>
+</div>
+
+<!-- CERITA TOKO -->
+<section class="section-pad" style="background:var(--white);">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid lg:grid-cols-2 gap-16 items-center">
+      <div class="reveal">
+        <div class="tag mb-5">PERJALANAN KAMI</div>
+        <h2 style="font-size:clamp(1.8rem,3.5vw,2.8rem);line-height:1.1;color:var(--black);margin-bottom:1.5rem;">Dimulai dari Sebuah<br>Toko Kecil di Bojonegoro</h2>
+        {{ company.about_text|default:'<p style="color:#444;font-size:.95rem;line-height:1.8;margin-bottom:1.25rem;">Berdiri sejak 1999, <strong>Zona Komputer</strong> dimulai dari toko kecil yang melayani kebutuhan komputer warga Bojonegoro dengan sederhana namun penuh ketulusan.</p>'|safe }}
+      </div>
+      <div class="reveal">
+        <div class="card-brutal-navy p-8">
+          <div class="grid grid-cols-2 gap-6">
+            {% for stat in stats %}
+            <div>
+              <p class="stat-num" style="font-size:3.5rem;color:var(--yellow);">{{ stat.value }}</p>
+              <p style="color:rgba(255,255,255,.6);font-size:.85rem;">{{ stat.title }}</p>
+            </div>
+            {% empty %}
+            <div>
+              <p class="stat-num" style="font-size:3.5rem;color:var(--yellow);">1999</p>
+              <p style="color:rgba(255,255,255,.6);font-size:.85rem;">Tahun berdiri</p>
+            </div>
+            <div>
+              <p class="stat-num" style="font-size:3.5rem;color:var(--yellow);">25+</p>
+              <p style="color:rgba(255,255,255,.6);font-size:.85rem;">Tahun pengalaman</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VISI MISI -->
+<section class="section-pad section-striped" style="background:var(--cream);">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-14">
+      <div class="tag mb-4">KOMITMEN KAMI</div>
+      <h2 style="font-size:clamp(2rem,4vw,3rem);line-height:1.1;color:var(--black);">Visi, Misi &amp; Nilai<br>yang <span style="background:var(--yellow);padding:0 .25rem;">Kami Pegang Teguh</span></h2>
+    </div>
+    <div class="grid lg:grid-cols-3 gap-6">
+      <div class="card-brutal-yellow p-8 reveal">
+        <div style="font-size:2.5rem;margin-bottom:1rem;">🎯</div>
+        <h3 style="font-size:1.2rem;margin-bottom:1rem;color:var(--black);">Visi</h3>
+        <p style="color:#333;font-size:.9rem;line-height:1.7;">{{ company.visi|default:'Menjadi mitra teknologi nomor satu bagi masyarakat Bojonegoro dan sekitarnya — dari generasi ke generasi.' }}</p>
+      </div>
+      <div class="card-brutal-navy p-8 reveal">
+        <div style="font-size:2.5rem;margin-bottom:1rem;">🚀</div>
+        <h3 style="font-size:1.2rem;margin-bottom:1rem;color:var(--yellow);">Misi</h3>
+        <p style="color:rgba(255,255,255,.8);font-size:.875rem;line-height:1.7;">{{ company.misi|default:'Produk & servis berkualitas, harga transparan. Teknisi kompeten, terus belajar teknologi baru. Hubungan jangka panjang berbasis kepercayaan.' }}</p>
+      </div>
+      <div class="card-brutal p-8 reveal" style="background:var(--white);">
+        <div style="font-size:2.5rem;margin-bottom:1rem;">💎</div>
+        <h3 style="font-size:1.2rem;margin-bottom:1rem;color:var(--black);">Nilai-Nilai Kami</h3>
+        <div style="display:flex;flex-direction:column;gap:.75rem;">
+          {% for val in values %}
+          <div style="background:var(--cream);border:2px solid var(--black);padding:.6rem .9rem;">
+            <strong style="font-size:.8rem;">{{ val.title }}</strong> — {{ val.description }}
+          </div>
+          {% empty %}
+          <div style="background:var(--cream);border:2px solid var(--black);padding:.6rem .9rem;">
+            <strong style="font-size:.8rem;">JUJUR</strong> — kondisi perangkat disampaikan apa adanya
+          </div>
+          <div style="background:var(--yellow);border:2px solid var(--black);padding:.6rem .9rem;">
+            <strong style="font-size:.8rem;">TRANSPARAN</strong> — estimasi biaya sebelum dikerjakan
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TIM KAMI -->
+{% if team_members %}
+<section class="section-pad" style="background:var(--white);">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-14">
+      <div class="tag mb-4">TIM KAMI</div>
+      <h2 style="font-size:clamp(2rem,4vw,3rem);line-height:1.1;color:var(--black);">Orang-orang di Balik<br><span style="color:var(--navy);">{{ company.name|default:'Zona Komputer' }}</span></h2>
+      <p style="color:#555;max-width:480px;margin:1rem auto 0;font-size:.95rem;line-height:1.7;">Tim teknisi kami sudah menangani ribuan unit dari berbagai merek — laptop, PC, printer, hingga perangkat jaringan.</p>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {% for member in team_members %}
+      <div class="card-brutal p-6 text-center reveal">
+        <div style="width:72px;height:72px;background:var(--navy);border:3px solid var(--black);border-radius:0;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:2rem;color:var(--yellow);font-family:'Archivo Black',sans-serif;">{{ member.name|first }}</div>
+        <h4 style="font-size:1rem;margin-bottom:.25rem;">{{ member.name }}</h4>
+        <p style="color:#777;font-size:.8rem;margin-bottom:.75rem;">{{ member.role }}</p>
+        {% if member.specialty %}<div class="tag" style="font-size:.6rem;">{{ member.specialty }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- BRAND MITRA -->
+{% if partner_brands %}
+<section class="section-pad" style="background:var(--navy);">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-10">
+      <div class="tag mb-4">MEREK YANG KAMI TANGANI</div>
+      <h2 style="font-size:clamp(1.8rem,3.5vw,2.6rem);line-height:1.1;color:var(--white);">Spesialis Berbagai Merek<br><span style="color:var(--yellow);">Laptop, PC &amp; Printer</span></h2>
+    </div>
+    <div style="background:var(--yellow);border:var(--border-w) solid var(--black);box-shadow:var(--shadow-lg) var(--shadow-lg) 0 var(--black);padding:.6rem 0;overflow:hidden;">
+      <div class="ticker-wrap">
+        <div class="ticker-inner">
+          <div class="flex gap-6 px-6">
+            {% for brand in partner_brands %}<span class="marquee-item">✦ {{ brand.name|upper }}</span>{% endfor %}
+          </div>
+          <div class="flex gap-6 px-6" aria-hidden="true">
+            {% for brand in partner_brands %}<span class="marquee-item">✦ {{ brand.name|upper }}</span>{% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- CTA -->
+<section class="section-pad" style="background:var(--yellow);">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <div style="background:var(--navy);border:var(--border-w) solid var(--black);box-shadow:var(--shadow-lg) var(--shadow-lg) 0 var(--black);padding:4rem 2rem;">
+      <h2 style="font-size:clamp(1.8rem,4vw,3rem);line-height:1.1;color:var(--white);margin-bottom:1rem;">Mau Kenal Lebih Dekat?<br><span style="color:var(--yellow);">Kunjungi atau Hubungi Kami</span></h2>
+      <p style="color:rgba(255,255,255,.7);margin-bottom:2rem;font-size:.95rem;line-height:1.7;">Datang langsung ke toko kami, atau mulai dari chat WhatsApp untuk konsultasi tanpa perlu keluar rumah.</p>
+      <div class="flex gap-4 justify-center flex-wrap">
+        {% if company.whatsapp %}<a href="https://wa.me/{{ company.whatsapp }}" target="_blank" class="btn-primary">Chat WhatsApp →</a>{% endif %}
+        <a href="{% url 'global:kontak' %}" class="btn-secondary">Lihat Lokasi Toko</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

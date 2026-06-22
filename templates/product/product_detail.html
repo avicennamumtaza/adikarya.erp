@@ -80,10 +80,14 @@
 {# ── PRODUCT HEADER CARD ── #}
 <div class="bg-white rounded-xl border border-slate-100 shadow-card p-5 sm:p-6 fade-up fade-up-1">
   <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-    {# Product image placeholder #}
+    {# Product image #}
+    {% if product.photo %}
+    <img src="{{ product.photo.url }}" class="w-20 h-20 object-cover rounded-xl border border-slate-200 flex-shrink-0" alt="{{ product.name }} photo"/>
+    {% else %}
     <div class="w-20 h-20 rounded-xl bg-navy-50 border border-navy-100 flex items-center justify-center flex-shrink-0">
       <svg class="w-10 h-10 text-navy-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
     </div>
+    {% endif %}
     <div class="flex-1 min-w-0">
       <div class="flex flex-wrap items-center gap-2 mb-1">
         <h2 class="text-xl font-extrabold text-slate-900">
@@ -146,6 +150,19 @@
       <div class="spec-row">
         <span class="spec-label">Margin</span>
         <span class="spec-value text-green-600 font-extrabold">{{ product.margin|default:"47.1%" }}</span>
+      </div>
+      <div class="spec-row">
+        <span class="spec-label">Documentation</span>
+        <span class="spec-value">
+          {% if product.docs %}
+          <a href="{{ product.docs }}" target="_blank" class="text-navy-600 hover:text-navy-800 font-bold inline-flex items-center gap-1">
+            Official Specs
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+          {% else %}
+          <span class="text-slate-400 italic">None</span>
+          {% endif %}
+        </span>
       </div>
       <div class="spec-row">
         <span class="spec-label">Created</span>

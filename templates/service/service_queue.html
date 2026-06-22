@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static humanize %}
 
 {% block title %}Service – Workshop Queue{% endblock %}
 {% block nav_service %}active{% endblock %}
@@ -8,7 +8,7 @@
 <input type="search"
        id="search-desktop"
        name="q"
-       placeholder="Search ticket, customer, device..."
+       placeholder="Cari ticket, customer, device..."
   value="{{ q }}"
        class="search-input w-56"
        aria-label="Search service tickets"/>
@@ -23,24 +23,56 @@
 {% endblock %}
 
 {% block page_header %}
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" x-data="{ importModalOpen: false }">
   <div>
     <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Service Workshop</h1>
-    <p class="text-sm text-slate-500 mt-0.5">Monitor repair queue, track technician progress, and manage unit status.</p>
+    <p class="text-sm text-slate-500 mt-0.5">Monitor antrian servis, lacak status unit, dan kelola servis perangkat.</p>
   </div>
   <div class="flex items-center gap-2 flex-shrink-0">
     <a href="{% url 'service:service_checkin' %}"
        class="flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-white text-sm font-bold px-4 py-3 rounded-xl shadow-navy transition-colors whitespace-nowrap min-h-[48px]"
        aria-label="Create new service ticket">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-      <span>+ New Service Ticket</span>
+      <span>Servis Baru</span>
     </a>
-    <a href="{% url 'service:service_export' %}"
+    <a href="{% url 'report:export_service' %}"
        class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-3 rounded-xl bg-white hover:bg-slate-50 transition-colors min-h-[48px]"
-       aria-label="Export service data">
+       aria-label="Export service data ke Excel">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-      <span class="hidden sm:inline">Export</span>
+      <span class="hidden sm:inline">Export Excel</span>
     </a>
+    <button type="button" @click="importModalOpen = true"
+       class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-3 rounded-xl bg-white hover:bg-slate-50 transition-colors min-h-[48px]"
+       aria-label="Import service data dari Excel">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L5 8m4-4v12"/></svg>
+      <span class="hidden sm:inline">Import</span>
+    </button>
+  </div>
+
+  {# ── Import Modal ── #}
+  <div x-show="importModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" x-cloak>
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" @click.outside="importModalOpen = false">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-slate-900">Import Data Servis</h3>
+        <button type="button" @click="importModalOpen = false" class="text-slate-400 hover:text-slate-700 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <p class="text-sm text-slate-500 mb-4">Upload file Excel (.xlsx) untuk mengimport data servis.</p>
+      <form method="POST" action="{% url 'report:import_service' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'service:service_queue' %}">
+        <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-6 mb-4 cursor-pointer hover:border-navy-300 transition-colors">
+          <svg class="w-8 h-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L5 8m4-4v12"/></svg>
+          <span class="text-sm text-slate-500 font-semibold">Klik untuk pilih file .xlsx</span>
+          <input type="file" name="file" accept=".xlsx" class="hidden" required>
+        </label>
+        <div class="flex gap-2 justify-end">
+          <button type="button" @click="importModalOpen = false" class="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-navy-900 text-white text-sm font-bold rounded-xl hover:bg-navy-800 transition-colors">Import</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 {% endblock %}
@@ -56,23 +88,8 @@
   .badge-cancelled   { background:#fee2e2; color:#b91c1c; }
   .badge-done        { background:#d1fae5; color:#065f46; }
 
-  /* Priority ring */
-  .priority-high  { box-shadow:0 0 0 2px #ef4444; }
-  .priority-med   { box-shadow:0 0 0 2px #f59e0b; }
-
-  /* Timeline */
-  .timeline-line  { position:absolute; left:19px; top:32px; bottom:0; width:2px; background:#e2e8f0; }
-  .timeline-dot   { width:12px; height:12px; border-radius:50%; border:2px solid #fff; flex-shrink:0; }
-
   /* Focus active row */
   .data-row:focus-within td { background:#f0f9ff; }
-
-  /* Overdue badge pulse */
-  @keyframes overdue-pulse {
-    0%, 100% { opacity:1; }
-    50%       { opacity:.55; }
-  }
-  .overdue-pulse { animation: overdue-pulse 2s ease-in-out infinite; }
 </style>
 {% endblock %}
 
@@ -86,7 +103,7 @@
   <!-- Total Active -->
   <div class="stat-card-dark rounded-xl p-4 sm:p-5 fade-up fade-up-1">
     <div class="flex items-start justify-between mb-3">
-      <p class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Total Active Units</p>
+      <p class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Total Unit Aktif</p>
       <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
       </div>
@@ -94,44 +111,44 @@
     <p class="text-4xl font-extrabold text-white mb-2">{{ stats.total_active }}</p>
     <div class="stat-badge inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full">
       <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-      Active in workshop
+      Dalam pengerjaan
     </div>
   </div>
 
   <!-- Waiting for Parts -->
   <div class="bg-white rounded-xl p-4 sm:p-5 border border-amber-100 shadow-card fade-up fade-up-2">
     <div class="flex items-start justify-between mb-3">
-      <p class="text-xs font-semibold text-amber-600 uppercase tracking-wide">Waiting for Parts</p>
+      <p class="text-xs font-semibold text-amber-600 uppercase tracking-wide">Menunggu Part</p>
       <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
     </div>
     <p class="text-3xl font-extrabold text-amber-600 mb-1">{{ stats.waiting_parts }}</p>
-    <p class="text-xs text-slate-400">{{ stats.overdue }} overdue</p>
+    <p class="text-xs text-slate-400">Menunggu suku cadang</p>
   </div>
 
   <!-- Ready for Pickup -->
   <div class="bg-white rounded-xl p-4 sm:p-5 border border-emerald-100 shadow-card fade-up fade-up-3">
     <div class="flex items-start justify-between mb-3">
-      <p class="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Ready for Pickup</p>
+      <p class="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Siap Diambil</p>
       <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
     </div>
     <p class="text-3xl font-extrabold text-emerald-600 mb-1">{{ stats.ready_pickup }}</p>
-    <p class="text-xs text-slate-400">Awaiting customer pickup</p>
+    <p class="text-xs text-slate-400">Menunggu pengambilan</p>
   </div>
 
   <!-- Today Finished -->
   <div class="bg-white rounded-xl p-4 sm:p-5 border border-blue-100 shadow-card fade-up fade-up-4">
     <div class="flex items-start justify-between mb-3">
-      <p class="text-xs font-semibold text-blue-600 uppercase tracking-wide">Finished Today</p>
+      <p class="text-xs font-semibold text-blue-600 uppercase tracking-wide">Selesai Hari Ini</p>
       <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
       </div>
     </div>
     <p class="text-3xl font-extrabold text-blue-600 mb-1">{{ stats.finished_today }}</p>
-    <p class="text-xs text-slate-400">Finished today</p>
+    <p class="text-xs text-slate-400">Selesai hari ini</p>
   </div>
 </div>
 
@@ -145,32 +162,24 @@
     <div class="relative flex-1 min-w-0">
       <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
       <input type="search" name="q" value="{{ q }}"
-             placeholder="Ticket ID, customer, device model..."
+             placeholder="Ticket ID, customer, device..."
              class="search-input w-full" aria-label="Search service tickets" style="width:100%;"/>
     </div>
 
     <!-- Status Filter -->
     <select name="status" class="filter-select min-h-[44px]" aria-label="Filter by status">
-      <option value="">All Statuses</option>
-      <option value="RECEIVED" {% if status == 'RECEIVED' %}selected{% endif %}>Received</option>
-      <option value="DIAGNOSING" {% if status == 'DIAGNOSING' %}selected{% endif %}>Diagnosing</option>
-      <option value="WAITING" {% if status == 'WAITING' %}selected{% endif %}>Waiting for Parts</option>
-      <option value="REPAIRING" {% if status == 'REPAIRING' %}selected{% endif %}>Repairing</option>
-      <option value="DONE" {% if status == 'DONE' %}selected{% endif %}>Ready / Done</option>
-      <option value="CANCELLED" {% if status == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
-    </select>
-
-    <!-- Technician Filter -->
-    <select name="technician" class="filter-select min-h-[44px]" aria-label="Filter by technician">
-      <option value="">All Technicians</option>
-      {% for u in technicians %}
-        <option value="{{ u.id }}" {% if technician|stringformat:"s" == u.id|stringformat:"s" %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
-      {% endfor %}
+      <option value="">Semua Status</option>
+      <option value="RECEIVED" {% if status == 'RECEIVED' %}selected{% endif %}>Diterima</option>
+      <option value="DIAGNOSING" {% if status == 'DIAGNOSING' %}selected{% endif %}>Pengecekan</option>
+      <option value="WAITING" {% if status == 'WAITING' %}selected{% endif %}>Menunggu Part</option>
+      <option value="REPAIRING" {% if status == 'REPAIRING' %}selected{% endif %}>Perbaikan</option>
+      <option value="DONE" {% if status == 'DONE' %}selected{% endif %}>Siap Diambil</option>
+      <option value="CANCELLED" {% if status == 'CANCELLED' %}selected{% endif %}>Batal</option>
     </select>
 
     <!-- Branch Filter -->
     <select name="branch" class="filter-select min-h-[44px]" aria-label="Filter by branch">
-      <option value="">All Branches</option>
+      <option value="">Semua Cabang</option>
       {% for b in branches %}
         <option value="{{ b.id }}" {% if branch|stringformat:"s" == b.id|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
       {% endfor %}
@@ -178,18 +187,6 @@
 
   </form>
 </div>
-
-{% if stats.overdue and stats.overdue > 0 %}
-  <!-- Overdue Alert Banner -->
-  <div class="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3" role="alert">
-    <span class="overdue-pulse flex-shrink-0 w-2.5 h-2.5 rounded-full bg-red-500"></span>
-    <svg class="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-    <p class="text-sm font-semibold text-red-700">
-      <strong>{{ stats.overdue }} units are OVERDUE</strong> — exceeding the promised completion date. Immediate action required.
-    </p>
-    <a href="?status=overdue" class="ml-auto text-xs font-bold text-red-600 underline underline-offset-2 whitespace-nowrap hover:text-red-800">View Overdue</a>
-  </div>
-{% endif %}
 
 <!-- ═══════════════════════════
      SERVICE QUEUE TABLE — Desktop / Tablet
@@ -203,13 +200,12 @@
             <input type="checkbox" class="w-4 h-4 rounded accent-navy-900" aria-label="Select all tickets"/>
           </th>
           <th>Ticket ID</th>
-          <th>Check-in Date</th>
+          <th>Tanggal Masuk</th>
           <th>Customer</th>
           <th>Device</th>
-          <th>Branch</th>
-          <th>Technician</th>
+          <th>Cabang</th>
           <th>Status</th>
-          <th class="text-center">Actions</th>
+          <th class="text-center">Aksi</th>
         </tr>
       </thead>
       <tbody>
@@ -217,12 +213,7 @@
           <tr class="data-row{% if t.status == 'CANCELLED' %} opacity-60{% endif %}">
             <td class="pl-5"><input type="checkbox" class="w-4 h-4 rounded accent-navy-900" aria-label="Select {{ t.ticket_number }}"/></td>
             <td>
-              <div>
-                <a href="{% url 'service:service_detail' pk=t.pk %}" class="font-bold text-navy-900 text-sm hover:underline font-mono">{{ t.ticket_number }}</a>
-                {% if t.is_overdue %}
-                  <p class="text-xs text-red-500 font-semibold mt-0.5">⚠ Overdue {{ t.overdue_days }}d</p>
-                {% endif %}
-              </div>
+              <a href="{% url 'service:service_detail' pk=t.pk %}" class="font-bold text-navy-900 text-sm hover:underline font-mono">{{ t.ticket_number }}</a>
             </td>
             <td class="text-sm text-slate-600 whitespace-nowrap">{% if t.checkin_date %}{{ t.checkin_date|date:"d M Y" }}{% else %}—{% endif %}</td>
             <td>
@@ -239,16 +230,6 @@
             </td>
             <td class="text-sm text-slate-600">{{ t.branch.name }}</td>
             <td>
-              {% if t.technician %}
-                <div class="flex items-center gap-2">
-                  <div class="w-6 h-6 rounded-full bg-navy-100 flex items-center justify-center text-navy-900 text-xs font-bold flex-shrink-0">{{ t.technician_initials }}</div>
-                  <span class="text-sm text-slate-700">{{ t.technician.get_full_name|default:t.technician.username }}</span>
-                </div>
-              {% else %}
-                <span class="text-xs text-slate-400 italic">Unassigned</span>
-              {% endif %}
-            </td>
-            <td>
               <span class="{{ t.status_badge }} inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold">
                 <span class="w-1.5 h-1.5 rounded-full {{ t.status_dot }} inline-block"></span>
                 {{ t.status_label }}
@@ -257,17 +238,17 @@
             <td>
               <div class="flex items-center justify-center gap-1">
                 <a href="{% url 'service:service_detail' pk=t.pk %}"
-                   class="icon-btn icon-btn-view" title="View / Log Work" aria-label="View ticket {{ t.ticket_number }}">
+                   class="icon-btn icon-btn-view" title="Detail Servis" aria-label="View ticket {{ t.ticket_number }}">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                 </a>
                 <a href="{% url 'service:service_checkin_edit' pk=t.pk %}"
                    class="icon-btn icon-btn-edit" title="Edit ticket" aria-label="Edit ticket {{ t.ticket_number }}">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                 </a>
-                <a href="{% url 'service:service_print_tag' pk=t.pk %}"
+                {% comment %} <a href="{% url 'service:service_print_tag' pk=t.pk %}"
                    class="icon-btn icon-btn-adj" title="Print service tag" aria-label="Print service tag {{ t.ticket_number }}">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                </a>
+                </a> {% endcomment %}
                 {% if t.status == 'DONE' %}
                   <a href="{% url 'service:service_billing' pk=t.pk %}" class="icon-btn icon-btn-adj" aria-label="Go to billing {{ t.ticket_number }}" title="Finalize & Bill">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
@@ -278,7 +259,7 @@
           </tr>
         {% empty %}
           <tr>
-            <td colspan="9" class="text-center text-sm text-slate-500 py-8">No tickets found.</td>
+            <td colspan="8" class="text-center text-sm text-slate-500 py-8">Tidak ada ticket ditemukan.</td>
           </tr>
         {% endfor %}
 
@@ -288,7 +269,7 @@
 
   <!-- Pagination -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4 border-t border-slate-100">
-    <p class="text-xs text-slate-500">Showing {{ tickets|length }} tickets</p>
+    <p class="text-xs text-slate-500">Menampilkan {{ tickets|length }} tickets</p>
   </div>
 </div>
 
@@ -297,7 +278,7 @@
 ═══════════════════════════ -->
 <div class="card-table" role="list" aria-label="Service ticket cards">
   {% for t in tickets %}
-    <div class="bg-white border{% if t.is_overdue %}-2 border-red-200{% else %} border-slate-100{% endif %} rounded-xl shadow-card p-4" role="listitem">
+    <div class="bg-white border border-slate-100 rounded-xl shadow-card p-4" role="listitem">
       <div class="flex items-start justify-between mb-3">
         <div>
           <div class="flex items-center gap-2 mb-1">
@@ -307,9 +288,6 @@
               {{ t.status_label }}
             </span>
           </div>
-          {% if t.is_overdue %}
-            <p class="text-xs text-red-500 font-semibold">⚠ Overdue {{ t.overdue_days }} days</p>
-          {% endif %}
         </div>
         <span class="text-xs text-slate-400">{% if t.checkin_date %}{{ t.checkin_date|date:"d M Y" }}{% else %}—{% endif %}</span>
       </div>
@@ -322,34 +300,32 @@
       </div>
       <div class="grid grid-cols-2 gap-2 text-xs mb-4">
         <div><p class="text-slate-400 mb-0.5">Customer</p><p class="font-semibold text-slate-700">{{ t.customer.name }}</p></div>
-        <div><p class="text-slate-400 mb-0.5">Branch</p><p class="font-semibold text-slate-700">{{ t.branch.name }}</p></div>
-        <div><p class="text-slate-400 mb-0.5">Technician</p><p class="font-semibold text-slate-700">{% if t.technician %}{{ t.technician.get_full_name|default:t.technician.username }}{% else %}—{% endif %}</p></div>
-        <div><p class="text-slate-400 mb-0.5">Est. Cost</p><p class="font-semibold text-slate-700">Rp {{ t.estimated_cost|default:0 }}</p></div>
+        <div><p class="text-slate-400 mb-0.5">Cabang</p><p class="font-semibold text-slate-700">{{ t.branch.name }}</p></div>
       </div>
       <div class="flex gap-2">
         <a href="{% url 'service:service_detail' pk=t.pk %}"
            class="flex-1 flex items-center justify-center gap-1.5 bg-navy-900 text-white font-bold text-sm py-3 rounded-xl hover:bg-navy-800 transition-colors min-h-[48px]">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-          View & Log
+          Detail
         </a>
         {% if t.status == 'DONE' %}
           <a href="{% url 'service:service_billing' pk=t.pk %}"
              class="flex items-center justify-center gap-1.5 bg-emerald-600 text-white font-bold text-sm px-4 rounded-xl hover:bg-emerald-700 transition-colors min-h-[48px]">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
-            Finalize & Bill
+            Billing
           </a>
         {% else %}
-          <a href="{% url 'service:service_print_tag' pk=t.pk %}"
+          {% comment %} <a href="{% url 'service:service_print_tag' pk=t.pk %}"
              class="flex items-center justify-center gap-1.5 border border-slate-200 text-slate-600 font-bold text-sm px-4 rounded-xl hover:bg-slate-50 transition-colors min-h-[48px]"
              aria-label="Print service tag">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-          </a>
+          </a> {% endcomment %}
         {% endif %}
       </div>
     </div>
   {% empty %}
     <div class="bg-white border border-slate-100 rounded-xl shadow-card p-4" role="listitem">
-      <p class="text-sm text-slate-500 text-center">No tickets found.</p>
+      <p class="text-sm text-slate-500 text-center">Tidak ada ticket ditemukan.</p>
     </div>
   {% endfor %}
 

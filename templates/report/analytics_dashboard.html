@@ -1,0 +1,704 @@
+{% extends "base.html" %}
+{% load static humanize %}
+{% block title %}Analytics Dashboard{% endblock %}
+{% block nav_analytics %}active{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+  .num-font { font-family: 'JetBrains Mono', monospace; }
+  .text-navy-800 { color: #1e293b; }
+  .text-slate-500 { color: #64748b; }
+  .text-emerald-600 { color: #059669; }
+  .text-red-600 { color: #dc2626; }
+
+  .section-card {
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .section-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    transition: box-shadow .2s;
+  }
+
+  .kpi-card {
+    min-height: 120px;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    padding: 16px;
+    transition: box-shadow .2s, transform .2s;
+  }
+  .kpi-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,.10);
+    transform: translateY(-2px);
+  }
+  .kpi-value { font-size: 1.625rem; line-height: 1.2; }
+  .kpi-label { font-size: .75rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .kpi-change { font-size: .75rem; font-weight: 700; }
+
+  .trend-up { color: #059669; }
+  .trend-down { color: #dc2626; }
+
+  .filter-select {
+    font-size: .8125rem;
+    padding: 7px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    color: #1e293b;
+    font-weight: 600;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .filter-select:focus { border-color: #0f172a; }
+
+  .kpi-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .tbl-row-hover:hover { background: #f8fafc; }
+  .tbl-row-hover { transition: background .12s; }
+
+  .spark-cell { position: relative; width: 100px; height: 28px; }
+
+  .filter-date-input {
+    font-size: .8125rem; padding: 7px 10px;
+    border: 1.5px solid #e2e8f0; border-radius: 10px;
+    outline: none; background: #fff; color: #1e293b;
+  }
+  .filter-date-input:focus { border-color: #0f172a; }
+
+  .chart-container { position: relative; width: 100%; }
+  .chart-container canvas { width: 100% !important; }
+
+  .badge-status {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 999px;
+    font-size: .6875rem; font-weight: 700; text-transform: uppercase;
+  }
+
+  .progress-ring {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .progress-ring svg { transform: rotate(-90deg); }
+  .progress-ring .bg { fill: none; stroke: #e2e8f0; }
+  .progress-ring .fg { fill: none; stroke: #059669; stroke-linecap: round; }
+  .progress-ring .center-label {
+    position: absolute; text-align: center;
+  }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+  <span class="text-slate-700 font-semibold">Dashboard</span>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div class="flex items-center gap-3">
+    <div>
+      <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Analytics</h1>
+      <p class="text-sm text-slate-500 mt-0.5" id="header-date">Memuat data...</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-2">
+    <form method="GET" id="period-form" class="flex items-center gap-2 flex-wrap">
+      <select name="period" id="period-select" class="filter-select" onchange="onPeriodChange()">
+        <option value="7d" {% if period == '7d' %}selected{% endif %}>Last 7 Days</option>
+        <option value="30d" {% if period == '30d' or not period %}selected{% endif %}>Last 30 Days</option>
+        <option value="quarter" {% if period == 'quarter' %}selected{% endif %}>Last Quarter</option>
+        <option value="year" {% if period == 'year' %}selected{% endif %}>Last Year</option>
+        <option value="custom" {% if period == 'custom' %}selected{% endif %}>Custom Range</option>
+      </select>
+      <div id="custom-dates" class="flex items-center gap-2 {% if period != 'custom' %}hidden{% endif %}">
+        <input type="date" name="start_date" value="{{ start_date }}" class="filter-date-input">
+        <span class="text-slate-400 text-sm">–</span>
+        <input type="date" name="end_date" value="{{ end_date }}" class="filter-date-input">
+      </div>
+      <button type="submit" class="bg-navy-900 hover:bg-navy-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors shadow-navy">Apply</button>
+    </form>
+    <button onclick="window.print()" class="icon-btn bg-slate-100 text-slate-600 hover:bg-slate-200" title="Print / Export">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 1: KPI CARDS
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="kpi-card fade-up fade-up-1">
+    <div class="flex items-center justify-between mb-2">
+      <p class="kpi-label">Total Revenue</p>
+      <div class="kpi-icon bg-emerald-50 text-emerald-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+    </div>
+    <p class="kpi-value num-font font-extrabold text-slate-900">Rp {{ kpi.revenue.cur|intcomma }}</p>
+    <div class="flex items-center gap-1.5 mt-1">
+      <span class="kpi-change {% if kpi.revenue.pct >= 0 %}trend-up{% else %}trend-down{% endif %}">
+        {% if kpi.revenue.pct >= 0 %}↑{% else %}↓{% endif %} {{ kpi.revenue.pct|floatformat:1 }}%
+      </span>
+      <span class="text-xs text-slate-400">vs prev period</span>
+    </div>
+  </div>
+
+  <div class="kpi-card fade-up fade-up-1">
+    <div class="flex items-center justify-between mb-2">
+      <p class="kpi-label">Sales Orders</p>
+      <div class="kpi-icon bg-blue-50 text-blue-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+      </div>
+    </div>
+    <p class="kpi-value num-font font-extrabold text-slate-900">{{ kpi.sales_orders.cur|intcomma }}</p>
+    <div class="flex items-center gap-1.5 mt-1">
+      <span class="kpi-change {% if kpi.sales_orders.pct >= 0 %}trend-up{% else %}trend-down{% endif %}">
+        {% if kpi.sales_orders.pct >= 0 %}↑{% else %}↓{% endif %} {{ kpi.sales_orders.pct|floatformat:1 }}%
+      </span>
+      <span class="text-xs text-slate-400">vs prev period</span>
+    </div>
+  </div>
+
+  <div class="kpi-card fade-up fade-up-2">
+    <div class="flex items-center justify-between mb-2">
+      <p class="kpi-label">Purchase Orders</p>
+      <div class="kpi-icon bg-orange-50 text-orange-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      </div>
+    </div>
+    <p class="kpi-value num-font font-extrabold text-slate-900">{{ kpi.purchase_orders.cur|intcomma }}</p>
+    <div class="flex items-center gap-1.5 mt-1">
+      <span class="kpi-change {% if kpi.purchase_orders.pct >= 0 %}trend-up{% else %}trend-down{% endif %}">
+        {% if kpi.purchase_orders.pct >= 0 %}↑{% else %}↓{% endif %} {{ kpi.purchase_orders.pct|floatformat:1 }}%
+      </span>
+      <span class="text-xs text-slate-400">vs prev period</span>
+    </div>
+  </div>
+
+  <div class="kpi-card fade-up fade-up-2">
+    <div class="flex items-center justify-between mb-2">
+      <p class="kpi-label">Service Requests</p>
+      <div class="kpi-icon bg-purple-50 text-purple-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </div>
+    </div>
+    <p class="kpi-value num-font font-extrabold text-slate-900">{{ kpi.service_requests.cur|intcomma }}</p>
+    <div class="flex items-center gap-1.5 mt-1">
+      <span class="kpi-change {% if kpi.service_requests.pct >= 0 %}trend-up{% else %}trend-down{% endif %}">
+        {% if kpi.service_requests.pct >= 0 %}↑{% else %}↓{% endif %} {{ kpi.service_requests.pct|floatformat:1 }}%
+      </span>
+      <span class="text-xs text-slate-400">vs prev period</span>
+    </div>
+  </div>
+
+  <div class="kpi-card fade-up fade-up-3">
+    <div class="flex items-center justify-between mb-2">
+      <p class="kpi-label">Products</p>
+      <div class="kpi-icon bg-sky-50 text-sky-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      </div>
+    </div>
+    <p class="kpi-value num-font font-extrabold text-slate-900">{{ kpi.products.cur|intcomma }}</p>
+    <div class="flex items-center gap-1.5 mt-1">
+      <span class="text-xs font-semibold text-emerald-600">{{ kpi.products.in_stock_pct }}% in-stock</span>
+    </div>
+  </div>
+
+  <div class="kpi-card fade-up fade-up-3">
+    <div class="flex items-center justify-between mb-2">
+      <p class="kpi-label">Avg Order Value</p>
+      <div class="kpi-icon bg-rose-50 text-rose-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      </div>
+    </div>
+    <p class="kpi-value num-font font-extrabold text-slate-900">Rp {{ kpi.aov.cur|intcomma }}</p>
+    <div class="flex items-center gap-1.5 mt-1">
+      <span class="kpi-change {% if kpi.aov.pct >= 0 %}trend-up{% else %}trend-down{% endif %}">
+        {% if kpi.aov.pct >= 0 %}↑{% else %}↓{% endif %} {{ kpi.aov.pct|floatformat:1 }}%
+      </span>
+      <span class="text-xs text-slate-400">vs prev period</span>
+    </div>
+  </div>
+
+  <div class="kpi-card fade-up fade-up-4">
+    <div class="flex items-center justify-between mb-2">
+      <p class="kpi-label">Customers</p>
+      <div class="kpi-icon bg-indigo-50 text-indigo-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/></svg>
+      </div>
+    </div>
+    <p class="kpi-value num-font font-extrabold text-slate-900">{{ kpi.customers.cur|intcomma }}</p>
+    <div class="flex items-center gap-1.5 mt-1">
+      <span class="text-xs font-semibold text-emerald-600">+{{ kpi.customers.new }} new</span>
+      <span class="text-xs text-slate-400">({{ kpi.customers.pct_new }}% vs prev)</span>
+    </div>
+  </div>
+
+  <div class="kpi-card fade-up fade-up-4">
+    <div class="flex items-center justify-between mb-2">
+      <p class="kpi-label">Outstanding Receivables</p>
+      <div class="kpi-icon bg-red-50 text-red-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      </div>
+    </div>
+    <p class="kpi-value num-font font-extrabold text-slate-900">Rp {{ kpi.receivables.cur|intcomma }}</p>
+    <div class="flex items-center gap-1.5 mt-1">
+      <span class="kpi-change {% if kpi.receivables.pct <= 0 %}trend-up{% else %}trend-down{% endif %}">
+        {% if kpi.receivables.pct <= 0 %}↓{% else %}↑{% endif %} {{ kpi.receivables.pct|floatformat:1 }}%
+      </span>
+      <span class="text-xs text-slate-400">vs prev period</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 2: CHARTS — ROW 1 (2 columns)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+  <!-- Chart 1A: Revenue Trend -->
+  <div class="section-card">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="font-bold text-navy-800">Revenue Trend</h3>
+        <p class="text-xs text-slate-500">12-month revenue breakdown</p>
+      </div>
+      <div class="flex items-center gap-3 text-xs" id="legend-1a"></div>
+    </div>
+    <div class="chart-container" style="height: 350px;">
+      <canvas id="chart1a"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart 1B: Sales vs Purchases -->
+  <div class="section-card">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="font-bold text-navy-800">Sales vs Purchases</h3>
+        <p class="text-xs text-slate-500">Monthly comparison (12 months)</p>
+      </div>
+    </div>
+    <div class="chart-container" style="height: 350px;">
+      <canvas id="chart1b"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 2: CHARTS — ROW 2 (3 columns)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+  <!-- Chart 2A: Product Category Performance -->
+  <div class="section-card">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-bold text-navy-800 text-sm">Product Category Performance</h3>
+    </div>
+    <div class="chart-container" style="height: 300px;">
+      <canvas id="chart2a"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart 2B: Payment Status Distribution -->
+  <div class="section-card">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-bold text-navy-800 text-sm">Payment Status</h3>
+    </div>
+    <div class="chart-container" style="height: 300px;">
+      <canvas id="chart2b"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart 2C: Service Request Status -->
+  <div class="section-card">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-bold text-navy-800 text-sm">Service Completion</h3>
+    </div>
+    <div class="flex flex-col items-center justify-center" style="height: 300px;">
+      <div class="progress-ring mb-3" id="service-ring">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle class="bg" cx="70" cy="70" r="60" stroke-width="12"/>
+          <circle class="fg" cx="70" cy="70" r="60" stroke-width="12"
+            stroke-dasharray="377"           stroke-dashoffset="{{ chart2c.dashoffset }}" />
+        </svg>
+        <div class="center-label" style="position:absolute;">
+          <p class="num-font text-3xl font-extrabold text-slate-900">{{ chart2c.rate }}%</p>
+          <p class="text-xs text-slate-500">completion</p>
+        </div>
+      </div>
+      <div class="flex gap-4 text-xs mt-2">
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> {{ chart2c.completed }}</span>
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> {{ chart2c.in_progress }}</span>
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> {{ chart2c.pending }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 2: CHARTS — ROW 3 (2 columns)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+  <!-- Chart 3A: Top 10 Products -->
+  <div class="section-card">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="font-bold text-navy-800">Top Products by Sales</h3>
+        <p class="text-xs text-slate-500">Best performing products this period</p>
+      </div>
+    </div>
+    <div class="overflow-x-auto" style="height: 320px;">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-xs font-bold text-slate-500 uppercase border-b border-slate-100">
+            <th class="text-left py-2 pr-2 w-8">#</th>
+            <th class="text-left py-2 pr-2">Product</th>
+            <th class="text-right py-2 pr-2">Units</th>
+            <th class="text-right py-2 pr-2">Revenue</th>
+            <th class="text-right py-2 pl-2 w-24">7-day Trend</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in chart3a %}
+          <tr class="tbl-row-hover border-b border-slate-50">
+            <td class="py-2 pr-2 text-slate-400 font-bold num-font">{{ p.rank }}</td>
+            <td class="py-2 pr-2 font-semibold text-slate-800 truncate max-w-[180px]">{{ p.name }}</td>
+            <td class="py-2 pr-2 text-right num-font text-slate-600">{{ p.qty }}</td>
+            <td class="py-2 pr-2 text-right num-font font-bold text-slate-900">Rp {{ p.rev|intcomma }}</td>
+            <td class="py-2 pl-2">
+              <div class="flex items-center justify-end">
+                <canvas class="spark-canvas" data-spark="{{ p.spark|join:',' }}" width="80" height="24"></canvas>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-center py-6 text-slate-500">No product sales data available.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Chart 3B: Finance Summary -->
+  <div class="section-card">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="font-bold text-navy-800">Finance Summary</h3>
+        <p class="text-xs text-slate-500">Revenue, COGS, Expenses & Profit</p>
+      </div>
+    </div>
+    <div class="chart-container" style="height: 320px;">
+      <canvas id="chart3b"></canvas>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function onPeriodChange() {
+  var sel = document.getElementById('period-select');
+  var customDiv = document.getElementById('custom-dates');
+  if (sel.value === 'custom') {
+    customDiv.classList.remove('hidden');
+  } else {
+    customDiv.classList.add('hidden');
+    document.getElementById('period-form').submit();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  // ── Date/time header ──
+  var now = new Date();
+  var opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' };
+  document.getElementById('header-date').textContent = now.toLocaleDateString('en-US', opts);
+
+  Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+  Chart.defaults.font.size = 11;
+  if (typeof ChartDataLabels !== 'undefined') {
+    Chart.register(ChartDataLabels);
+  }
+
+  // ── Color palette ──
+  var COLORS = {
+    navy: '#0f172a', emerald: '#059669', red: '#dc2626',
+    blue: '#3b82f6', orange: '#f97316', amber: '#f59e0b',
+    purple: '#8b5cf6', sky: '#0ea5e9', rose: '#e11d48',
+    slate: '#64748b', slate100: '#e2e8f0', slate200: '#cbd5e1',
+    teal: '#14b8a6',
+  };
+
+  // ── Helper: format IDR ──
+  function fmtIDR(v) { return 'Rp ' + Number(v).toLocaleString('id-ID'); }
+  function fmtK(v) {
+    if (v >= 1000000000) return (v / 1000000000).toFixed(1) + 'B';
+    if (v >= 1000000) return (v / 1000000).toFixed(1) + 'M';
+    if (v >= 1000) return (v / 1000).toFixed(1) + 'K';
+    return v.toString();
+  }
+
+  // ── Chart 1A: Revenue Trend ──
+  (function () {
+    var labels = JSON.parse('{{ chart1a.labels|escapejs }}');
+    var salesData = JSON.parse('{{ chart1a.sales|escapejs }}');
+    var serviceData = JSON.parse('{{ chart1a.service|escapejs }}');
+    var otherData = JSON.parse('{{ chart1a.other|escapejs }}');
+
+    new Chart(document.getElementById('chart1a'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'Sales Revenue', data: salesData, borderColor: COLORS.blue, backgroundColor: 'rgba(59,130,246,0.1)', borderWidth: 2.5, tension: 0.4, fill: true, pointRadius: 3, pointHoverRadius: 6 },
+          { label: 'Service Revenue', data: serviceData, borderColor: COLORS.emerald, backgroundColor: 'rgba(5,150,105,0.08)', borderWidth: 2.5, tension: 0.4, fill: true, pointRadius: 3, pointHoverRadius: 6 },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { usePointStyle: true, padding: 16, font: { size: 11 } } },
+          tooltip: {
+            titleFont: { size: 12 }, bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+            callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + fmtIDR(ctx.parsed.y); } }
+          },
+          datalabels: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 }, callback: function (v) { return fmtK(v); } } },
+          x: { grid: { display: false }, ticks: { font: { size: 10 }, maxTicksLimit: 8 } }
+        }
+      }
+    });
+  })();
+
+  // ── Chart 1B: Sales vs Purchases ──
+  (function () {
+    var labels = JSON.parse('{{ chart1b.labels|escapejs }}');
+    var sa = JSON.parse('{{ chart1b.sales_amt|escapejs }}');
+    var pa = JSON.parse('{{ chart1b.purch_amt|escapejs }}');
+    var sc = JSON.parse('{{ chart1b.sales_cnt|escapejs }}');
+    var pc = JSON.parse('{{ chart1b.purch_cnt|escapejs }}');
+
+    new Chart(document.getElementById('chart1b'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'Sales (Rp)', data: sa, backgroundColor: COLORS.blue, borderRadius: 4, yAxisID: 'y' },
+          { label: 'Purchases (Rp)', data: pa, backgroundColor: COLORS.orange, borderRadius: 4, yAxisID: 'y' },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { usePointStyle: true, padding: 16, font: { size: 11 } } },
+          tooltip: {
+            bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+            callbacks: {
+              afterBody: function (items) {
+                var idx = items[0].dataIndex;
+                return 'Orders: ' + sc[idx] + ' sales / ' + pc[idx] + ' purchases';
+              },
+              label: function (ctx) { return ctx.dataset.label + ': ' + fmtIDR(ctx.parsed.y); }
+            }
+          },
+          datalabels: {
+            anchor: 'end', align: 'end', font: { size: 9, weight: 'bold' },
+            formatter: function (v) { return fmtK(v); },
+            color: '#64748b'
+          }
+        },
+        scales: {
+          y: { beginAtZero: true, position: 'left', grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 }, callback: function (v) { return fmtK(v); } } },
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+  })();
+
+  // ── Chart 2A: Product Category ──
+  (function () {
+    var labels = JSON.parse('{{ chart2a.labels|escapejs }}');
+    var values = JSON.parse('{{ chart2a.values|escapejs }}');
+    if (!labels.length) labels = ['No data']; values = values.length ? values : [0];
+
+    var colors = ['#0f172a','#1e3fdd','#3b82f6','#0ea5e9','#14b8a6','#059669','#84cc16','#f59e0b'];
+    new Chart(document.getElementById('chart2a'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          backgroundColor: labels.map(function(_, i) { return colors[i % colors.length]; }),
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+            callbacks: { label: function (ctx) { return fmtIDR(ctx.parsed.x); } }
+          },
+          datalabels: {
+            anchor: 'end', align: 'end', font: { size: 9, weight: 'bold' },
+            formatter: function (v) { return fmtK(v); },
+            color: '#64748b'
+          }
+        },
+        scales: {
+          x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: "'JetBrains Mono', monospace", size: 9 }, callback: function (v) { return fmtK(v); } } },
+          y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+  })();
+
+  // ── Chart 2B: Payment Status Donut ──
+  (function () {
+    var paid = {{ chart2b.paid }};
+    var pending = {{ chart2b.pending }};
+    var overdue = {{ chart2b.overdue }};
+    var cancelled = {{ chart2b.cancelled }};
+    var total = {{ chart2b.total }};
+
+    new Chart(document.getElementById('chart2b'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Paid', 'Pending', 'Overdue', 'Cancelled'],
+        datasets: [{
+          data: [paid, Math.max(0, pending), overdue, cancelled],
+          backgroundColor: ['#059669', '#f59e0b', '#dc2626', '#94a3b8'],
+          borderWidth: 0,
+          hoverOffset: 6,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, font: { size: 10 } } },
+          tooltip: {
+            bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+            callbacks: {
+              label: function (ctx) {
+                var pct = total ? (ctx.parsed / total * 100).toFixed(1) : 0;
+                return ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+              }
+            }
+          },
+          datalabels: {
+            display: function (ctx) { return ctx.dataset.data[ctx.dataIndex] > 0; },
+            font: { size: 9, weight: 'bold' }, color: '#fff',
+            formatter: function (v, ctx) {
+              return total ? (v / total * 100).toFixed(1) + '%' : '';
+            }
+          }
+        }
+      },
+    });
+  })();
+
+  // ── Chart 3B: Finance Summary Stacked Bar ──
+  (function () {
+    var rev = {{ chart3b.revenue }};
+    var cogs = {{ chart3b.cogs }};
+    var exp = {{ chart3b.expense }};
+    var profit = {{ chart3b.profit }};
+    var prevRev = {{ chart3b.prev_revenue }};
+
+    new Chart(document.getElementById('chart3b'), {
+      type: 'bar',
+      data: {
+        labels: ['Current Period', 'Previous Period'],
+        datasets: [
+          { label: 'Revenue', data: [rev, prevRev], backgroundColor: '#3b82f6', borderRadius: 4 },
+          { label: 'COGS', data: [cogs, 0], backgroundColor: '#f97316', borderRadius: 4 },
+          { label: 'Expenses', data: [exp, 0], backgroundColor: '#dc2626', borderRadius: 4 },
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { usePointStyle: true, padding: 16, font: { size: 11 } } },
+          tooltip: {
+            bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+            callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + fmtIDR(ctx.parsed.x); } }
+          },
+          datalabels: {
+            anchor: 'end', align: 'end', font: { size: 9 },
+            formatter: function (v) { return v > 0 ? fmtK(v) : ''; },
+            color: '#64748b'
+          }
+        },
+        scales: {
+          x: { beginAtZero: true, stacked: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: "'JetBrains Mono', monospace", size: 9 }, callback: function (v) { return fmtK(v); } } },
+          y: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+  })();
+
+  // ── Sparklines for Top Products ──
+  document.querySelectorAll('.spark-canvas').forEach(function (canvas) {
+    var dataStr = canvas.getAttribute('data-spark');
+    if (!dataStr) return;
+    var data = dataStr.split(',').map(Number);
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width, h = canvas.height;
+    var max = Math.max.apply(null, data) || 1;
+    var min = Math.min.apply(null, data);
+    var range = max - min || 1;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // draw line
+    ctx.beginPath();
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 1.5;
+    data.forEach(function (v, i) {
+      var x = (i / (data.length - 1)) * (w - 4) + 2;
+      var y = h - 4 - ((v - min) / range) * (h - 8);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // fill area
+    ctx.lineTo(w - 2, h - 4);
+    ctx.lineTo(2, h - 4);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(59,130,246,0.08)';
+    ctx.fill();
+
+    // dots
+    ctx.fillStyle = '#3b82f6';
+    data.forEach(function (v, i) {
+      var x = (i / (data.length - 1)) * (w - 4) + 2;
+      var y = h - 4 - ((v - min) / range) * (h - 8);
+      ctx.beginPath();
+      ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  });
+});
+
+
+</script>
+{% endblock %}

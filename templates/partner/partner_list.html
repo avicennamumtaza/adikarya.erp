@@ -123,7 +123,7 @@
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ stat_receivable|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ stat_receivable|floatformat:"0"|intcomma|default:"0" }}</p>
   </div>
 
   {# Supplier Payables #}
@@ -134,7 +134,7 @@
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ stat_payable|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Rp {{ stat_payable|floatformat:"0"|intcomma|default:"0" }}</p>
   </div>
 
   {# Active Members #}
@@ -150,7 +150,7 @@
 </div>
 
 {# ── ACTION / FILTER BAR ── #}
-<div class="bg-white border border-slate-100 rounded-xl p-3 sm:p-4 shadow-card mb-4">
+<div class="bg-white border border-slate-100 rounded-xl p-3 sm:p-4 shadow-card mb-4" x-data="{ importModalOpen: false }">
   <form method="GET" id="filter-form" class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
 
     {# Search #}
@@ -178,17 +178,49 @@
 
     <div class="flex-1 hidden sm:block"></div>
 
-    <a href="{% url 'partner:partner_export' %}?{{ request.GET.urlencode }}"
+    <a href="{% url 'report:export_partners' %}?{{ request.GET.urlencode }}"
        class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-2 rounded-xl bg-white hover:bg-slate-50 transition-colors whitespace-nowrap">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-      Export
+      Export Excel
     </a>
+
+    <button type="button" @click="importModalOpen = true"
+       class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-2 rounded-xl bg-white hover:bg-slate-50 transition-colors whitespace-nowrap">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L5 8m4-4v12"/></svg>
+      Import
+    </button>
 
     <a href="{% url 'partner:partner_add' %}"
        class="flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-white text-sm font-bold px-4 py-2 rounded-xl shadow-navy transition-colors whitespace-nowrap">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
       <span>Add Partner</span>
     </a>
+
+    {# ── Import Modal ── #}
+    <div x-show="importModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" x-cloak>
+      <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" @click.outside="importModalOpen = false">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-slate-900">Import Data Partner</h3>
+          <button type="button" @click="importModalOpen = false" class="text-slate-400 hover:text-slate-700 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <p class="text-sm text-slate-500 mb-4">Upload file Excel (.xlsx) untuk mengimport data partner.</p>
+        <form method="POST" action="{% url 'report:import_partners' %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'partner:partner_list' %}">
+          <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-6 mb-4 cursor-pointer hover:border-navy-300 transition-colors">
+            <svg class="w-8 h-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L5 8m4-4v12"/></svg>
+            <span class="text-sm text-slate-500 font-semibold">Klik untuk pilih file .xlsx</span>
+            <input type="file" name="file" accept=".xlsx" class="hidden" required>
+          </label>
+          <div class="flex gap-2 justify-end">
+            <button type="button" @click="importModalOpen = false" class="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">Batal</button>
+            <button type="submit" class="px-4 py-2 bg-navy-900 text-white text-sm font-bold rounded-xl hover:bg-navy-800 transition-colors">Import</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </form>
 </div>
 
@@ -235,10 +267,33 @@
               {{ partner.get_contact_type_display }}
             </span>
           </td>
-          <td class="whitespace-nowrap">{{ partner.whatsapp }}</td>
+          <td class="whitespace-nowrap">
+            {{ partner.whatsapp }} -
+            {% with partner.whatsapp|stringformat:"s" as wa_raw %}
+              {% if wa_raw %}
+                {% if wa_raw|slice:":1" == "0" %}
+                  <a href="https://wa.me/62{{ wa_raw|slice:"1:" }}"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     class="text-navy-900 font-semibold hover:underline">
+                    chat
+                  </a>
+                {% else %}
+                  <a href="https://wa.me/62{{ wa_raw }}"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     class="text-navy-900 font-semibold hover:underline">
+                    chat
+                  </a>
+                {% endif %}
+              {% else %}
+                <span class="text-slate-400">-</span>
+              {% endif %}
+            {% endwith %}
+          </td>
           <td class="text-right whitespace-nowrap font-semibold
               {% if partner.current_balance > 0 %}text-green-600{% elif partner.current_balance < 0 %}text-red-500{% else %}text-slate-400{% endif %}">
-            {% if partner.current_balance > 0 %}+{% endif %}Rp {{ partner.current_balance|intcomma|default:"0" }}
+            {% if partner.current_balance > 0 %}+{% endif %}Rp {{ partner.current_balance|floatformat:"0"|intcomma|default:"0" }}
           </td>
           <td class="pl-6">
             <span class="inline-flex items-center gap-1.5 text-xs font-semibold
@@ -333,12 +388,32 @@
     <div class="grid grid-cols-2 gap-2 text-xs mb-4">
       <div>
         <p class="text-slate-400 font-medium mb-0.5">WhatsApp</p>
-        <p class="text-slate-700 font-semibold">{{ partner.whatsapp }}</p>
+        {% with partner.whatsapp|stringformat:"s" as wa_raw %}
+          {% if wa_raw %}
+            {% if wa_raw|slice:":1" == "0" %}
+              <a href="https://wa.me/62{{ wa_raw|slice:"1:" }}"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 class="text-navy-900 font-semibold hover:underline">
+                chat
+              </a>
+            {% else %}
+              <a href="https://wa.me/62{{ wa_raw }}"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 class="text-navy-900 font-semibold hover:underline">
+                chat
+              </a>
+            {% endif %}
+          {% else %}
+            <p class="text-slate-400 font-semibold">-</p>
+          {% endif %}
+        {% endwith %}
       </div>
       <div>
         <p class="text-slate-400 font-medium mb-0.5">Balance</p>
         <p class="font-bold {% if partner.current_balance > 0 %}text-green-600{% elif partner.current_balance < 0 %}text-red-500{% else %}text-slate-400{% endif %}">
-          {% if partner.current_balance > 0 %}+{% endif %}Rp {{ partner.current_balance|intcomma|default:"0" }}
+          {% if partner.current_balance > 0 %}+{% endif %}Rp {{ partner.current_balance|floatformat:"0"|intcomma|default:"0" }}
         </p>
       </div>
       <div>
@@ -384,7 +459,7 @@
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
       </div>
     </div>
-    <p class="text-4xl font-extrabold text-white mb-2">Rp {{ hutang_total_outstanding|intcomma|default:"0" }}</p>
+    <p class="text-4xl font-extrabold text-white mb-2">Rp {{ hutang_total_outstanding|floatformat:"0"|intcomma|default:"0" }}</p>
   </div>
 
   {# Overdue #}
@@ -395,7 +470,7 @@
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-red-600">Rp {{ hutang_overdue_total|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-red-600">Rp {{ hutang_overdue_total|floatformat:"0"|intcomma|default:"0" }}</p>
   </div>
 
   {# Jatuh Tempo 7 Hari #}
@@ -406,7 +481,7 @@
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-amber-700">Rp {{ hutang_week_due|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-amber-700">Rp {{ hutang_week_due|floatformat:"0"|intcomma|default:"0" }}</p>
   </div>
 
   {# Invoice Aktif #}
@@ -468,8 +543,8 @@
           <td><span class="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-lg">{{ item.invoice_number }}</span></td>
           <td>{{ item.contact.name|default:"-" }}</td>
           <td>{% if item.due_date %}{{ item.due_date|date:"d M Y" }}{% else %}-{% endif %}</td>
-          <td class="text-right">Rp {{ item.total_amount|intcomma }}</td>
-          <td class="text-right font-semibold">Rp {{ item.outstanding|intcomma }}</td>
+          <td class="text-right">Rp {{ item.total_amount|floatformat:"0"|intcomma }}</td>
+          <td class="text-right font-semibold">Rp {{ item.outstanding|floatformat:"0"|intcomma }}</td>
           <td class="text-center"><span class="{{ item.status_badge }} inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold">{{ item.status_label }}</span></td>
           <td class="text-center">
             <div class="flex items-center justify-center gap-1.5">
@@ -514,7 +589,7 @@
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
       </div>
     </div>
-    <p class="text-4xl font-extrabold text-white mb-2">Rp {{ piutang_total_outstanding|intcomma|default:"0" }}</p>
+    <p class="text-4xl font-extrabold text-white mb-2">Rp {{ piutang_total_outstanding|floatformat:"0"|intcomma|default:"0" }}</p>
   </div>
   <div class="bg-white rounded-xl p-4 sm:p-5 border border-red-100 shadow-card fade-up fade-up-2">
     <div class="flex items-start justify-between mb-3">
@@ -523,7 +598,7 @@
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-red-600">Rp {{ piutang_overdue_total|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-red-600">Rp {{ piutang_overdue_total|floatformat:"0"|intcomma|default:"0" }}</p>
   </div>
   <div class="bg-white rounded-xl p-4 sm:p-5 border border-amber-100 shadow-card fade-up fade-up-3">
     <div class="flex items-start justify-between mb-3">
@@ -532,7 +607,7 @@
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
     </div>
-    <p class="text-2xl sm:text-3xl font-extrabold text-amber-700">Rp {{ piutang_week_due|intcomma|default:"0" }}</p>
+    <p class="text-2xl sm:text-3xl font-extrabold text-amber-700">Rp {{ piutang_week_due|floatformat:"0"|intcomma|default:"0" }}</p>
   </div>
   <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-100 shadow-card fade-up fade-up-4">
     <div class="flex items-start justify-between mb-3">
@@ -592,8 +667,8 @@
           <td class="py-3"><span class="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-lg">{{ item.invoice_number }}</span></td>
           <td class="py-3">{{ item.contact.name|default:"-" }}</td>
           <td class="py-3">{% if item.due_date %}{{ item.due_date|date:"d M Y" }}{% else %}-{% endif %}</td>
-          <td class="text-right py-3">Rp {{ item.total_amount|intcomma }}</td>
-          <td class="text-right font-semibold py-3">Rp {{ item.outstanding|intcomma }}</td>
+          <td class="text-right py-3">Rp {{ item.total_amount|floatformat:"0"|intcomma }}</td>
+          <td class="text-right font-semibold py-3">Rp {{ item.outstanding|floatformat:"0"|intcomma }}</td>
           <td class="text-center py-3"><span class="{{ item.status_badge }} inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold">{{ item.status_label }}</span></td>
           <td class="text-center pr-5 py-3">
             <div class="flex items-center justify-center gap-1.5">

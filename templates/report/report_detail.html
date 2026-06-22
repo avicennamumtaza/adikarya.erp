@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Detail Laporan{% endblock %}
+{% block nav_report %}active{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .num-font { font-family: 'JetBrains Mono', monospace; }
+  
+  .section-card {
+    background: #fff; border: 1.5px solid #e2e8f0; border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06); padding: 20px;
+  }
+  
+  .page-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 9px; cursor: pointer;
+    font-size: .8125rem; font-weight: 600; color: #64748b;
+    text-decoration: none; transition: background .15s, color .15s;
+    white-space: nowrap; border: none; background: transparent;
+  }
+  .page-tab:hover  { background: #fff; color: #1e293b; }
+  .page-tab.active { background: #fff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  
+  .tbl-row:hover { background: #f0f4ff; }
+  .tbl-row { transition: background 0.12s; border-bottom: 1px solid #f1f5f9; }
+  .tbl-cell { padding: 12px 14px; vertical-align: middle; color: #1e293b; font-size: 0.875rem; }
+  .tbl-header { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; padding: 10px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+  
+  /* Remove vertical borders by just keeping horizontal ones */
+  table { width: 100%; border-collapse: collapse; }
+  
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fade-in .3s ease-in-out; }
+  
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .text-navy-800 { color: #1e293b; }
+  .text-slate-500 { color: #64748b; }
+  .text-emerald-600 { color: #059669; }
+  .text-red-600 { color: #dc2626; }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+  <a href="{% url 'dashboard' %}" class="hover:text-slate-700 transition-colors">Dashboard</a>
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <span class="text-slate-700 font-semibold">Laporan</span>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div>
+    <h1 class="text-2xl font-extrabold text-navy-800 tracking-tight">Detail Laporan</h1>
+    <p class="text-sm text-slate-500 mt-0.5">Analisa komprehensif keuangan, akuntansi, dan AR/AP.</p>
+  </div>
+  <div class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto shrink-0" role="tablist">
+    <a href="{% url 'report:dashboard' %}" class="page-tab whitespace-nowrap" role="tab">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      Overview
+    </a>
+    <a href="{% url 'report:detail' %}" class="page-tab active whitespace-nowrap" role="tab">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      Detail Laporan
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white border border-slate-100 rounded-xl p-3 sm:p-4 shadow-card mb-4 flex flex-wrap items-center justify-between gap-3">
+  <form method="GET" class="flex flex-wrap items-center gap-3">
+    <div class="flex items-center gap-2">
+      <label class="text-xs font-bold text-slate-500 uppercase">Periode:</label>
+      <input type="date" name="start_date" value="{{ start_date }}" class="filter-select">
+      <span class="text-slate-400 text-sm">–</span>
+      <input type="date" name="end_date" value="{{ end_date }}" class="filter-select">
+    </div>
+    <button type="submit" class="bg-navy-900 hover:bg-navy-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors shadow-navy">Filter</button>
+  </form>
+  <button onclick="window.print()" class="flex items-center gap-2 border border-slate-200 text-slate-600 text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+    Export
+  </button>
+</div>
+
+<!-- TABS NAVIGATION -->
+<div class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto mb-4" role="tablist">
+  <button class="page-tab active" onclick="switchTab('tab-a', this)">A. Arus Kas (Cash Flow)</button>
+  <button class="page-tab" onclick="switchTab('tab-b', this)">B. Laba Rugi (P&L)</button>
+  <button class="page-tab" onclick="switchTab('tab-c', this)">C. Neraca Saldo (Balance Sheet)</button>
+  <button class="page-tab" onclick="switchTab('tab-d', this)">D. AR/AP Ageing</button>
+</div>
+
+<!-- TAB A: CASH FLOW -->
+<div id="tab-a" class="tab-content active section-card">
+  <h2 class="text-xl font-extrabold text-navy-800 mb-4">Laporan Arus Kas</h2>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <div class="lg:col-span-1 flex flex-col gap-4">
+      <div class="p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
+        <p class="text-xs font-bold text-emerald-700 uppercase">Uang Masuk (Inflow)</p>
+        <p class="text-2xl font-extrabold text-emerald-700 num-font mt-2">Rp {{ cf_inflow|floatformat:"0"|intcomma }}</p>
+      </div>
+      <div class="p-4 bg-red-50 border border-red-100 rounded-xl">
+        <p class="text-xs font-bold text-red-700 uppercase">Uang Keluar (Outflow)</p>
+        <p class="text-2xl font-extrabold text-red-700 num-font mt-2">Rp {{ cf_outflow|floatformat:"0"|intcomma }}</p>
+      </div>
+    </div>
+    <div class="lg:col-span-2">
+      <div class="relative w-full h-[200px]">
+        <canvas id="cfChart"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <div class="overflow-x-auto">
+    <table>
+      <thead>
+        <tr>
+          <th class="tbl-header text-left">Tanggal</th>
+          <th class="tbl-header text-left">Tipe</th>
+          <th class="tbl-header text-left">Kategori</th>
+          <th class="tbl-header text-left">Catatan</th>
+          <th class="tbl-header text-right">Nominal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in transactions %}
+        <tr class="tbl-row">
+          <td class="tbl-cell">{{ t.date|date:"d M Y" }}</td>
+          <td class="tbl-cell">
+            {% if t.transaction_type == 'IN' %}
+              <span class="badge-paid px-2 py-0.5 rounded text-xs font-bold">MASUK</span>
+            {% elif t.transaction_type == 'OUT' %}
+              <span class="badge-overdue px-2 py-0.5 rounded text-xs font-bold">KELUAR</span>
+            {% else %}
+              <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-bold">TRANSFER</span>
+            {% endif %}
+          </td>
+          <td class="tbl-cell font-semibold">{{ t.category.name|default:"-" }}</td>
+          <td class="tbl-cell">{{ t.note|truncatechars:50 }}</td>
+          <td class="tbl-cell text-right num-font font-bold">Rp {{ t.amount|floatformat:"0"|intcomma }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center py-4 text-slate-500">Tidak ada transaksi pada periode ini.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TAB B: P&L -->
+<div id="tab-b" class="tab-content section-card">
+  <h2 class="text-xl font-extrabold text-navy-800 mb-4">Laporan Laba Rugi</h2>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div>
+      <table>
+        <tbody>
+          <tr class="tbl-row"><td class="tbl-cell font-bold">Pendapatan</td><td class="tbl-cell text-right num-font font-bold text-emerald-600">Rp {{ pl_revenue|floatformat:"0"|intcomma }}</td></tr>
+          <tr class="tbl-row"><td class="tbl-cell font-bold">Harga Pokok Penjualan (HPP)</td><td class="tbl-cell text-right num-font font-bold text-red-600">Rp {{ pl_cogs|floatformat:"0"|intcomma }}</td></tr>
+          <tr class="tbl-row bg-slate-50"><td class="tbl-cell font-extrabold">Laba Kotor</td><td class="tbl-cell text-right num-font font-extrabold">Rp {{ pl_gross|floatformat:"0"|intcomma }}</td></tr>
+          <tr class="tbl-row"><td class="tbl-cell font-bold">Beban / Pengeluaran</td><td class="tbl-cell text-right num-font font-bold text-red-600">Rp {{ pl_expense|floatformat:"0"|intcomma }}</td></tr>
+          <tr class="tbl-row bg-navy-50 border-t-2 border-navy-900"><td class="tbl-cell font-extrabold text-navy-900">Laba Bersih</td><td class="tbl-cell text-right num-font font-extrabold text-navy-900">Rp {{ pl_net|floatformat:"0"|intcomma }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="flex flex-col items-center justify-center">
+      <h3 class="text-sm font-bold text-slate-500 uppercase mb-4">Komposisi P&L</h3>
+      <div class="relative w-[250px] h-[250px]">
+        <canvas id="plChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB C: BALANCE SHEET -->
+<div id="tab-c" class="tab-content section-card">
+  <h2 class="text-xl font-extrabold text-navy-800 mb-4">Neraca Saldo (Balance Sheet)</h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- Aset -->
+    <div>
+      <div class="bg-slate-100 px-4 py-2 font-bold text-slate-700 uppercase text-sm mb-2 rounded-lg">Aset (Harta)</div>
+      <table>
+        <tbody>
+          <tr class="tbl-row"><td class="tbl-cell">Kas & Bank</td><td class="tbl-cell text-right num-font font-bold">Rp {{ bs_kas|floatformat:"0"|intcomma }}</td></tr>
+          <tr class="tbl-row"><td class="tbl-cell">Piutang Usaha</td><td class="tbl-cell text-right num-font font-bold">Rp {{ bs_piutang|floatformat:"0"|intcomma }}</td></tr>
+          <tr class="tbl-row bg-emerald-50"><td class="tbl-cell font-extrabold text-emerald-800">Total Aset</td><td class="tbl-cell text-right num-font font-extrabold text-emerald-800">Rp {{ bs_aset|floatformat:"0"|intcomma }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- Kewajiban & Ekuitas -->
+    <div>
+      <div class="bg-slate-100 px-4 py-2 font-bold text-slate-700 uppercase text-sm mb-2 rounded-lg">Kewajiban & Ekuitas</div>
+      <table>
+        <tbody>
+          <tr class="tbl-row"><td class="tbl-cell">Hutang Usaha</td><td class="tbl-cell text-right num-font font-bold">Rp {{ bs_hutang|floatformat:"0"|intcomma }}</td></tr>
+          <tr class="tbl-row"><td class="tbl-cell">Modal (Equity)</td><td class="tbl-cell text-right num-font font-bold">Rp {{ bs_modal|floatformat:"0"|intcomma }}</td></tr>
+          <tr class="tbl-row"><td class="tbl-cell">Laba Ditahan (Laba Bersih)</td><td class="tbl-cell text-right num-font font-bold">Rp {{ pl_net|floatformat:"0"|intcomma }}</td></tr>
+          <tr class="tbl-row bg-amber-50"><td class="tbl-cell font-extrabold text-amber-800">Total Kewajiban & Ekuitas</td><td class="tbl-cell text-right num-font font-extrabold text-amber-800">Rp {{ bs_kewajiban_ekuitas|floatformat:"0"|intcomma }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TAB D: AR/AP AGEING -->
+<div id="tab-d" class="tab-content section-card">
+  <h2 class="text-xl font-extrabold text-navy-800 mb-4">AR/AP Ageing (Umur Tagihan)</h2>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="p-4 bg-white border border-slate-200 rounded-xl shadow-sm text-center">
+      <p class="text-xs font-bold text-slate-500 uppercase">0 - 30 Hari</p>
+      <p class="text-xl font-extrabold text-navy-800 num-font mt-1">Rp {{ age_0_30|floatformat:"0"|intcomma }}</p>
+    </div>
+    <div class="p-4 bg-white border border-amber-200 rounded-xl shadow-sm text-center">
+      <p class="text-xs font-bold text-amber-600 uppercase">31 - 60 Hari</p>
+      <p class="text-xl font-extrabold text-amber-700 num-font mt-1">Rp {{ age_31_60|floatformat:"0"|intcomma }}</p>
+    </div>
+    <div class="p-4 bg-white border border-red-200 rounded-xl shadow-sm text-center">
+      <p class="text-xs font-bold text-red-600 uppercase">61+ Hari</p>
+      <p class="text-xl font-extrabold text-red-700 num-font mt-1">Rp {{ age_61_plus|floatformat:"0"|intcomma }}</p>
+    </div>
+  </div>
+  
+  <div class="overflow-x-auto">
+    <table>
+      <thead>
+        <tr>
+          <th class="tbl-header text-left">Partner</th>
+          <th class="tbl-header text-left">Tipe</th>
+          <th class="tbl-header text-left">Invoice</th>
+          <th class="tbl-header text-center">Jatuh Tempo</th>
+          <th class="tbl-header text-center">Umur (Hari)</th>
+          <th class="tbl-header text-right">Sisa Tagihan</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ap in ar_ap_list %}
+        <tr class="tbl-row">
+          <td class="tbl-cell font-bold">{{ ap.contact }}</td>
+          <td class="tbl-cell">
+            {% if ap.type == 'SALE' %}
+              <span class="badge-paid px-2 py-0.5 rounded text-xs font-bold">PIUTANG (AR)</span>
+            {% else %}
+              <span class="badge-overdue px-2 py-0.5 rounded text-xs font-bold">HUTANG (AP)</span>
+            {% endif %}
+          </td>
+          <td class="tbl-cell font-mono text-xs">{{ ap.invoice }}</td>
+          <td class="tbl-cell text-center">{{ ap.due_date|date:"d M Y" }}</td>
+          <td class="tbl-cell text-center">
+            <span class="font-extrabold {% if ap.age > 60 %}text-red-600{% elif ap.age > 30 %}text-amber-500{% else %}text-slate-600{% endif %}">
+              {{ ap.age }}
+            </span>
+          </td>
+          <td class="tbl-cell text-right num-font font-bold text-red-600">Rp {{ ap.sisa|floatformat:"0"|intcomma }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center py-4 text-slate-500">Semua tagihan lunas atau tidak ada tagihan overdue.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.page-tab').forEach(el => el.classList.remove('active'));
+  
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const ctx = document.getElementById('plChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Pendapatan', 'Beban/Pengeluaran', 'Laba Bersih'],
+      datasets: [{
+        data: [{{ pl_revenue|default:0 }}, {{ pl_expense|default:0 }}, Math.max(0, {{ pl_net|default:0 }})],
+        backgroundColor: ['#059669', '#dc2626', '#1e293b'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: "'Plus Jakarta Sans', sans-serif" } } }
+      }
+    }
+  });
+
+  const cfCtx = document.getElementById('cfChart').getContext('2d');
+  new Chart(cfCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Arus Kas'],
+      datasets: [
+        { label: 'Uang Masuk', data: [{{ cf_inflow|default:0 }}], backgroundColor: '#059669' },
+        { label: 'Uang Keluar', data: [{{ cf_outflow|default:0 }}], backgroundColor: '#dc2626' }
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: { ticks: { font: { family: "'JetBrains Mono', monospace" } } },
+        y: { ticks: { font: { family: "'Plus Jakarta Sans', sans-serif" } } }
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

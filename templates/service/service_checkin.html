@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Service – New Check-in{% endblock %}
+{% block title %}Service – Check-in Baru{% endblock %}
 {% block nav_service %}active{% endblock %}
 
 {% block topbar_search %}{% endblock %}
@@ -12,19 +12,19 @@
   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
   <a href="{% url 'service:service_queue' %}" class="hover:text-slate-700 transition-colors">Service Workshop</a>
   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-  <span class="text-slate-700 font-semibold">New Check-in</span>
+  <span class="text-slate-700 font-semibold">Check-in Baru</span>
 </nav>
 {% endblock %}
 
 {% block page_header %}
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
   <div>
-    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">New Service Check-in</h1>
-    <p class="text-sm text-slate-500 mt-0.5">Register a new device for service. Fields marked <span class="text-red-500 font-bold">*</span> are required.</p>
+    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Check-in Servis Baru</h1>
+    <p class="text-sm text-slate-500 mt-0.5">Daftarkan perangkat baru untuk diservis. Field dengan tanda <span class="text-red-500 font-bold">*</span> wajib diisi.</p>
   </div>
   <a href="{% url 'service:service_queue' %}" class="flex items-center gap-2 border border-slate-200 text-slate-600 text-sm font-semibold px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 transition-colors">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-    Back to Queue
+    Kembali ke Antrian
   </a>
 </div>
 {% endblock %}
@@ -84,7 +84,7 @@
     border-bottom: 1.5px solid #e2e8f0;
   }
 
-  /* Large touch-friendly inputs for boomer staff */
+  /* Large touch-friendly inputs */
   .form-input-lg {
     width: 100%;
     padding: 13px 16px;
@@ -118,17 +118,138 @@
   }
   .form-select-lg:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.1); }
 
-  /* Priority radio */
-  .priority-radio { display: none; }
-  .priority-label {
-    display: flex; align-items: center; justify-content: center; flex-direction: column;
-    gap: 4px; padding: 10px 14px;
-    border: 1.5px solid #e2e8f0; border-radius: 10px;
-    cursor: pointer; transition: all .15s;
-    flex: 1; min-height: 60px; font-size: .8rem; font-weight: 600; color: #64748b;
-    text-align: center;
+  /* ═══ Partner Autocomplete ═══ */
+  .partner-autocomplete-wrap { position: relative; }
+  .partner-search-box { position: relative; display: flex; align-items: center; }
+  .partner-search-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    width: 18px; height: 18px; color: #94a3b8; pointer-events: none;
+    transition: color .2s;
   }
-  .priority-radio:checked + .priority-label { border-color: #0f172a; background: #f0f4ff; color: #1e293b; }
+  .partner-search-box:focus-within .partner-search-icon { color: #0f172a; }
+  .partner-search-input { padding-left: 44px !important; padding-right: 44px !important; }
+  .partner-clear-btn {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    width: 32px; height: 32px; border-radius: 8px; border: none;
+    background: #f1f5f9; color: #64748b; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s, transform .15s;
+  }
+  .partner-clear-btn:hover { background: #fee2e2; color: #dc2626; transform: translateY(-50%) scale(1.08); }
+
+  .partner-dropdown {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    background: rgba(255,255,255,.96);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(15,23,42,.12), 0 4px 12px rgba(15,23,42,.06);
+    z-index: 50;
+    max-height: 280px; overflow-y: auto;
+    padding: 6px;
+    animation: partnerDropIn .2s cubic-bezier(.22,1,.36,1);
+    scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;
+  }
+  .partner-dropdown::-webkit-scrollbar { width: 6px; }
+  .partner-dropdown::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  .partner-dropdown.hidden { display: none; }
+
+  @keyframes partnerDropIn {
+    0% { opacity: 0; transform: translateY(-8px) scale(.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .partner-dropdown-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 10px; cursor: pointer;
+    transition: background .12s, transform .12s;
+    position: relative;
+  }
+  .partner-dropdown-item:hover,
+  .partner-dropdown-item.active {
+    background: linear-gradient(135deg, #f0f4ff 0%, #eef2ff 100%);
+    transform: translateX(2px);
+  }
+  .partner-dropdown-item + .partner-dropdown-item { margin-top: 2px; }
+
+  .partner-dropdown-item .pdi-avatar {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: .75rem;
+    letter-spacing: .04em; flex-shrink: 0;
+  }
+  .partner-dropdown-item .pdi-info { flex: 1; min-width: 0; }
+  .partner-dropdown-item .pdi-name {
+    font-weight: 600; font-size: .875rem; color: #1e293b;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .partner-dropdown-item .pdi-name mark {
+    background: #fef08a; color: #1e293b; border-radius: 2px;
+    padding: 0 1px; font-weight: 700;
+  }
+  .partner-dropdown-item .pdi-phone {
+    font-size: .75rem; color: #64748b; margin-top: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .partner-dropdown-item .pdi-type {
+    font-size: .625rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; padding: 3px 8px; border-radius: 6px;
+    background: #f1f5f9; color: #64748b; flex-shrink: 0;
+  }
+
+  .partner-dropdown-empty {
+    padding: 24px 12px; text-align: center;
+  }
+  .partner-dropdown-empty.hidden { display: none; }
+
+  /* ═══ Selected Customer Card ═══ */
+  .selected-customer-card {
+    margin-top: 12px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1.5px solid #0f172a;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%);
+    transition: all .3s cubic-bezier(.22,1,.36,1);
+    animation: cardPulseIn .35s cubic-bezier(.22,1,.36,1);
+  }
+  .selected-customer-card--empty {
+    border-color: #e2e8f0;
+    background: #f8fafc;
+    border-style: dashed;
+    animation: none;
+  }
+  @keyframes cardPulseIn {
+    0% { transform: scale(.97); opacity: .6; }
+    60% { transform: scale(1.01); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .selected-customer-avatar {
+    width: 42px; height: 42px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: .8rem; letter-spacing: .04em;
+    flex-shrink: 0; transition: all .3s;
+  }
+  .selected-customer-card:not(.selected-customer-card--empty) .selected-customer-avatar {
+    background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+    color: white;
+  }
+  .selected-customer-card--empty .selected-customer-avatar {
+    background: #e2e8f0; color: #94a3b8;
+  }
+  .selected-customer-name {
+    font-weight: 700; font-size: .875rem; color: #0f172a;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .selected-customer-card--empty .selected-customer-name { color: #94a3b8; font-weight: 500; }
+  .selected-customer-phone {
+    font-size: .75rem; color: #64748b; margin-top: 1px;
+  }
+  .selected-customer-card--empty .selected-customer-phone { color: #cbd5e1; }
+  .selected-customer-badge { flex-shrink: 0; }
+  .selected-customer-card:not(.selected-customer-card--empty) .selected-customer-badge { color: #059669; }
+  .selected-customer-card--empty .selected-customer-badge { color: #f59e0b; }
 </style>
 {% endblock %}
 
@@ -141,25 +262,25 @@
   <div class="ticket-preview p-5 mb-5">
     <div class="flex items-center justify-between flex-wrap gap-4">
       <div>
-        <p class="text-xs text-slate-300 uppercase tracking-widest font-semibold mb-1">New Ticket Number</p>
+        <p class="text-xs text-slate-300 uppercase tracking-widest font-semibold mb-1">Nomor Ticket Baru</p>
         <p class="text-3xl font-extrabold tracking-widest font-mono text-white">{% if ticket %}{{ ticket.ticket_number }}{% else %}{{ preview_ticket_number }}{% endif %}</p>
         <p class="text-xs text-slate-300 mt-1">Auto-generated · {% if ticket and ticket.checkin_date %}{{ ticket.checkin_date|date:"d M Y" }}{% else %}{{ today|date:"d M Y" }}{% endif %}</p>
       </div>
       <div class="flex items-center gap-4 flex-wrap">
         <div>
-          <label class="form-label text-slate-300 mb-1 block" for="input-branch">Branch <span class="text-red-400">*</span></label>
+          <label class="form-label text-slate-300 mb-1 block" for="input-branch">Cabang <span class="text-red-400">*</span></label>
           <select id="input-branch" name="branch" required aria-required="true"
                   class="form-select-lg bg-white/10 border-white/20 text-white min-w-[180px]"
                   style="background-color:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:white;">
-            <option value="" style="color:#0f172a;">— Select Branch —</option>
+            <option value="" style="color:#0f172a;">— Pilih Cabang —</option>
             {% for b in branches %}
-              <option value="{{ b.id }}" style="color:#0f172a;" {% if ticket and ticket.branch_id == b.id %}selected{% endif %}>{{ b.name }}</option>
+              <option value="{{ b.id }}" style="color:#0f172a;" {% if form_data.branch == b.id|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
             {% endfor %}
           </select>
         </div>
         <div>
-          <label class="form-label text-slate-300 mb-1 block" for="input-date">Check-in Date <span class="text-red-400">*</span></label>
-          <input type="date" id="input-date" name="checkin_date" value="{% if ticket and ticket.checkin_date %}{{ ticket.checkin_date|date:"Y-m-d" }}{% else %}{{ today|date:"Y-m-d" }}{% endif %}" required
+          <label class="form-label text-slate-300 mb-1 block" for="input-date">Tanggal Masuk <span class="text-red-400">*</span></label>
+          <input type="date" id="input-date" name="checkin_date" value="{% if form_data.checkin_date %}{{ form_data.checkin_date }}{% else %}{{ today|date:"Y-m-d" }}{% endif %}" required
                  class="form-input-lg min-w-[160px]"
                  style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:white;"
                  aria-required="true"/>
@@ -176,163 +297,134 @@
 
       <h2 class="form-section-title">
         <svg class="w-4 h-4 text-navy-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-        Device Information
+        Informasi Perangkat
       </h2>
 
       <!-- Device Type -->
       <div>
-        <label class="form-label text-sm" for="device-type">Device Type <span class="text-red-500">*</span></label>
+        <label class="form-label text-sm" for="device-type">Jenis Perangkat <span class="text-red-500">*</span></label>
         <select id="device-type" name="device_type" required aria-required="true" class="form-select-lg">
-          <option value="">— Select Device Type —</option>
-          <option value="smartphone" {% if ticket and ticket.device_type == 'smartphone' %}selected{% endif %}>📱 Smartphone</option>
-          <option value="laptop">💻 Laptop / Notebook</option>
-          <option value="tablet">📟 Tablet</option>
-          <option value="smartwatch">⌚ Smartwatch</option>
-          <option value="camera">📷 Camera / Drone</option>
-          <option value="console">🎮 Game Console</option>
-          <option value="other">🔧 Other Electronics</option>
+          <option value="">— Pilih Jenis Perangkat —</option>
+          <option value="Pc" {% if form_data.device_type == 'Pc' %}selected{% endif %}>🖥️ PC</option>
+          <option value="Laptop" {% if form_data.device_type == 'Laptop' %}selected{% endif %}>💻 Laptop</option>
+          <option value="Monitor" {% if form_data.device_type == 'Monitor' %}selected{% endif %}>📺 Monitor</option>
+          <option value="Printer" {% if form_data.device_type == 'Printer' %}selected{% endif %}>🖨️ Printer</option>
+          <option value="Device Khusus" {% if form_data.device_type == 'Device Khusus' %}selected{% endif %}>🔧 Lainnya</option>
         </select>
       </div>
 
-      <!-- Brand & Model -->
-      <div class="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label class="form-label text-sm" for="device-brand">Brand <span class="text-red-500">*</span></label>
-          <input type="text" id="device-brand" name="device_brand" value="{% if ticket %}{{ ticket.device_brand }}{% endif %}"
-                 placeholder="e.g. Samsung, Apple, Lenovo"
-                 required aria-required="true" class="form-input-lg"
-                 autocomplete="off"/>
-        </div>
-        <div>
-          <label class="form-label text-sm" for="device-model">Model <span class="text-red-500">*</span></label>
-          <input type="text" id="device-model" name="device_model" value="{% if ticket %}{{ ticket.device_model }}{% endif %}"
-                 placeholder="e.g. Galaxy S23, iPhone 14 Pro"
-                 required aria-required="true" class="form-input-lg"
-                 autocomplete="off"/>
-        </div>
+      <!-- Brand -->
+      <div>
+        <label class="form-label text-sm" for="device-brand">Merek <span class="text-red-500">*</span></label>
+        <input type="text" id="device-brand" name="device_brand" value="{{ form_data.device_brand|default:'' }}"
+               placeholder="cth. Asus, Lenovo, Epson"
+               required aria-required="true" class="form-input-lg"
+               autocomplete="off"/>
       </div>
 
       <!-- Device Name (combined) -->
       <div>
-        <label class="form-label text-sm" for="device-name">Full Device Name <span class="text-red-500">*</span></label>
-        <input type="text" id="device-name" name="device_name" value="{% if ticket %}{{ ticket.device_name }}{% endif %}"
-               placeholder="e.g. Samsung Galaxy S23 – Black 256GB"
+        <label class="form-label text-sm" for="device-name">Nama Perangkat Lengkap <span class="text-red-500">*</span></label>
+        <input type="text" id="device-name" name="device_name" value="{{ form_data.device_name|default:'' }}"
+               placeholder="Lenovo ThinkPad X1 Carbon Gen 9"
                required aria-required="true" class="form-input-lg"/>
-        <p class="text-xs text-slate-400 mt-1">This appears on the service tag printed for the customer.</p>
+        <p class="text-xs text-slate-400 mt-1">Nama ini akan tercetak pada label servis untuk pelanggan.</p>
       </div>
 
       <!-- Serial Number / IMEI -->
       <div class="grid sm:grid-cols-2 gap-4">
         <div>
           <label class="form-label text-sm" for="serial-number">Serial Number / IMEI</label>
-          <input type="text" id="serial-number" name="serial_number" value="{% if ticket %}{{ ticket.serial_number }}{% endif %}"
-                 placeholder="S/N or IMEI number"
+          <input type="text" id="serial-number" name="serial_number" value="{{ form_data.serial_number|default:'' }}"
+                 placeholder="S/N atau nomor IMEI"
                  class="form-input-lg font-mono" autocomplete="off"/>
         </div>
         <div>
-          <label class="form-label text-sm" for="device-color">Color / Variant</label>
-          <input type="text" id="device-color" name="device_color" value="{% if ticket %}{{ ticket.device_color }}{% endif %}"
-                 placeholder="e.g. Midnight Black, Silver"
+          <label class="form-label text-sm" for="device-color">Warna / Varian</label>
+          <input type="text" id="device-color" name="device_color" value="{{ form_data.device_color|default:'' }}"
+                 placeholder="cth. Midnight Black, Silver"
                  class="form-input-lg"/>
         </div>
       </div>
 
       <!-- Completeness Checklist -->
       <div>
-        <label class="form-label text-sm mb-3 block">Completeness / Accessories Received</label>
+        <label class="form-label text-sm mb-3 block">Kelengkapan / Aksesori yang Diterima</label>
         <div class="grid grid-cols-2 sm:grid-cols-2 gap-2">
           <label class="completeness-checkbox">
-            <input type="checkbox" name="completeness" value="charger" {% if ticket and 'charger' in ticket.completeness %}checked{% endif %}/>
-            🔌 Charger / Cable
+            <input type="checkbox" name="completeness" value="Unit" checked disabled />
+            🔧 Unit
+            <input type="hidden" name="completeness" value="Unit" />
           </label>
           <label class="completeness-checkbox">
-            <input type="checkbox" name="completeness" value="bag" {% if ticket and 'bag' in ticket.completeness %}checked{% endif %}/>
-            👜 Bag / Case
+            <input type="checkbox" name="completeness" value="Charger" {% if 'Charger' in form_data_lists.completeness %}checked{% endif %}/>
+            🔌 Charger / Kabel
           </label>
           <label class="completeness-checkbox">
-            <input type="checkbox" name="completeness" value="battery" {% if ticket and 'battery' in ticket.completeness %}checked{% endif %}/>
-            🔋 Battery (external)
+            <input type="checkbox" name="completeness" value="Bag" {% if 'Bag' in form_data_lists.completeness %}checked{% endif %}/>
+            👜 Tas / Case
           </label>
           <label class="completeness-checkbox">
-            <input type="checkbox" name="completeness" value="earphone" {% if ticket and 'earphone' in ticket.completeness %}checked{% endif %}/>
+            <input type="checkbox" name="completeness" value="Battery" {% if 'Battery' in form_data_lists.completeness %}checked{% endif %}/>
+            🔋 Baterai (external)
+          </label>
+          {% comment %} <label class="completeness-checkbox">
+            <input type="checkbox" name="completeness" value="earphone" {% if 'earphone' in form_data_lists.completeness %}checked{% endif %}/>
             🎧 Earphone
-          </label>
-          <label class="completeness-checkbox">
-            <input type="checkbox" name="completeness" value="sim_card" {% if ticket and 'sim_card' in ticket.completeness %}checked{% endif %}/>
+          </label> {% endcomment %}
+          {% comment %} <label class="completeness-checkbox">
+            <input type="checkbox" name="completeness" value="sim_card" {% if 'sim_card' in form_data_lists.completeness %}checked{% endif %}/>
             💳 SIM Card Tray
           </label>
           <label class="completeness-checkbox">
-            <input type="checkbox" name="completeness" value="memory_card" {% if ticket and 'memory_card' in ticket.completeness %}checked{% endif %}/>
+            <input type="checkbox" name="completeness" value="memory_card" {% if 'memory_card' in form_data_lists.completeness %}checked{% endif %}/>
             💾 Memory Card
-          </label>
+          </label> {% endcomment %}
           <label class="completeness-checkbox">
-            <input type="checkbox" name="completeness" value="stylus" {% if ticket and 'stylus' in ticket.completeness %}checked{% endif %}/>
+            <input type="checkbox" name="completeness" value="Stylus" {% if 'Stylus' in form_data_lists.completeness %}checked{% endif %}/>
             ✏️ Stylus / Pen
           </label>
           <label class="completeness-checkbox">
-            <input type="checkbox" name="completeness" value="box" {% if ticket and 'box' in ticket.completeness %}checked{% endif %}/>
-            📦 Original Box
+            <input type="checkbox" name="completeness" value="Box" {% if 'Box' in form_data_lists.completeness %}checked{% endif %}/>
+            📦 Dus Asli
           </label>
         </div>
         <div class="mt-2">
-          <label class="form-label text-xs" for="completeness-notes">Other accessories (specify):</label>
+          <label class="form-label text-xs" for="completeness-notes">Aksesori lain (sebutkan):</label>
           <input type="text" id="completeness-notes" name="completeness_notes"
-                 placeholder="e.g. Wireless headset, protective glass..."
+                 value="{{ form_data.completeness_notes|default:'' }}"
+                 placeholder="cth. Headset wireless, screen protector..."
                  class="form-input-lg" style="min-height:44px;padding:10px 13px;font-size:.875rem;"/>
         </div>
       </div>
 
       <!-- Physical Condition -->
       <div>
-        <label class="form-label text-sm mb-3 block">Physical Condition on Arrival</label>
+        <label class="form-label text-sm mb-3 block">Kondisi Fisik saat Diterima</label>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <label class="completeness-checkbox">
-            <input type="checkbox" name="condition" value="screen_crack" {% if ticket and 'screen_crack' in ticket.condition %}checked{% endif %}/>
-            💔 Cracked Screen
+            <input type="checkbox" name="condition" value="screen_crack" {% if 'screen_crack' in form_data_lists.condition %}checked{% endif %}/>
+            💔 Layar Retak
           </label>
           <label class="completeness-checkbox">
-            <input type="checkbox" name="condition" value="dent" {% if ticket and 'dent' in ticket.condition %}checked{% endif %}/>
-            ⚠️ Dent / Scratch
+            <input type="checkbox" name="condition" value="dent" {% if 'dent' in form_data_lists.condition %}checked{% endif %}/>
+            ⚠️ Penyok / Gores
           </label>
           <label class="completeness-checkbox">
-            <input type="checkbox" name="condition" value="water" {% if ticket and 'water' in ticket.condition %}checked{% endif %}/>
-            💧 Water Damage
+            <input type="checkbox" name="condition" value="water" {% if 'water' in form_data_lists.condition %}checked{% endif %}/>
+            💧 Kena Air
           </label>
           <label class="completeness-checkbox">
-            <input type="checkbox" name="condition" value="missing_screw" {% if ticket and 'missing_screw' in ticket.condition %}checked{% endif %}/>
-            🔩 Missing Screws
+            <input type="checkbox" name="condition" value="missing_screw" {% if 'missing_screw' in form_data_lists.condition %}checked{% endif %}/>
+            🔩 Baut Hilang
           </label>
           <label class="completeness-checkbox">
-            <input type="checkbox" name="condition" value="damaged_port" {% if ticket and 'damaged_port' in ticket.condition %}checked{% endif %}/>
-            🔌 Damaged Port
+            <input type="checkbox" name="condition" value="damaged_port" {% if 'damaged_port' in form_data_lists.condition %}checked{% endif %}/>
+            🔌 Port Rusak
           </label>
           <label class="completeness-checkbox">
-            <input type="checkbox" name="condition" value="good" {% if ticket and 'good' in ticket.condition %}checked{% endif %}/>
-            ✅ Good Condition
-          </label>
-        </div>
-      </div>
-
-      <!-- Priority -->
-      <div>
-        <label class="form-label text-sm mb-3 block">Service Priority</label>
-        <div class="flex gap-3">
-          <input type="radio" id="priority-normal" name="priority" value="NORMAL" class="priority-radio" {% if not ticket or ticket.priority == 'NORMAL' %}checked{% endif %}/>
-          <label for="priority-normal" class="priority-label">
-            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            Normal
-          </label>
-
-          <input type="radio" id="priority-urgent" name="priority" value="URGENT" class="priority-radio" {% if ticket and ticket.priority == 'URGENT' %}checked{% endif %}/>
-          <label for="priority-urgent" class="priority-label">
-            <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            Urgent
-          </label>
-
-          <input type="radio" id="priority-emergency" name="priority" value="EMERGENCY" class="priority-radio" {% if ticket and ticket.priority == 'EMERGENCY' %}checked{% endif %}/>
-          <label for="priority-emergency" class="priority-label">
-            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-            Emergency
+            <input type="checkbox" name="condition" value="good" {% if 'good' in form_data_lists.condition %}checked{% endif %}/>
+            ✅ Kondisi Baik
           </label>
         </div>
       </div>
@@ -349,130 +441,89 @@
           Customer (Partner)
         </h2>
 
-        <!-- Searchable Partner -->
+        <!-- Searchable Partner (Custom Autocomplete) -->
         <div class="mb-4">
-          <label class="form-label text-sm" for="partner-search">Search / Select Customer <span class="text-red-500">*</span></label>
-          <div class="relative">
-            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            <input list="partner-list" id="partner-search" name="partner_id"
-                   value="{% if ticket and ticket.customer %}{{ ticket.customer.id }} | {{ ticket.customer.name }} ({{ ticket.customer.whatsapp }}){% endif %}"
-                   placeholder="Type name or phone number..."
-                   required aria-required="true"
-                   class="form-input-lg" style="padding-left:44px;" autocomplete="off"/>
-          </div>
-          <datalist id="partner-list">
-            {% for p in partners %}
-              <option value="{{ p.id }} | {{ p.name }} ({{ p.whatsapp }})">
-            {% endfor %}
-          </datalist>
-          <!-- Selected Customer Card -->
-          <div class="mt-3 flex items-center gap-3 bg-navy-50 border border-navy-200 rounded-xl p-3">
-            <div class="w-10 h-10 rounded-full bg-navy-900 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">{% if ticket and ticket.customer %}{{ ticket.customer.name|slice:":2"|upper }}{% else %}--{% endif %}</div>
-            <div class="flex-1 min-w-0">
-              <p class="font-bold text-navy-900 text-sm">{% if ticket and ticket.customer %}{{ ticket.customer.name }}{% else %}Selected customer will appear here{% endif %}</p>
-              <p class="text-xs text-slate-500">{% if ticket and ticket.customer %}{{ ticket.customer.whatsapp }}{% else %}—{% endif %}</p>
+          <label class="form-label text-sm" for="partner-search">Cari / Pilih Customer <span class="text-red-500">*</span></label>
+          <input type="hidden" id="partner-id-hidden" name="partner_id"
+                 value="{{ form_data.partner_id|default:'' }}" />
+          <div class="partner-autocomplete-wrap">
+            <div class="partner-search-box">
+              <svg class="partner-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <input type="text" id="partner-search"
+                     placeholder="Ketik nama atau nomor telepon..."
+                     class="form-input-lg partner-search-input" autocomplete="off"/>
+              <button type="button" id="partner-clear-btn" class="partner-clear-btn hidden" title="Hapus pilihan" aria-label="Hapus pilihan">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
             </div>
-            <svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <!-- Suggestion Dropdown -->
+            <div id="partner-dropdown" class="partner-dropdown hidden">
+              <div id="partner-dropdown-list" class="partner-dropdown-list">
+                <!-- JS populates items here -->
+              </div>
+              <div id="partner-dropdown-empty" class="partner-dropdown-empty hidden">
+                <svg class="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p class="text-sm text-slate-400 font-medium">Customer tidak ditemukan</p>
+              </div>
+            </div>
           </div>
-          <p class="text-xs text-slate-400 mt-1">Can't find customer?
-            <a href="{% url 'partner:partner_add' %}" class="text-navy-700 font-semibold underline hover:text-navy-900">Register new customer →</a>
-          </p>
-        </div>
 
-        <!-- Assign Technician -->
-        <div>
-          <label class="form-label text-sm" for="technician">Assign Technician</label>
-          <select id="technician" name="technician" class="form-select-lg">
-            <option value="">— Assign Later —</option>
-            {% for u in technicians %}
-              <option value="{{ u.id }}" {% if ticket and ticket.technician_id == u.id %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
-            {% endfor %}
-          </select>
+          <!-- Selected Customer Card -->
+          <div id="selected-customer-card" class="selected-customer-card {% if not ticket or not ticket.customer %}selected-customer-card--empty{% endif %}">
+            <div class="selected-customer-avatar" id="selected-avatar">
+              {% if ticket and ticket.customer %}{{ ticket.customer.name|slice:":2"|upper }}{% else %}
+              <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              {% endif %}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="selected-customer-name" id="selected-name">{% if ticket and ticket.customer %}{{ ticket.customer.name }}{% else %}Belum ada customer dipilih{% endif %}</p>
+              <p class="selected-customer-phone" id="selected-phone">{% if ticket and ticket.customer %}{{ ticket.customer.whatsapp }}{% else %}Ketik di kolom pencarian untuk memilih{% endif %}</p>
+            </div>
+            <div class="selected-customer-badge" id="selected-badge">
+              {% if ticket and ticket.customer %}
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              {% else %}
+              <span class="text-[10px] font-bold uppercase tracking-wider">Wajib</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-400 mt-2">Tidak menemukan customer?
+            <a href="{% url 'partner:partner_add' %}" class="text-navy-700 font-semibold underline hover:text-navy-900 transition-colors">Daftarkan customer baru →</a>
+          </p>
         </div>
       </div>
 
-      <!-- Complaint & Diagnosis Card -->
+      <!-- Complaint Card -->
       <div class="bg-white rounded-xl border border-slate-100 shadow-card p-5 sm:p-6">
         <h2 class="form-section-title">
           <svg class="w-4 h-4 text-navy-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          Complaint & Diagnosis
+          Keluhan Pelanggan
         </h2>
 
         <!-- Customer Complaint -->
         <div class="mb-4">
-          <label class="form-label text-sm" for="complaint">Customer Complaint <span class="text-red-500">*</span>
-            <span class="font-normal text-slate-400">(as reported by customer)</span>
+          <label class="form-label text-sm" for="complaint">Keluhan Customer <span class="text-red-500">*</span>
+            <span class="font-normal text-slate-400">(seperti yang dilaporkan customer)</span>
           </label>
           <textarea id="complaint" name="complaint" rows="4" required aria-required="true"
                     class="form-input-lg"
                     style="resize:vertical; min-height:110px;"
-                    placeholder="Describe the problem in detail as told by the customer...
-e.g. Screen shows purple lines after dropping phone, touchscreen not responding on top-right area.">{% if ticket %}{{ ticket.complaint }}{% endif %}</textarea>
-          
-        </div>
-
-        <!-- Initial Technician Diagnosis -->
-        <div class="mb-4">
-          <label class="form-label text-sm" for="initial-diagnosis">Initial Diagnosis (Technician)</label>
-          <textarea id="initial-diagnosis" name="initial_diagnosis" rows="3"
-                    class="form-input-lg"
-                    style="resize:vertical; min-height:88px;"
-                    placeholder="Technician's initial findings after visual inspection...">{% if ticket %}{{ ticket.initial_diagnosis }}{% endif %}</textarea>
-        </div>
-
-        <!-- Estimated Cost -->
-        <div class="grid sm:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label class="form-label text-sm" for="est-cost">Estimated Cost (Rp)</label>
-            <div class="relative">
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold pointer-events-none">Rp</span>
-              <input type="number" id="est-cost" name="estimated_cost" value="{% if ticket %}{{ ticket.estimated_cost }}{% endif %}"
-                     placeholder="0" min="0"
-                     class="form-input-lg" style="padding-left:40px;"
-                     aria-label="Estimated repair cost in Rupiah"/>
-            </div>
-          </div>
-          <div>
-            <label class="form-label text-sm" for="est-completion">Est. Completion Date</label>
-            <input type="date" id="est-completion" name="estimated_completion"
-                   value="{% if ticket and ticket.estimated_completion %}{{ ticket.estimated_completion|date:"Y-m-d" }}{% endif %}"
-                   class="form-input-lg"
-                   aria-label="Estimated completion date"/>
-          </div>
-        </div>
-
-        <!-- Warranty Void Warning -->
-        <div class="mb-4">
-          <label class="completeness-checkbox w-full">
-            <input type="checkbox" name="warranty_void_informed" value="1" {% if ticket and ticket.warranty_void_informed %}checked{% endif %}/>
-            <div>
-              <p class="font-semibold text-sm text-slate-700">Customer informed of warranty void risk</p>
-              <p class="text-xs text-slate-400 font-normal mt-0.5">Device opened by unauthorized party — warranty may be voided</p>
-            </div>
-          </label>
+                    placeholder="Jelaskan masalah secara detail sesuai laporan customer...
+cth. Layar muncul garis ungu setelah HP jatuh, touchscreen tidak responsif di area kanan atas.">{{ form_data.complaint|default:'' }}</textarea>
         </div>
 
         <!-- Customer Agreement -->
         <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
           <label class="flex items-start gap-3 cursor-pointer">
             <input type="checkbox" name="customer_agreement" value="1" required
-                   class="w-5 h-5 mt-0.5 accent-navy-900 flex-shrink-0" {% if not ticket or ticket.customer_agreement %}checked{% endif %}/>
+                   class="w-5 h-5 mt-0.5 accent-navy-900 flex-shrink-0" {% if form_data.customer_agreement or not form_data %}checked{% endif %}/>
             <p class="text-xs text-amber-800 font-medium leading-relaxed">
-              <strong>Customer Agreement:</strong> Customer agrees that the repair shop is not responsible for data loss during the repair process. Customer has been informed of the estimated cost and completion date.
+              <strong>Persetujuan Pelanggan:</strong> Pelanggan menyetujui bahwa bengkel servis tidak bertanggung jawab atas kehilangan data selama proses perbaikan. Pelanggan telah diinformasikan mengenai proses servis.
             </p>
           </label>
         </div>
 
-      </div>
-
-      <!-- Internal Notes -->
-      <div class="bg-white rounded-xl border border-slate-100 shadow-card p-5">
-        <h2 class="form-section-title">
-          <svg class="w-4 h-4 text-navy-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-          Internal Notes (Not shown to customer)
-        </h2>
-        <textarea name="internal_notes" rows="2" class="form-input-lg" style="resize:vertical;min-height:72px;"
-                  placeholder="Internal team notes, supplier contact for parts, special handling instructions...">{% if ticket %}{{ ticket.internal_notes }}{% endif %}</textarea>
       </div>
 
     </div>
@@ -480,25 +531,231 @@ e.g. Screen shows purple lines after dropping phone, touchscreen not responding 
   </div>
 
   <!-- ═══ FORM ACTIONS ═══ -->
-  <div class="flex flex-col sm:flex-row gap-3 pt-2 border-t border-slate-200 sticky bottom-0 bg-slate-50 py-4 -mx-4 sm:-mx-6 px-4 sm:px-6 shadow-[0_-4px_12px_rgba(0,0,0,.06)]">
+  <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200 sticky bottom-0 bg-slate-50 py-4 -mx-4 sm:-mx-6 px-4 sm:px-6 shadow-[0_-4px_12px_rgba(0,0,0,.06)]">
     <a href="{% url 'service:service_queue' %}"
        class="flex-1 sm:flex-none flex items-center justify-center gap-2 border border-slate-200 text-slate-600 font-semibold text-base py-3.5 px-6 rounded-xl hover:bg-slate-100 transition-colors min-h-[52px]">
-      Cancel
+      Batal
     </a>
     <button type="submit" name="action" value="save_print"
             class="flex-1 sm:flex-none flex items-center justify-center gap-2 border-2 border-navy-900 text-navy-900 font-bold text-base py-3.5 px-6 rounded-xl hover:bg-navy-50 transition-colors min-h-[52px]"
-            aria-label="Save ticket and print service tag">
+            aria-label="Simpan ticket dan cetak label servis">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-      Save & Print Tag
+      Simpan & Cetak Tanda Terima
     </button>
     <button type="submit" name="action" value="save"
             class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-navy-900 hover:bg-navy-800 text-white font-bold text-base py-3.5 px-8 rounded-xl shadow-navy transition-colors min-h-[52px]"
-            aria-label="Save service ticket">
+            aria-label="Simpan service ticket">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      Save Ticket ({% if ticket %}{{ ticket.ticket_number }}{% else %}{{ preview_ticket_number }}{% endif %})
+      Simpan ({% if ticket %}{{ ticket.ticket_number }}{% else %}{{ preview_ticket_number }}{% endif %})
     </button>
   </div>
 
 </form>
+
+<script>
+(function() {
+  'use strict';
+
+  /* ── Partner data from Django ── */
+  const PARTNERS = [
+    {% for p in partners %}
+    { id: {{ p.id }}, name: "{{ p.name|escapejs }}", phone: "{{ p.whatsapp|escapejs }}", type: "{{ p.contact_type|escapejs }}" },
+    {% endfor %}
+  ];
+
+  /* ── DOM refs ── */
+  const searchInput   = document.getElementById('partner-search');
+  const hiddenInput   = document.getElementById('partner-id-hidden');
+  const dropdown      = document.getElementById('partner-dropdown');
+  const listContainer = document.getElementById('partner-dropdown-list');
+  const emptyState    = document.getElementById('partner-dropdown-empty');
+  const clearBtn      = document.getElementById('partner-clear-btn');
+  const card          = document.getElementById('selected-customer-card');
+  const avatarEl      = document.getElementById('selected-avatar');
+  const nameEl        = document.getElementById('selected-name');
+  const phoneEl       = document.getElementById('selected-phone');
+  const badgeEl       = document.getElementById('selected-badge');
+
+  let activeIdx = -1;
+  let filtered  = [];
+
+  /* ── Helpers ── */
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function highlightMatch(text, query) {
+    if (!query) return escapeHtml(text);
+    const safe = escapeHtml(text);
+    const q = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return safe.replace(new RegExp('(' + q + ')', 'gi'), '<mark>$1</mark>');
+  }
+
+  function initials(name) {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.substring(0, 2).toUpperCase();
+  }
+
+  function typeLabel(t) {
+    const map = { CUSTOMER: 'Customer', SUPPLIER: 'Supplier', BOTH: 'Customer & Supplier' };
+    return map[t] || t;
+  }
+
+  /* ── Render dropdown ── */
+  function renderDropdown(query) {
+    const q = (query || '').toLowerCase().trim();
+    filtered = q
+      ? PARTNERS.filter(p =>
+          p.name.toLowerCase().includes(q) ||
+          p.phone.toLowerCase().includes(q)
+        )
+      : PARTNERS.slice(0, 30);
+
+    listContainer.innerHTML = '';
+    activeIdx = -1;
+
+    if (filtered.length === 0) {
+      emptyState.classList.remove('hidden');
+      listContainer.style.display = 'none';
+    } else {
+      emptyState.classList.add('hidden');
+      listContainer.style.display = '';
+      filtered.forEach((p, idx) => {
+        const item = document.createElement('div');
+        item.className = 'partner-dropdown-item';
+        item.dataset.idx = idx;
+        item.innerHTML = `
+          <div class="pdi-avatar">${escapeHtml(initials(p.name))}</div>
+          <div class="pdi-info">
+            <div class="pdi-name">${highlightMatch(p.name, q)}</div>
+            <div class="pdi-phone">${highlightMatch(p.phone, q)}</div>
+          </div>
+          <div class="pdi-type">${escapeHtml(typeLabel(p.type))}</div>
+        `;
+        item.addEventListener('mousedown', (e) => { e.preventDefault(); selectPartner(p); });
+        item.addEventListener('mouseenter', () => {
+          setActive(idx);
+        });
+        listContainer.appendChild(item);
+      });
+    }
+  }
+
+  function openDropdown() {
+    renderDropdown(searchInput.value);
+    dropdown.classList.remove('hidden');
+  }
+
+  function closeDropdown() {
+    dropdown.classList.add('hidden');
+    activeIdx = -1;
+  }
+
+  function setActive(idx) {
+    const items = listContainer.querySelectorAll('.partner-dropdown-item');
+    items.forEach(i => i.classList.remove('active'));
+    activeIdx = idx;
+    if (idx >= 0 && idx < items.length) {
+      items[idx].classList.add('active');
+      items[idx].scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  /* ── Select a partner ── */
+  function selectPartner(p) {
+    hiddenInput.value = `${p.id} | ${p.name} (${p.phone})`;
+    searchInput.value = p.name;
+    closeDropdown();
+    clearBtn.classList.remove('hidden');
+
+    // Update selected customer card
+    card.classList.remove('selected-customer-card--empty');
+    card.style.animation = 'none';
+    // Force reflow
+    void card.offsetHeight;
+    card.style.animation = 'cardPulseIn .35s cubic-bezier(.22,1,.36,1)';
+
+    avatarEl.textContent = initials(p.name);
+    nameEl.textContent   = p.name;
+    phoneEl.textContent  = p.phone;
+    badgeEl.innerHTML    = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+  }
+
+  /* ── Clear selection ── */
+  function clearSelection() {
+    hiddenInput.value = '';
+    searchInput.value = '';
+    clearBtn.classList.add('hidden');
+
+    card.classList.add('selected-customer-card--empty');
+    card.style.animation = 'none';
+    avatarEl.innerHTML = '<svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>';
+    nameEl.textContent  = 'Belum ada customer dipilih';
+    phoneEl.textContent = 'Ketik di kolom pencarian untuk memilih';
+    badgeEl.innerHTML   = '<span class="text-[10px] font-bold uppercase tracking-wider">Wajib</span>';
+
+    searchInput.focus();
+  }
+
+  /* ── Events ── */
+  searchInput.addEventListener('focus', openDropdown);
+  searchInput.addEventListener('input', () => {
+    openDropdown();
+    // If user edits text after selecting, invalidate selection
+    if (hiddenInput.value && searchInput.value !== hiddenInput.value.split(' | ')[1]?.split(' (')[0]) {
+      hiddenInput.value = '';
+      card.classList.add('selected-customer-card--empty');
+      card.style.animation = 'none';
+      avatarEl.innerHTML = '<svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>';
+      nameEl.textContent  = 'Belum ada customer dipilih';
+      phoneEl.textContent = 'Ketik di kolom pencarian untuk memilih';
+      badgeEl.innerHTML   = '<span class="text-[10px] font-bold uppercase tracking-wider">Wajib</span>';
+      clearBtn.classList.add('hidden');
+    }
+  });
+
+  searchInput.addEventListener('keydown', (e) => {
+    if (dropdown.classList.contains('hidden')) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive(Math.min(activeIdx + 1, filtered.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive(Math.max(activeIdx - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (activeIdx >= 0 && activeIdx < filtered.length) {
+        selectPartner(filtered[activeIdx]);
+      }
+    } else if (e.key === 'Escape') {
+      closeDropdown();
+    }
+  });
+
+  clearBtn.addEventListener('click', clearSelection);
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.partner-autocomplete-wrap')) {
+      closeDropdown();
+    }
+  });
+
+  /* ── Init: pre-fill if editing an existing ticket ── */
+  if (hiddenInput.value) {
+    const match = hiddenInput.value.match(/^(\d+)\s*\|/);
+    if (match) {
+      const p = PARTNERS.find(x => x.id === parseInt(match[1]));
+      if (p) {
+        searchInput.value = p.name;
+        clearBtn.classList.remove('hidden');
+      }
+    }
+  }
+})();
+</script>
 
 {% endblock %}

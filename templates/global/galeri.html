@@ -1,0 +1,96 @@
+{% extends 'global/base.html' %}
+{% load static %}
+{% block head_title %}Galeri &amp; Portofolio — {{ company.name|default:'Zona Komputer' }} Bojonegoro{% endblock %}
+{% block meta_description %}Lihat dokumentasi hasil servis, instalasi jaringan, dan suasana toko {{ company.name|default:'Zona Komputer' }} Bojonegoro. Bukti nyata kerja teknisi kami.{% endblock %}
+{% block head_extra %}
+<style>
+.gal-tab{cursor:pointer;border:var(--border-w) solid var(--black);padding:.5rem 1.2rem;font-family:'Archivo Black',sans-serif;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;background:var(--white);transition:all .1s ease;}
+.gal-tab.active,.gal-tab:hover{background:var(--navy);color:var(--yellow);}
+.gal-item{display:none;}
+.gal-item.visible{display:flex;}
+</style>
+{% endblock %}
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="grid-bg-dark"></div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="tag mb-4">GALERI &amp; PORTOFOLIO</div>
+    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--white);margin-bottom:1rem;">Hasil Kerja<br><span style="color:var(--yellow);">Bukan Sekadar Janji</span></h1>
+    <p style="color:rgba(255,255,255,.7);font-size:1rem;line-height:1.7;max-width:540px;">Dokumentasi nyata dari pekerjaan servis, instalasi, dan suasana toko kami selama bertahun-tahun.</p>
+  </div>
+</div>
+
+<!-- FILTER -->
+{% if gallery_categories %}
+<div style="background:var(--cream);border-bottom:var(--border-w) solid var(--black);padding:1.25rem 0;position:sticky;top:64px;z-index:40;">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex gap-2 flex-wrap">
+      <button class="gal-tab active" onclick="filterGal('semua',this)">Semua</button>
+      {% for cat in gallery_categories %}
+      <button class="gal-tab" onclick="filterGal('cat-{{ cat.slug }}',this)">{{ cat.name }}</button>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- GALLERY GRID -->
+<section class="section-pad" style="background:var(--white);">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div id="galGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {% for item in gallery_items %}
+      <div class="gal-item visible flex-col gallery-box reveal" data-cat="cat-{{ item.category.slug }}">
+        {% if item.image %}
+        <img src="{{ item.image.url }}" alt="{{ item.title }}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
+        {% elif item.icon %}
+        <span style="font-size:3rem;">{{ item.icon }}</span>
+        {% endif %}
+        <p style="font-weight:700;font-size:.85rem;{% if item.image %}position:relative;z-index:1;background:rgba(0,0,0,.6);color:#fff;padding:.25rem .5rem;{% endif %}">{{ item.title }}</p>
+        {% if item.description %}<p style="font-size:.75rem;color:#666;">{{ item.description }}</p>{% endif %}
+      </div>
+      {% empty %}
+      <div class="gal-item visible flex-col gallery-box reveal" data-cat="before-after" style="background:var(--cream);">
+        <span style="font-size:3rem;">🔋➡️✅</span>
+        <p style="font-weight:700;font-size:.85rem;">Before–After: Ganti Baterai</p>
+        <p style="font-size:.75rem;color:#666;">Laptop yang dayanya cepat habis kembali normal setelah ganti baterai original.</p>
+      </div>
+      <div class="gal-item visible flex-col gallery-box reveal" data-cat="instalasi" style="background:var(--navy);">
+        <span style="font-size:3rem;">🌐</span>
+        <p style="font-weight:700;font-size:.85rem;color:var(--white);">Instalasi Jaringan Kantor</p>
+        <p style="font-size:.75rem;color:rgba(255,255,255,.6);">Pemasangan WiFi &amp; LAN untuk kantor di area Bojonegoro.</p>
+      </div>
+      <div class="gal-item visible flex-col gallery-box reveal" data-cat="toko" style="background:var(--yellow);">
+        <span style="font-size:3rem;">🏪</span>
+        <p style="font-weight:700;font-size:.85rem;">Tampak Depan Toko</p>
+        <p style="font-size:.75rem;color:#333;">Lokasi toko kami di {{ company.address|default:'Jl. Veteran No. 10, Bojonegoro' }}.</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if not gallery_items %}
+    <div class="card-brutal-yellow p-6 mt-10 reveal flex gap-4 items-start">
+      <span style="font-size:1.5rem;flex-shrink:0;">📸</span>
+      <div>
+        <h4 style="font-size:1rem;margin-bottom:.4rem;">Foto-foto di atas adalah placeholder</h4>
+        <p style="color:#333;font-size:.85rem;line-height:1.6;">Ganti dengan foto asli dari hasil pekerjaan toko Anda — usahakan selalu memotret kondisi before-after setiap selesai servis, karena ini sangat efektif membangun kepercayaan calon pelanggan baru.</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function filterGal(cat, btn){
+  document.querySelectorAll('.gal-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.gal-item').forEach(item => {
+    if(cat === 'semua' || item.dataset.cat === cat){ item.classList.add('visible'); }
+    else { item.classList.remove('visible'); }
+  });
+}
+</script>
+{% endblock %}
