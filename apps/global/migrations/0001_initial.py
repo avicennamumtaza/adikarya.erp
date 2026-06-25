@@ -17,12 +17,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ArticleCategory',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=50)),
                 ('slug', models.SlugField(blank=True, unique=True)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'verbose_name_plural': 'Article Categories',
@@ -31,7 +33,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Article',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('title', models.CharField(max_length=200)),
@@ -39,12 +42,15 @@ class Migration(migrations.Migration):
                 ('excerpt', models.TextField(blank=True)),
                 ('content', models.TextField()),
                 ('icon', models.CharField(blank=True, max_length=20)),
-                ('image', models.ImageField(blank=True, null=True, upload_to='articles/')),
+                ('image', models.ImageField(
+                    blank=True, null=True, upload_to='articles/')),
                 ('is_featured', models.BooleanField(default=False)),
                 ('is_published', models.BooleanField(default=True)),
                 ('published_at', models.DateTimeField(blank=True, null=True)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
-                ('category', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='articles', to='global.articlecategory')),
+                ('created_by', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('category', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL,
+                 related_name='articles', to='global.articlecategory')),
             ],
             options={
                 'ordering': ['-published_at'],
@@ -53,10 +59,11 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CompanyProfile',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('name', models.CharField(default='Zona Komputer', max_length=100)),
+                ('name', models.CharField(default='Adikarya', max_length=100)),
                 ('short_description', models.TextField(blank=True)),
                 ('about_text', models.TextField(blank=True)),
                 ('address', models.TextField(blank=True)),
@@ -70,7 +77,8 @@ class Migration(migrations.Migration):
                 ('tiktok_url', models.URLField(blank=True)),
                 ('visi', models.TextField(blank=True)),
                 ('misi', models.TextField(blank=True)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'verbose_name_plural': 'Company Profile',
@@ -79,7 +87,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CompanyStat',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('title', models.CharField(max_length=50)),
@@ -87,7 +96,8 @@ class Migration(migrations.Migration):
                 ('description', models.CharField(blank=True, max_length=100)),
                 ('icon', models.CharField(blank=True, max_length=20)),
                 ('order', models.IntegerField(default=0)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ['order'],
@@ -96,14 +106,16 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CompanyValue',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('title', models.CharField(max_length=100)),
                 ('description', models.TextField()),
                 ('icon', models.CharField(blank=True, max_length=20)),
                 ('order', models.IntegerField(default=0)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ['order'],
@@ -112,7 +124,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ContactMessage',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=100)),
@@ -120,7 +133,8 @@ class Migration(migrations.Migration):
                 ('subject', models.CharField(max_length=100)),
                 ('message', models.TextField()),
                 ('is_read', models.BooleanField(default=False)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'abstract': False,
@@ -129,14 +143,16 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='FAQ',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('question', models.CharField(max_length=255)),
                 ('answer', models.TextField()),
                 ('order', models.IntegerField(default=0)),
                 ('is_active', models.BooleanField(default=True)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ['order'],
@@ -145,13 +161,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='GalleryCategory',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=50)),
                 ('slug', models.SlugField(blank=True, unique=True)),
                 ('order', models.IntegerField(default=0)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'verbose_name_plural': 'Gallery Categories',
@@ -161,16 +179,20 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Gallery',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('title', models.CharField(max_length=100)),
                 ('description', models.TextField(blank=True)),
                 ('icon', models.CharField(blank=True, max_length=20)),
-                ('image', models.ImageField(blank=True, null=True, upload_to='gallery/')),
+                ('image', models.ImageField(
+                    blank=True, null=True, upload_to='gallery/')),
                 ('order', models.IntegerField(default=0)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
-                ('category', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='global.gallerycategory')),
+                ('created_by', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('category', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                 related_name='items', to='global.gallerycategory')),
             ],
             options={
                 'verbose_name_plural': 'Galleries',
@@ -180,14 +202,16 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='PartnerBrand',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=50)),
                 ('logo', models.ImageField(blank=True, null=True, upload_to='brands/')),
                 ('is_active', models.BooleanField(default=True)),
                 ('order', models.IntegerField(default=0)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ['order'],
@@ -196,20 +220,25 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Promo',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('title', models.CharField(max_length=150)),
                 ('category', models.CharField(blank=True, max_length=50)),
                 ('description', models.TextField()),
-                ('benefits', models.TextField(blank=True, help_text='Satu benefit per baris')),
+                ('benefits', models.TextField(
+                    blank=True, help_text='Satu benefit per baris')),
                 ('discount_text', models.CharField(blank=True, max_length=100)),
-                ('call_to_action', models.CharField(default='Klaim Promo ini', max_length=50)),
+                ('call_to_action', models.CharField(
+                    default='Klaim Promo ini', max_length=50)),
                 ('wa_text', models.CharField(blank=True, max_length=200)),
-                ('image', models.ImageField(blank=True, null=True, upload_to='promos/')),
+                ('image', models.ImageField(
+                    blank=True, null=True, upload_to='promos/')),
                 ('is_active', models.BooleanField(default=True)),
                 ('order', models.IntegerField(default=0)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ['order'],
@@ -218,7 +247,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TeamMember',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=100)),
@@ -227,7 +257,8 @@ class Migration(migrations.Migration):
                 ('experience', models.CharField(blank=True, max_length=50)),
                 ('photo', models.ImageField(blank=True, null=True, upload_to='team/')),
                 ('order', models.IntegerField(default=0)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ['order'],
@@ -236,7 +267,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Testimonial',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('customer_name', models.CharField(max_length=100)),
@@ -246,7 +278,8 @@ class Migration(migrations.Migration):
                 ('avatar_initial', models.CharField(blank=True, max_length=2)),
                 ('is_featured', models.BooleanField(default=False)),
                 ('order', models.IntegerField(default=0)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ['order'],
@@ -255,13 +288,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TickerText',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('text', models.CharField(max_length=200)),
                 ('is_active', models.BooleanField(default=True)),
                 ('order', models.IntegerField(default=0)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(blank=True, null=True,
+                 on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ['order'],

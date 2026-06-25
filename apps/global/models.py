@@ -2,8 +2,9 @@ from django.db import models
 from django.utils.text import slugify
 from apps.common.models import TimeStampedModel
 
+
 class CompanyProfile(TimeStampedModel):
-    name = models.CharField(max_length=100, default="Zona Komputer")
+    name = models.CharField(max_length=100, default="Adikarya")
     short_description = models.TextField(blank=True)
     about_text = models.TextField(blank=True)
     address = models.TextField(blank=True)
@@ -11,12 +12,12 @@ class CompanyProfile(TimeStampedModel):
     whatsapp = models.CharField(max_length=20, blank=True)
     email = models.EmailField(blank=True)
     operational_hours = models.CharField(max_length=100, blank=True)
-    maps_url = models.URLField(blank=True)
-    
+    maps_url = models.URLField(blank=True, max_length=500)
+
     instagram_url = models.URLField(blank=True)
     facebook_url = models.URLField(blank=True)
     tiktok_url = models.URLField(blank=True)
-    
+
     visi = models.TextField(blank=True)
     misi = models.TextField(blank=True)
 
@@ -25,6 +26,7 @@ class CompanyProfile(TimeStampedModel):
 
     def __str__(self):
         return self.name
+
 
 class CompanyStat(TimeStampedModel):
     title = models.CharField(max_length=50)
@@ -39,6 +41,7 @@ class CompanyStat(TimeStampedModel):
     def __str__(self):
         return f"{self.title} - {self.value}"
 
+
 class CompanyValue(TimeStampedModel):
     title = models.CharField(max_length=100)
     description = models.TextField()
@@ -51,6 +54,7 @@ class CompanyValue(TimeStampedModel):
     def __str__(self):
         return self.title
 
+
 class TickerText(TimeStampedModel):
     text = models.CharField(max_length=200)
     is_active = models.BooleanField(default=True)
@@ -61,6 +65,7 @@ class TickerText(TimeStampedModel):
 
     def __str__(self):
         return self.text
+
 
 class TeamMember(TimeStampedModel):
     name = models.CharField(max_length=100)
@@ -76,6 +81,7 @@ class TeamMember(TimeStampedModel):
     def __str__(self):
         return self.name
 
+
 class PartnerBrand(TimeStampedModel):
     name = models.CharField(max_length=50)
     logo = models.ImageField(upload_to='brands/', blank=True, null=True)
@@ -88,6 +94,7 @@ class PartnerBrand(TimeStampedModel):
     def __str__(self):
         return self.name
 
+
 class FAQ(TimeStampedModel):
     question = models.CharField(max_length=255)
     answer = models.TextField()
@@ -99,6 +106,7 @@ class FAQ(TimeStampedModel):
 
     def __str__(self):
         return self.question
+
 
 class Testimonial(TimeStampedModel):
     customer_name = models.CharField(max_length=100)
@@ -114,6 +122,7 @@ class Testimonial(TimeStampedModel):
 
     def __str__(self):
         return f"{self.customer_name} - {self.rating} Stars"
+
 
 class Promo(TimeStampedModel):
     title = models.CharField(max_length=150)
@@ -133,6 +142,7 @@ class Promo(TimeStampedModel):
     def __str__(self):
         return self.title
 
+
 class GalleryCategory(TimeStampedModel):
     name = models.CharField(max_length=50)
     slug = models.SlugField(unique=True, blank=True)
@@ -150,8 +160,10 @@ class GalleryCategory(TimeStampedModel):
     def __str__(self):
         return self.name
 
+
 class Gallery(TimeStampedModel):
-    category = models.ForeignKey(GalleryCategory, on_delete=models.CASCADE, related_name='items')
+    category = models.ForeignKey(
+        GalleryCategory, on_delete=models.CASCADE, related_name='items')
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     icon = models.CharField(max_length=20, blank=True)
@@ -164,6 +176,7 @@ class Gallery(TimeStampedModel):
 
     def __str__(self):
         return self.title
+
 
 class ArticleCategory(TimeStampedModel):
     name = models.CharField(max_length=50)
@@ -180,10 +193,12 @@ class ArticleCategory(TimeStampedModel):
     def __str__(self):
         return self.name
 
+
 class Article(TimeStampedModel):
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, blank=True)
-    category = models.ForeignKey(ArticleCategory, on_delete=models.SET_NULL, null=True, related_name='articles')
+    category = models.ForeignKey(
+        ArticleCategory, on_delete=models.SET_NULL, null=True, related_name='articles')
     excerpt = models.TextField(blank=True)
     content = models.TextField()
     icon = models.CharField(max_length=20, blank=True)
@@ -202,6 +217,7 @@ class Article(TimeStampedModel):
 
     def __str__(self):
         return self.title
+
 
 class ContactMessage(TimeStampedModel):
     name = models.CharField(max_length=100)
