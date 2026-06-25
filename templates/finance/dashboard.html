@@ -43,7 +43,7 @@
       {% endfor %}
     </div>
     {% endif %}
-    <a href="{% url 'report:export_finance' %}{% if request.GET.tab %}?tab={{ request.GET.tab }}{% endif %}"
+    {% comment %} <a href="{% url 'report:export_finance' %}{% if request.GET.tab %}?tab={{ request.GET.tab }}{% endif %}"
        class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 transition-colors shrink-0">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
       Export Excel
@@ -52,7 +52,7 @@
        class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 transition-colors shrink-0">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L5 8m4-4v12"/></svg>
       Import
-    </button>
+    </button> {% endcomment %}
     <a href="{% url 'finance:transaction_create' %}" class="flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-navy transition-all shrink-0">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
       Catat Transaksi

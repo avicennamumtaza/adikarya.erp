@@ -35,7 +35,7 @@
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
       <span>Servis Baru</span>
     </a>
-    <a href="{% url 'report:export_service' %}"
+    {% comment %} <a href="{% url 'report:export_service' %}"
        class="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold px-3 py-3 rounded-xl bg-white hover:bg-slate-50 transition-colors min-h-[48px]"
        aria-label="Export service data ke Excel">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
@@ -46,7 +46,7 @@
        aria-label="Import service data dari Excel">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L5 8m4-4v12"/></svg>
       <span class="hidden sm:inline">Import</span>
-    </button>
+    </button> {% endcomment %}
   </div>
 
   {# ── Import Modal ── #}
