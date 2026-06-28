@@ -80,15 +80,6 @@
         Piutang
       </a>
     </div>
-    {# New Sale CTA #}
-  {% comment %} <a href="{% url 'transaction:sales_pos' %}"
-       class="flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-white font-bold text-sm px-4 py-2.5 rounded-xl shadow-navy transition-colors whitespace-nowrap"
-       aria-label="Buat transaksi penjualan baru (POS)">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-      </svg>
-      + New Sale (POS)
-    </a> {% endcomment %}
   </div>
 </div>
 {% endblock %}
@@ -169,14 +160,14 @@
 {% comment %} ══════════════════════════════════════════
    FILTER BAR
 ══════════════════════════════════════════ {% endcomment %}
-<div class="bg-white border border-slate-100 rounded-xl p-3 sm:p-4 shadow-card" x-data="{ importModalOpen: false }">
+<div class="bg-white border border-slate-100 rounded-xl p-3 sm:p-4 shadow-card">
   <form method="GET" class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
-    {# Mobile search (topbar search hidden on xs) #}
-    <div class="relative sm:hidden">
+    {# Search #}
+    <div class="relative flex-1 min-w-0">
       <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
       </svg>
-      <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Cari invoice, customer..." class="search-input w-full" aria-label="Search"/>
+      <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Cari invoice/customer..." class="search-input w-full" aria-label="Search"/>
     </div>
     <select name="status" class="filter-select" aria-label="Filter status">
       <option value="">Semua Status</option>
@@ -202,52 +193,10 @@
       <input type="date" name="date_to" value="{{ request.GET.date_to }}" class="filter-select" aria-label="Sampai tanggal"/>
     </div>
     <button type="submit" class="flex items-center gap-1.5 bg-navy-900 hover:bg-navy-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors shadow-navy">
-      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
-      </svg>
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
       Filter
     </button>
-    <a href="{% url 'transaction:sales_list' %}" class="text-xs text-slate-400 hover:text-slate-700 transition-colors">Reset</a>
-    <a href="{% url 'report:export_sales' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
-       class="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 transition-colors font-semibold"
-       aria-label="Export transaksi sales ke Excel">
-      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-      Export Excel
-    </a>
-    <button type="button" @click="importModalOpen = true"
-       class="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 transition-colors font-semibold"
-       aria-label="Import data sales dari Excel">
-      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L5 8m4-4v12"/></svg>
-      Import
-    </button>
-    <span class="sm:ml-auto text-xs text-slate-400">Menampilkan <strong class="text-slate-700">{{ sales.start_index|default:"0" }}–{{ sales.end_index|default:"0" }}</strong> dari {{ sales.paginator.count|default:"0" }} transaksi</span>
   </form>
-
-  {# ── Import Modal ── #}
-  <div x-show="importModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" x-cloak>
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" @click.outside="importModalOpen = false">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold text-slate-900">Import Data Penjualan</h3>
-        <button type="button" @click="importModalOpen = false" class="text-slate-400 hover:text-slate-700 transition-colors">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
-      </div>
-      <p class="text-sm text-slate-500 mb-4">Upload file Excel (.xlsx) untuk mengimport data penjualan.</p>
-      <form method="POST" action="{% url 'report:import_sales' %}" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{% url 'transaction:sales_list' %}">
-        <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-6 mb-4 cursor-pointer hover:border-navy-300 transition-colors">
-          <svg class="w-8 h-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L5 8m4-4v12"/></svg>
-          <span class="text-sm text-slate-500 font-semibold">Klik untuk pilih file .xlsx</span>
-          <input type="file" name="file" accept=".xlsx" class="hidden" required>
-        </label>
-        <div class="flex gap-2 justify-end">
-          <button type="button" @click="importModalOpen = false" class="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">Batal</button>
-          <button type="submit" class="px-4 py-2 bg-navy-900 text-white text-sm font-bold rounded-xl hover:bg-navy-800 transition-colors">Import</button>
-        </div>
-      </form>
-    </div>
-  </div>
 </div>
 
 {% comment %} ══════════════════════════════════════════
