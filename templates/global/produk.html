@@ -1,107 +1,246 @@
 {% extends 'global/base.html' %}
 {% load static humanize %}
-{% block head_title %}Katalog Produk — {{ company.name|default:'Zona Komputer' }} Bojonegoro | Laptop, PC, Printer{% endblock %}
-{% block meta_description %}Katalog lengkap laptop baru, laptop second, PC rakitan, printer, sparepart dan aksesoris komputer di {{ company.name|default:'Zona Komputer' }} Bojonegoro. Harga bersaing, bergaransi.{% endblock %}
+
+{% block head_title %}Katalog Produk — {{ company.name|default:'Adikarya' }} Lamongan | Laptop, PC, Printer{% endblock %}
+{% block meta_description %}Katalog lengkap laptop baru, laptop second, PC rakitan, printer, sparepart dan aksesoris komputer di {{ company.name|default:'Adikarya' }} Lamongan. Harga bersaing, bergaransi.{% endblock %}
+
 {% block head_extra %}
 <style>
-.cat-tab{cursor:pointer;border:var(--border-w) solid var(--black);padding:.5rem 1.2rem;font-family:'Archivo Black',sans-serif;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;background:var(--white);transition:all .1s ease;}
-.cat-tab.active,.cat-tab:hover{background:var(--navy);color:var(--yellow);}
-.product-card{display:none;}
-.product-card.visible{display:flex;}
+  /* Category filter tabs */
+  .cat-tab {
+    cursor: pointer;
+    border: 2px solid var(--black);
+    padding: .45rem 1.1rem;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    background: var(--white);
+    color: var(--black);
+    line-height: 1;
+    /* Tactile shadow shift */
+    box-shadow: 3px 3px 0 var(--black);
+    transition: background .1s ease, color .1s ease,
+                transform .1s ease, box-shadow .1s ease;
+  }
+  .cat-tab:hover {
+    background: var(--navy);
+    color: var(--yellow);
+    box-shadow: 3px 3px 0 var(--black);
+  }
+  .cat-tab.active {
+    background: var(--navy);
+    color: var(--yellow);
+    transform: translate(3px, 3px);
+    box-shadow: none;
+  }
+  .cat-tab:focus-visible {
+    outline: 2px solid var(--navy);
+    outline-offset: 3px;
+  }
+
+  /* Product card visibility */
+  .product-card { display: none; }
+  .product-card.visible { display: flex; }
+
+  /* Stock badge colour pairs — always text-black on coloured bg */
+  .badge-stock  { background: var(--green); color: var(--black); }
+  .badge-empty  { background: var(--pink);  color: var(--black); }
 </style>
 {% endblock %}
+
 {% block content %}
 
-<!-- PAGE HEADER -->
-<div class="page-header">
-  <div class="grid-bg-dark"></div>
+<!-- ══ PAGE HEADER ══ -->
+<header class="page-header">
+  <div class="grid-bg-dark" aria-hidden="true"></div>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
     <div class="tag mb-4">KATALOG PRODUK</div>
-    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--white);margin-bottom:1rem;">Laptop, PC, Printer<br>&amp; <span style="color:var(--yellow);">Semua Aksesorisnya</span></h1>
-    <p style="color:rgba(255,255,255,.7);font-size:1rem;line-height:1.7;max-width:540px;">Tidak menemukan yang Anda cari? Hubungi kami via WhatsApp — stok bisa lebih lengkap dari yang tertera di katalog ini.</p>
+    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--white);margin-bottom:1rem;">
+      Laptop, PC, Printer<br>&amp; <span style="color:var(--yellow);">Semua Aksesorisnya</span>
+    </h1>
+    <p style="color:rgba(255,255,255,.75);font-size:1rem;line-height:1.7;max-width:540px;">
+      Tidak menemukan yang Anda cari? Hubungi kami via WhatsApp — stok bisa lebih lengkap dari yang tertera di katalog ini.
+    </p>
   </div>
-</div>
+</header>
 
-<!-- FILTER TABS -->
-<div style="background:var(--cream);border-bottom:var(--border-w) solid var(--black);padding:1.25rem 0;position:sticky;top:64px;z-index:40;">
+<!-- ══ FILTER TABS ══ -->
+<div style="background:var(--cream);border-bottom:2px solid var(--black);padding:1.25rem 0;position:sticky;top:64px;z-index:40;"
+     role="navigation" aria-label="Filter kategori produk">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    {# Horizontal scroll on very small screens instead of overflow #}
     <div class="flex gap-2 flex-wrap">
-      <button class="cat-tab active" onclick="filterCat('semua',this)">Semua</button>
+      <button class="cat-tab active"
+              onclick="filterCat('semua', this)"
+              aria-pressed="true"
+              type="button">Semua</button>
       {% for cat in product_categories %}
-      <button class="cat-tab" onclick="filterCat('cat-{{ cat|slugify }}',this)">{{ cat }}</button>
+      <button class="cat-tab"
+              onclick="filterCat('cat-{{ cat|slugify }}', this)"
+              aria-pressed="false"
+              type="button">{{ cat }}</button>
       {% empty %}
-      <span class="cat-tab" style="opacity:.4;cursor:default;">Belum ada kategori</span>
+      <span class="cat-tab opacity-40 cursor-default" aria-disabled="true">Belum ada kategori</span>
       {% endfor %}
     </div>
   </div>
 </div>
 
-<!-- PRODUCT GRID -->
-<section class="section-pad" style="background:var(--white);">
+<!-- ══ PRODUCT GRID ══ -->
+<section class="section-pad" style="background:var(--white);" aria-label="Daftar produk">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
     {% if products %}
-    <div id="productGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+    {# Extra px-0.5 pb-1 prevents hard shadow being clipped at container edge #}
+    <div id="productGrid"
+         class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 px-0.5 pb-1"
+         role="list">
+
       {% for product in products %}
-      <div class="product-card visible reveal flex-col card-brutal p-0 overflow-hidden" data-cat="cat-{{ product.category|slugify }}">
-        <div style="background:{% cycle 'var(--navy)' 'var(--yellow)' 'var(--green)' 'var(--pink)' 'var(--cream)' as card_color %};padding:2.5rem 1rem;display:flex;align-items:center;justify-content:center;font-size:3rem;border-bottom:var(--border-w) solid var(--black);">
-          {% if product.photo %}<img src="{{ product.photo.url }}" alt="{{ product.name }}" style="max-height:100px;object-fit:contain;">{% else %}📦{% endif %}
-        </div>
-        <div class="p-5 flex-1 flex flex-col">
-          <div class="flex gap-2 mb-2 flex-wrap">
-            <span class="tag" style="font-size:.6rem;">{{ product.category|upper }}</span>
-            {% if product.brand %}<span class="tag-navy" style="font-size:.6rem;">{{ product.brand|upper }}</span>{% endif %}
+      {# Cycle colours — yellow/green need black text, navy needs white/yellow #}
+      {% cycle 'navy' 'yellow' 'green' 'pink' 'cream' as card_color silent %}
+
+      <article class="product-card visible reveal flex-col card-brutal p-0 overflow-hidden"
+               data-cat="cat-{{ product.category|slugify }}"
+               role="listitem">
+
+        {# Product image / placeholder #}
+        <div class="relative border-b-2 border-black flex items-center justify-center"
+             style="background:var(--{{ card_color }});min-height:140px;padding:2rem 1rem;">
+          {% if product.photo %}
+          <img src="{{ product.photo.url }}"
+               alt="{{ product.name }}"
+               class="max-h-28 w-auto object-contain"
+               loading="lazy">
+          {% else %}
+          <span class="text-5xl" aria-hidden="true">📦</span>
+          {% endif %}
+
+          {# Sold-out overlay — structural + colour #}
+          {% if product.total_stock == 0 %}
+          <div class="absolute inset-0 bg-black/50 flex items-center justify-center" aria-hidden="true">
+            <span class="font-display text-white text-sm tracking-wider">STOK KOSONG</span>
           </div>
-          <h3 style="font-size:.95rem;margin-bottom:.4rem;">{{ product.name }}</h3>
-          {% if product.notes %}<p style="color:#666;font-size:.78rem;line-height:1.5;flex:1;">{{ product.notes|truncatewords:20 }}</p>{% endif %}
-          <div style="border-top:2px solid var(--black);margin-top:1rem;padding-top:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
-            <span class="font-mono" style="font-size:1.05rem;font-weight:700;{% if product.total_stock == 0 %}opacity:.4{% endif %}">
-              {% if product.selling_price > 1000 %}Rp {{ product.selling_price|floatformat:"0"|intcomma }}{% else %}—{% endif %}
-            </span>
-            {% if product.total_stock > 0 %}
-            <span class="tag-green" style="font-size:.6rem;">STOK {{ product.total_stock }}</span>
-            {% else %}
-            <span class="tag-pink" style="font-size:.6rem;">STOK KOSONG</span>
-            {% endif %}
-          </div>
-          {% if company.whatsapp %}
-          <a href="https://wa.me/{{ company.whatsapp }}?text=Halo%2C%20saya%20tertarik%20dengan%20{{ product.name|urlencode }}" target="_blank" class="btn-primary w-full justify-center mt-3 btn-sm">Tanya via WA</a>
           {% endif %}
         </div>
-      </div>
+
+        <div class="p-5 flex-1 flex flex-col">
+          <div class="flex gap-2 mb-2 flex-wrap">
+            <span class="tag text-xs">{{ product.category|upper }}</span>
+            {% if product.brand %}
+            <span class="tag-navy text-xs">{{ product.brand|upper }}</span>
+            {% endif %}
+          </div>
+          <h2 class="text-sm font-bold mb-1 leading-snug flex-none">{{ product.name }}</h2>
+          {% if product.notes %}
+          <p class="text-gray-600 text-xs leading-relaxed flex-1">{{ product.notes|truncatewords:20 }}</p>
+          {% endif %}
+
+          <div class="flex items-center justify-between flex-wrap gap-2 mt-4 pt-3 border-t-2 border-black">
+            {# Price — greyed if out of stock for extra visual cue #}
+            <span class="font-mono font-bold text-base {% if product.total_stock == 0 %}opacity-40{% endif %}">
+              {% if product.selling_price > 1000 %}
+                Rp {{ product.selling_price|floatformat:"0"|intcomma }}
+              {% else %}
+                —
+              {% endif %}
+            </span>
+
+            {# Stock badge — colour + text label for colour-blind users #}
+            {% if product.total_stock > 0 %}
+            <span class="badge-stock font-bold text-xs px-2 py-0.5 border border-black">
+              STOK {{ product.total_stock }}
+            </span>
+            {% else %}
+            <span class="badge-empty font-bold text-xs px-2 py-0.5 border border-black">
+              HABIS
+            </span>
+            {% endif %}
+          </div>
+
+          {% if company.whatsapp %}
+          {% with company.whatsapp|stringformat:"s" as wa_raw %}
+          <a href="https://wa.me/62{% if wa_raw|slice:':1' == '0' %}{{ wa_raw|slice:'1:' }}{% else %}{{ wa_raw }}{% endif %}?text=Halo%2C%20saya%20tertarik%20dengan%20{{ product.name|urlencode }}"
+             target="_blank" rel="noopener noreferrer"
+             class="btn-primary w-full justify-center mt-3 btn-sm"
+             {% if product.total_stock == 0 %}aria-label="Tanya ketersediaan {{ product.name }} via WhatsApp"{% endif %}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            Tanya via WA
+          </a>
+          {% endwith %}
+          {% endif %}
+        </div>
+      </article>
       {% endfor %}
     </div>
+
     {% else %}
-    <div class="card-brutal p-8 text-center reveal">
-      <div style="font-size:3rem;margin-bottom:1rem;">📦</div>
-      <h3 style="font-size:1.2rem;margin-bottom:.5rem;">Belum Ada Produk</h3>
-      <p style="color:#666;font-size:.9rem;">Katalog produk belum tersedia. Hubungi kami untuk info produk terbaru.</p>
+    <div class="card-brutal p-10 text-center reveal max-w-md mx-auto">
+      <div class="text-5xl mb-4" aria-hidden="true">📦</div>
+      <h2 class="text-lg font-bold mb-2">Belum Ada Produk</h2>
+      <p class="text-gray-600 text-sm">Katalog produk belum tersedia. Hubungi kami untuk info produk terbaru.</p>
     </div>
     {% endif %}
 
+    {# Callout — yellow bg, text-black enforced #}
     <div class="card-brutal-yellow p-6 mt-10 reveal flex gap-4 items-start">
-      <span style="font-size:1.5rem;flex-shrink:0;">💡</span>
+      <span class="text-2xl shrink-0 mt-0.5" aria-hidden="true">💡</span>
       <div>
-        <h4 style="font-size:1rem;margin-bottom:.4rem;">Tidak menemukan produk yang Anda cari?</h4>
-        <p style="color:#333;font-size:.85rem;line-height:1.6;">Katalog ini hanya sebagian dari stok kami. Hubungi kami via WhatsApp untuk menanyakan ketersediaan produk, harga terbaru, atau konsultasi spesifikasi sesuai budget dan kebutuhan Anda.</p>
-        {% if company.whatsapp %}<a href="https://wa.me/{{ company.whatsapp }}?text=Halo%2C%20saya%20ingin%20tanya%20stok%20produk" target="_blank" class="btn-navy mt-4 btn-sm">Chat WhatsApp Sekarang →</a>{% endif %}
+        <h3 class="font-bold text-base text-black mb-1">Tidak menemukan produk yang Anda cari?</h3>
+        <p class="text-gray-800 text-sm leading-relaxed">
+          Katalog ini hanya sebagian dari stok kami. Hubungi kami via WhatsApp untuk menanyakan ketersediaan produk, harga terbaru, atau konsultasi spesifikasi sesuai budget dan kebutuhan Anda.
+        </p>
+        {% if company.whatsapp %}
+        {% with company.whatsapp|stringformat:"s" as wa_raw %}
+        <a href="https://wa.me/62{% if wa_raw|slice:':1' == '0' %}{{ wa_raw|slice:'1:' }}{% else %}{{ wa_raw }}{% endif %}?text=Halo%2C%20saya%20ingin%20tanya%20stok%20produk"
+           target="_blank" rel="noopener noreferrer"
+           class="btn-navy mt-4 btn-sm inline-flex">
+            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            Chat WhatsApp Sekarang →
+        </a>
+        {% endwith %}
+        {% endif %}
       </div>
     </div>
   </div>
 </section>
 
 {% endblock %}
+
 {% block extra_scripts %}
 <script>
-function filterCat(cat, btn){
-  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.product-card').forEach(card => {
-    if(cat === 'semua' || card.dataset.cat === cat){
-      card.classList.add('visible');
-    } else {
-      card.classList.remove('visible');
-    }
+/**
+ * Product category filter.
+ * Updates aria-pressed on buttons for screen-reader feedback.
+ */
+function filterCat(cat, btn) {
+  // Update tab states
+  document.querySelectorAll('.cat-tab').forEach(function (t) {
+    t.classList.remove('active');
+    t.setAttribute('aria-pressed', 'false');
   });
+  btn.classList.add('active');
+  btn.setAttribute('aria-pressed', 'true');
+
+  // Filter cards
+  var total = 0;
+  document.querySelectorAll('.product-card').forEach(function (card) {
+    var match = cat === 'semua' || card.dataset.cat === cat;
+    card.classList.toggle('visible', match);
+    if (match) total++;
+  });
+
+  // Live region announce for screen readers
+  var live = document.getElementById('filterStatus');
+  if (live) live.textContent = total + ' produk ditampilkan';
 }
 </script>
+{# Screen-reader live region for filter result count #}
+<div id="filterStatus" role="status" aria-live="polite" class="sr-only"></div>
 {% endblock %}

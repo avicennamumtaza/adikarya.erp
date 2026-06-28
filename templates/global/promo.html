@@ -1,67 +1,120 @@
 {% extends 'global/base.html' %}
 {% load static %}
-{% block head_title %}Promo &amp; Penawaran Spesial — {{ company.name|default:'Zona Komputer' }} Bojonegoro{% endblock %}
-{% block meta_description %}Cek promo terbaru {{ company.name|default:'Zona Komputer' }} Bojonegoro — diskon servis, paket bundling laptop, upgrade SSD murah, dan penawaran spesial lainnya.{% endblock %}
+
+{% block head_title %}Promo &amp; Penawaran Spesial — {{ company.name|default:'Adikarya' }} Lamongan{% endblock %}
+{% block meta_description %}Cek promo terbaru {{ company.name|default:'Adikarya' }} Lamongan — diskon servis, paket bundling laptop, upgrade SSD murah, dan penawaran spesial lainnya.{% endblock %}
+
 {% block content %}
 
-<!-- PAGE HEADER -->
-<div class="page-header" style="background:var(--yellow);">
-  <div class="grid-bg"></div>
+<!-- ══ PAGE HEADER ══ -->
+{# Yellow background header — black text is mandatory for WCAG AAA contrast #}
+<header class="page-header" style="background:var(--yellow);">
+  <div class="grid-bg" aria-hidden="true"></div>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
     <div class="tag-navy mb-4">PROMO &amp; PENAWARAN</div>
-    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--black);margin-bottom:1rem;">Penawaran Spesial<br><span style="color:var(--navy);">Bulan Ini</span></h1>
-    <p style="color:#333;font-size:1rem;line-height:1.7;max-width:540px;">Diskon, bundling, dan paket hemat — semua tersedia untuk waktu terbatas. Jangan sampai ketinggalan!</p>
+    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--black);margin-bottom:1rem;">
+      Penawaran Spesial<br>
+      <span style="color:var(--navy);">Bulan Ini</span>
+    </h1>
+    <p class="text-gray-800 text-base leading-relaxed max-w-lg">
+      Diskon, bundling, dan paket hemat — semua tersedia untuk waktu terbatas. Jangan sampai ketinggalan!
+    </p>
   </div>
-</div>
+</header>
 
-<!-- PROMO AKTIF -->
-<section class="section-pad" style="background:var(--white);">
+<!-- ══ PROMO AKTIF ══ -->
+<section class="section-pad" style="background:var(--white);" aria-label="Daftar promo aktif">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
     <div class="title-bar">
       <div class="tag">🔥 PROMO AKTIF</div>
-      <h2 style="font-size:clamp(1.4rem,2.5vw,2rem);font-family:'Archivo Black',sans-serif;">Berlaku sampai akhir bulan ini</h2>
+      <h2 class="font-display" style="font-size:clamp(1.4rem,2.5vw,2rem);">Berlaku sampai akhir bulan ini</h2>
     </div>
 
-    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {# px-0.5 pb-1 prevents hard shadow clipping at container edges #}
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 px-0.5 pb-1">
+
       {% for promo in active_promos %}
-      <div class="card-brutal p-0 overflow-hidden reveal">
-        <div style="background:var(--navy);padding:1.5rem;border-bottom:var(--border-w) solid var(--black);">
-          <div class="tag" style="font-size:.6rem;margin-bottom:.75rem;">{{ promo.category|upper|default:'PENAWARAN' }}</div>
-          <h3 style="font-size:1.1rem;color:var(--white);">{{ promo.title }}</h3>
+      <article class="card-brutal p-0 overflow-hidden reveal">
+
+        {# Header band #}
+        <div style="background:var(--navy);padding:1.5rem;border-bottom:2px solid var(--black);">
+          {% if promo.category %}
+          <div class="tag text-xs mb-3">{{ promo.category|upper }}</div>
+          {% endif %}
+          <h3 class="text-lg font-bold leading-snug" style="color:var(--white);">{{ promo.title }}</h3>
         </div>
-        <div class="p-6">
-          <p style="color:#444;font-size:.875rem;line-height:1.7;margin-bottom:1rem;">{{ promo.description }}</p>
+
+        {# Body #}
+        <div class="p-6 flex flex-col gap-4">
+          <p class="text-gray-700 text-sm leading-relaxed">{{ promo.description }}</p>
+
+          {# Benefits list — each item from benefits_list property #}
           {% if promo.benefits_list %}
-          <div style="margin-bottom:1.25rem;">
+          <ul class="flex flex-col gap-1.5 list-none m-0 p-0" aria-label="Keuntungan promo">
             {% for line in promo.benefits_list %}
-            <div style="display:flex;gap:.5rem;font-size:.85rem;padding:.2rem 0;"><span class="check">✓</span> {{ line }}</div>
+            <li class="flex gap-2 text-sm text-gray-800">
+              <span class="check shrink-0" aria-hidden="true">✓</span>
+              {{ line }}
+            </li>
             {% endfor %}
+          </ul>
+          {% endif %}
+
+          {# Discount badge — yellow bg needs black text (WCAG AAA) #}
+          {% if promo.discount_text %}
+          <div class="inline-block self-start">
+            <span class="font-display text-xs text-black bg-yellow-400 border-2 border-black px-3 py-1.5 block">
+              {{ promo.discount_text }}
+            </span>
           </div>
           {% endif %}
-          {% if promo.discount_text %}
-          <div style="background:var(--yellow);border:2px solid var(--black);padding:.5rem 1rem;display:inline-block;font-family:'Archivo Black',sans-serif;font-size:.8rem;margin-bottom:1rem;">{{ promo.discount_text }}</div>
-          {% endif %}
+
+          {# CTA — pushed to bottom #}
           {% if company.whatsapp %}
-          <a href="https://wa.me/{{ company.whatsapp }}?text={{ promo.wa_text|urlencode|default:'Halo, saya tertarik promo ini' }}" target="_blank" class="btn-primary w-full justify-center btn-sm">{{ promo.call_to_action|default:'Klaim Promo ini' }} →</a>
+          {% with company.whatsapp|stringformat:"s" as wa_raw %}
+          <a href="https://wa.me/62{% if wa_raw|slice:':1' == '0' %}{{ wa_raw|slice:'1:' }}{% else %}{{ wa_raw }}{% endif %}?text={{ promo.wa_text|default:'Halo, saya tertarik promo ini'|urlencode }}"
+             target="_blank" rel="noopener noreferrer"
+             class="btn-primary w-full justify-center btn-sm mt-auto"
+             aria-label="{{ promo.call_to_action|default:'💬 Klaim Promo ini' }} — {{ promo.title }}">
+            {{ promo.call_to_action|default:'Klaim Promo ini' }} →
+          </a>
+          {% endwith %}
           {% endif %}
         </div>
-      </div>
+      </article>
+
       {% empty %}
-      <div class="card-brutal p-8 text-center reveal" style="grid-column:1/-1;">
-        <div style="font-size:3rem;margin-bottom:1rem;">🎉</div>
-        <h3 style="font-size:1.2rem;margin-bottom:.5rem;">Belum Ada Promo Aktif</h3>
-        <p style="color:#666;font-size:.9rem;">Saat ini belum ada promo yang tersedia. Pantau terus halaman ini atau chat WhatsApp kami untuk info promo terbaru.</p>
+      <div class="card-brutal p-10 text-center reveal" style="grid-column:1/-1;" role="status">
+        <div class="text-5xl mb-4" aria-hidden="true">🎉</div>
+        <h2 class="text-lg font-bold mb-2">Belum Ada Promo Aktif</h2>
+        <p class="text-gray-600 text-sm">
+          Saat ini belum ada promo yang tersedia. Pantau terus halaman ini atau chat WhatsApp kami untuk info promo terbaru.
+        </p>
       </div>
       {% endfor %}
     </div>
   </div>
 </section>
 
-<!-- CTA -->
-<section style="padding:4rem 0;background:var(--black);">
-  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-    <p style="color:rgba(255,255,255,.6);font-size:.85rem;margin-bottom:.5rem;">Promo bisa berubah sewaktu-waktu. Pastikan tanya via WhatsApp untuk konfirmasi ketersediaan.</p>
-    {% if company.whatsapp %}<a href="https://wa.me/{{ company.whatsapp }}" target="_blank" class="btn-primary">Konfirmasi Promo via WhatsApp →</a>{% endif %}
+<!-- ══ CTA ══ -->
+<section class="py-16" style="background:var(--black);" aria-label="Konfirmasi promo">
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
+    <p class="text-sm" style="color:rgba(255,255,255,.6);">
+      Promo bisa berubah sewaktu-waktu. Pastikan tanya via WhatsApp untuk konfirmasi ketersediaan.
+    </p>
+    {% if company.whatsapp %}
+    {% with company.whatsapp|stringformat:"s" as wa_raw %}
+    <a href="https://wa.me/62{% if wa_raw|slice:':1' == '0' %}{{ wa_raw|slice:'1:' }}{% else %}{{ wa_raw }}{% endif %}"
+       target="_blank" rel="noopener noreferrer"
+       class="btn-primary inline-flex">
+      <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+      </svg>
+      Konfirmasi Promo via WhatsApp →
+    </a>
+    {% endwith %}
+    {% endif %}
   </div>
 </section>
 

@@ -1,10 +1,10 @@
 {% extends 'global/base.html' %}
 {% load static %}
-{% block head_title %}Galeri &amp; Portofolio — {{ company.name|default:'Zona Komputer' }} Bojonegoro{% endblock %}
-{% block meta_description %}Lihat dokumentasi hasil servis, instalasi jaringan, dan suasana toko {{ company.name|default:'Zona Komputer' }} Bojonegoro. Bukti nyata kerja teknisi kami.{% endblock %}
+{% block head_title %}Galeri &amp; Portofolio — {{ company.name|default:'Adikarya' }} Lamongan{% endblock %}
+{% block meta_description %}Lihat dokumentasi hasil servis, instalasi jaringan, dan suasana toko {{ company.name|default:'Adikarya' }} Lamongan. Bukti nyata kerja teknisi kami.{% endblock %}
 {% block head_extra %}
 <style>
-.gal-tab{cursor:pointer;border:var(--border-w) solid var(--black);padding:.5rem 1.2rem;font-family:'Archivo Black',sans-serif;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;background:var(--white);transition:all .1s ease;}
+.gal-tab{cursor:pointer;border:var(--border-w) solid var(--black);padding:.5rem 1.2rem;font-family:'Sora',sans-serif;font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;background:var(--white);transition:all .1s ease;}
 .gal-tab.active,.gal-tab:hover{background:var(--navy);color:var(--yellow);}
 .gal-item{display:none;}
 .gal-item.visible{display:flex;}
@@ -17,7 +17,7 @@
   <div class="grid-bg-dark"></div>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
     <div class="tag mb-4">GALERI &amp; PORTOFOLIO</div>
-    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--white);margin-bottom:1rem;">Hasil Kerja<br><span style="color:var(--yellow);">Bukan Sekadar Janji</span></h1>
+    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--white);margin-bottom:1rem;">Hasil Kerja Bergaransi<br><span style="color:var(--yellow);">Bukan Sekadar Janji</span></h1>
     <p style="color:rgba(255,255,255,.7);font-size:1rem;line-height:1.7;max-width:540px;">Dokumentasi nyata dari pekerjaan servis, instalasi, dan suasana toko kami selama bertahun-tahun.</p>
   </div>
 </div>
@@ -59,12 +59,12 @@
       <div class="gal-item visible flex-col gallery-box reveal" data-cat="instalasi" style="background:var(--navy);">
         <span style="font-size:3rem;">🌐</span>
         <p style="font-weight:700;font-size:.85rem;color:var(--white);">Instalasi Jaringan Kantor</p>
-        <p style="font-size:.75rem;color:rgba(255,255,255,.6);">Pemasangan WiFi &amp; LAN untuk kantor di area Bojonegoro.</p>
+        <p style="font-size:.75rem;color:rgba(255,255,255,.6);">Pemasangan WiFi &amp; LAN untuk kantor di area Lamongan.</p>
       </div>
       <div class="gal-item visible flex-col gallery-box reveal" data-cat="toko" style="background:var(--yellow);">
         <span style="font-size:3rem;">🏪</span>
         <p style="font-weight:700;font-size:.85rem;">Tampak Depan Toko</p>
-        <p style="font-size:.75rem;color:#333;">Lokasi toko kami di {{ company.address|default:'Jl. Veteran No. 10, Bojonegoro' }}.</p>
+        <p style="font-size:.75rem;color:#333;">Lokasi toko kami di {{ company.address|default:'Jl. Veteran No. 10, Lamongan' }}.</p>
       </div>
       {% endfor %}
     </div>

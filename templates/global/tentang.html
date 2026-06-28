@@ -1,45 +1,203 @@
 {% extends 'global/base.html' %}
 {% load static %}
-{% block head_title %}Tentang Kami — {{ company.name|default:'Zona Komputer' }} Bojonegoro | 25+ Tahun Melayani{% endblock %}
-{% block meta_description %}Kenali lebih dekat {{ company.name|default:'Zona Komputer' }} — toko komputer terpercaya di Bojonegoro sejak 1999. Teknisi berpengalaman, jujur, dan bergaransi.{% endblock %}
+
+{% block head_title %}Tentang Kami — {{ company.name|default:'Adikarya' }} Lamongan | 25+ Tahun Melayani{% endblock %}
+{% block meta_description %}Kenali lebih dekat {{ company.name|default:'Adikarya' }} — toko komputer terpercaya di Lamongan sejak 1999. Teknisi berpengalaman, jujur, dan bergaransi.{% endblock %}
+
 {% block content %}
 
-<!-- PAGE HEADER -->
-<div class="page-header">
-  <div class="grid-bg-dark"></div>
+<!-- ══ PAGE HEADER ══ -->
+<header class="page-header">
+  <div class="grid-bg-dark" aria-hidden="true"></div>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
     <div class="tag mb-4">TENTANG KAMI</div>
-    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--white);margin-bottom:1rem;">Lebih dari 25 Tahun<br><span style="color:var(--yellow);">Menjadi Mitra Teknologi</span><br>Warga Bojonegoro</h1>
-    <p style="color:rgba(255,255,255,.7);font-size:1rem;line-height:1.7;max-width:540px;">Kami bukan hanya toko — kami adalah tempat pelanggan bisa bertanya, dipercaya, dan mendapatkan solusi yang jujur untuk setiap kebutuhan komputernya.</p>
+    <h1 style="font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;color:var(--white);margin-bottom:1rem;">
+      Lebih dari 25 Tahun<br>
+      <span style="color:var(--yellow);">Menjadi Mitra Teknologi</span><br>
+      Warga Lamongan
+    </h1>
+    <p style="color:rgba(255,255,255,.75);font-size:1rem;line-height:1.7;max-width:540px;">
+      Kami bukan hanya toko — kami adalah tempat pelanggan bisa bertanya, dipercaya, dan mendapatkan solusi yang jujur untuk setiap kebutuhan komputernya.
+    </p>
   </div>
-</div>
+</header>
 
-<!-- CERITA TOKO -->
+<!-- ══ CERITA TOKO ══ -->
 <section class="section-pad" style="background:var(--white);">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="grid lg:grid-cols-2 gap-16 items-center">
+
       <div class="reveal">
         <div class="tag mb-5">PERJALANAN KAMI</div>
-        <h2 style="font-size:clamp(1.8rem,3.5vw,2.8rem);line-height:1.1;color:var(--black);margin-bottom:1.5rem;">Dimulai dari Sebuah<br>Toko Kecil di Bojonegoro</h2>
-        {{ company.about_text|default:'<p style="color:#444;font-size:.95rem;line-height:1.8;margin-bottom:1.25rem;">Berdiri sejak 1999, <strong>Zona Komputer</strong> dimulai dari toko kecil yang melayani kebutuhan komputer warga Bojonegoro dengan sederhana namun penuh ketulusan.</p>'|safe }}
+        <h2 style="font-size:clamp(1.8rem,3.5vw,2.8rem);line-height:1.1;color:var(--black);margin-bottom:1.5rem;">
+          Dimulai dari Sebuah<br>Toko Kecil di Lamongan
+        </h2>
+        {# about_text is trusted HTML from the admin rich-text editor — |safe is intentional #}
+        <div class="prose-brutal">
+          {{ company.about_text|default:'<p style="color:#444;font-size:.95rem;line-height:1.8;margin-bottom:1.25rem;">Berdiri sejak 1999, <strong>Adikarya</strong> dimulai dari toko kecil yang melayani kebutuhan komputer warga Lamongan dengan sederhana namun penuh ketulusan.</p>'|safe }}
+        </div>
       </div>
-      <div class="reveal">
+
+      {# Stats panel — dark bg, yellow numbers #}
+      <div class="reveal px-0.5 pb-1">
         <div class="card-brutal-navy p-8">
-          <div class="grid grid-cols-2 gap-6">
+          {% if stats %}
+          <dl class="grid grid-cols-2 gap-6">
             {% for stat in stats %}
             <div>
-              <p class="stat-num" style="font-size:3.5rem;color:var(--yellow);">{{ stat.value }}</p>
-              <p style="color:rgba(255,255,255,.6);font-size:.85rem;">{{ stat.title }}</p>
+              <dd class="stat-num" style="font-size:3.5rem;color:var(--yellow);">{{ stat.value }}</dd>
+              <dt class="text-sm leading-snug" style="color:rgba(255,255,255,.65);">{{ stat.title }}</dt>
             </div>
-            {% empty %}
+            {% endfor %}
+          </dl>
+          {% else %}
+          {# Hardcoded fallback if no stats in DB #}
+          <dl class="grid grid-cols-2 gap-6">
             <div>
-              <p class="stat-num" style="font-size:3.5rem;color:var(--yellow);">1999</p>
-              <p style="color:rgba(255,255,255,.6);font-size:.85rem;">Tahun berdiri</p>
+              <dd class="stat-num" style="font-size:3.5rem;color:var(--yellow);">1999</dd>
+              <dt class="text-sm" style="color:rgba(255,255,255,.65);">Tahun berdiri</dt>
             </div>
             <div>
-              <p class="stat-num" style="font-size:3.5rem;color:var(--yellow);">25+</p>
-              <p style="color:rgba(255,255,255,.6);font-size:.85rem;">Tahun pengalaman</p>
+              <dd class="stat-num" style="font-size:3.5rem;color:var(--yellow);">25+</dd>
+              <dt class="text-sm" style="color:rgba(255,255,255,.65);">Tahun pengalaman</dt>
             </div>
+          </dl>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ VISI MISI NILAI ══ -->
+<section class="section-pad section-striped" style="background:var(--cream);">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-14">
+      <div class="tag mb-4">KOMITMEN KAMI</div>
+      <h2 style="font-size:clamp(2rem,4vw,3rem);line-height:1.1;color:var(--black);">
+        Visi, Misi &amp; Nilai<br>yang
+        <span style="background:var(--yellow);padding:0 .25rem;">Kami Pegang Teguh</span>
+      </h2>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-6 px-0.5 pb-1">
+
+      {# Visi — yellow bg: text-black mandatory #}
+      <article class="card-brutal-yellow p-8 reveal">
+        <div class="text-5xl mb-4" aria-hidden="true">🎯</div>
+        <h3 class="text-xl font-display mb-3 text-black">Visi</h3>
+        <p class="text-gray-800 text-sm leading-relaxed">
+          {{ company.visi|default:'Menjadi mitra teknologi nomor satu bagi masyarakat Lamongan dan sekitarnya — dari generasi ke generasi.' }}
+        </p>
+      </article>
+
+      {# Misi — navy bg: yellow heading, white/75 body #}
+      <article class="card-brutal-navy p-8 reveal">
+        <div class="text-5xl mb-4" aria-hidden="true">🚀</div>
+        <h3 class="text-xl font-display mb-3" style="color:var(--yellow);">Misi</h3>
+        <p class="text-sm leading-relaxed" style="color:rgba(255,255,255,.82);">
+          {{ company.misi|default:'Produk & servis berkualitas, harga transparan. Teknisi kompeten, terus belajar teknologi baru. Hubungan jangka panjang berbasis kepercayaan.' }}
+        </p>
+      </article>
+
+      {# Nilai-nilai — white card #}
+      <article class="card-brutal p-8 reveal" style="background:var(--white);">
+        <div class="text-5xl mb-4" aria-hidden="true">💎</div>
+        <h3 class="text-xl font-display mb-3 text-black">Nilai-Nilai Kami</h3>
+        <ul class="flex flex-col gap-2.5 list-none m-0 p-0" aria-label="Nilai-nilai perusahaan">
+          {% for val in values %}
+          <li class="border-2 border-black px-3 py-2" style="background:var(--cream);">
+            <strong class="text-xs text-black">{{ val.title|upper }}</strong>
+            <span class="text-gray-700 text-xs"> — {{ val.description }}</span>
+          </li>
+          {% empty %}
+          <li class="border-2 border-black px-3 py-2" style="background:var(--cream);">
+            <strong class="text-xs text-black">JUJUR</strong>
+            <span class="text-gray-700 text-xs"> — kondisi perangkat disampaikan apa adanya</span>
+          </li>
+          <li class="border-2 border-black px-3 py-2 bg-yellow-400">
+            <strong class="text-xs text-black">TRANSPARAN</strong>
+            <span class="text-gray-800 text-xs"> — estimasi biaya sebelum dikerjakan</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TIM KAMI ══ -->
+{% if team_members %}
+<section class="section-pad" style="background:var(--white);" aria-label="Tim kami">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-14">
+      <div class="tag mb-4">TIM KAMI</div>
+      <h2 style="font-size:clamp(2rem,4vw,3rem);line-height:1.1;color:var(--black);">
+        Orang-orang di Balik<br>
+        <span style="color:var(--navy);">{{ company.name|default:'Adikarya' }}</span>
+      </h2>
+      <p class="text-gray-600 max-w-md mx-auto mt-3 text-sm leading-relaxed">
+        Tim teknisi kami sudah menangani ribuan unit dari berbagai merek — laptop, PC, printer, hingga perangkat jaringan.
+      </p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 px-0.5 pb-1">
+      {% for member in team_members %}
+      <article class="card-brutal p-6 text-center reveal">
+        {# Avatar — navy bg with yellow initial; role="img" for initials #}
+        <div class="w-20 h-20 mx-auto mb-4 border-[3px] border-black flex items-center justify-center font-display text-3xl"
+             style="background:var(--navy);color:var(--yellow);"
+             role="img"
+             aria-label="Foto {{ member.name }}">
+          {% if member.photo %}
+          <img src="{{ member.photo.url }}"
+               alt="{{ member.name }}"
+               class="w-full h-full object-cover">
+          {% else %}
+          {{ member.name|first|upper }}
+          {% endif %}
+        </div>
+        <h3 class="font-bold text-base text-black mb-1">{{ member.name }}</h3>
+        <p class="text-gray-600 text-xs mb-2">{{ member.role }}</p>
+        {% if member.specialty %}
+        <span class="tag text-xs">{{ member.specialty }}</span>
+        {% endif %}
+        {% if member.experience %}
+        <p class="text-gray-500 text-xs mt-2">{{ member.experience }}</p>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ══ BRAND MITRA ══ -->
+{% if partner_brands %}
+<section class="section-pad" style="background:var(--navy);" aria-label="Merek yang kami tangani">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-10">
+      <div class="tag mb-4">MEREK YANG KAMI TANGANI</div>
+      <h2 style="font-size:clamp(1.8rem,3.5vw,2.6rem);line-height:1.1;color:var(--white);">
+        Spesialis Berbagai Merek<br>
+        <span style="color:var(--yellow);">Laptop, PC &amp; Printer</span>
+      </h2>
+    </div>
+
+    {# Ticker — yellow bg requires black text #}
+    <div style="background:var(--yellow);border:2px solid var(--black);box-shadow:6px 6px 0 var(--black);padding:.6rem 0;overflow:hidden;"
+         aria-label="Daftar merek" role="marquee">
+      <div class="ticker-wrap">
+        <div class="ticker-inner">
+          <div class="flex gap-6 px-6" aria-hidden="true">
+            {% for brand in partner_brands %}
+            <span class="marquee-item text-black font-bold">✦ {{ brand.name|upper }}</span>
+            {% endfor %}
+          </div>
+          {# Duplicate for seamless loop — aria-hidden on both, visible text accessible via heading above #}
+          <div class="flex gap-6 px-6" aria-hidden="true">
+            {% for brand in partner_brands %}
+            <span class="marquee-item text-black font-bold">✦ {{ brand.name|upper }}</span>
             {% endfor %}
           </div>
         </div>
@@ -47,102 +205,32 @@
     </div>
   </div>
 </section>
-
-<!-- VISI MISI -->
-<section class="section-pad section-striped" style="background:var(--cream);">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-14">
-      <div class="tag mb-4">KOMITMEN KAMI</div>
-      <h2 style="font-size:clamp(2rem,4vw,3rem);line-height:1.1;color:var(--black);">Visi, Misi &amp; Nilai<br>yang <span style="background:var(--yellow);padding:0 .25rem;">Kami Pegang Teguh</span></h2>
-    </div>
-    <div class="grid lg:grid-cols-3 gap-6">
-      <div class="card-brutal-yellow p-8 reveal">
-        <div style="font-size:2.5rem;margin-bottom:1rem;">🎯</div>
-        <h3 style="font-size:1.2rem;margin-bottom:1rem;color:var(--black);">Visi</h3>
-        <p style="color:#333;font-size:.9rem;line-height:1.7;">{{ company.visi|default:'Menjadi mitra teknologi nomor satu bagi masyarakat Bojonegoro dan sekitarnya — dari generasi ke generasi.' }}</p>
-      </div>
-      <div class="card-brutal-navy p-8 reveal">
-        <div style="font-size:2.5rem;margin-bottom:1rem;">🚀</div>
-        <h3 style="font-size:1.2rem;margin-bottom:1rem;color:var(--yellow);">Misi</h3>
-        <p style="color:rgba(255,255,255,.8);font-size:.875rem;line-height:1.7;">{{ company.misi|default:'Produk & servis berkualitas, harga transparan. Teknisi kompeten, terus belajar teknologi baru. Hubungan jangka panjang berbasis kepercayaan.' }}</p>
-      </div>
-      <div class="card-brutal p-8 reveal" style="background:var(--white);">
-        <div style="font-size:2.5rem;margin-bottom:1rem;">💎</div>
-        <h3 style="font-size:1.2rem;margin-bottom:1rem;color:var(--black);">Nilai-Nilai Kami</h3>
-        <div style="display:flex;flex-direction:column;gap:.75rem;">
-          {% for val in values %}
-          <div style="background:var(--cream);border:2px solid var(--black);padding:.6rem .9rem;">
-            <strong style="font-size:.8rem;">{{ val.title }}</strong> — {{ val.description }}
-          </div>
-          {% empty %}
-          <div style="background:var(--cream);border:2px solid var(--black);padding:.6rem .9rem;">
-            <strong style="font-size:.8rem;">JUJUR</strong> — kondisi perangkat disampaikan apa adanya
-          </div>
-          <div style="background:var(--yellow);border:2px solid var(--black);padding:.6rem .9rem;">
-            <strong style="font-size:.8rem;">TRANSPARAN</strong> — estimasi biaya sebelum dikerjakan
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- TIM KAMI -->
-{% if team_members %}
-<section class="section-pad" style="background:var(--white);">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-14">
-      <div class="tag mb-4">TIM KAMI</div>
-      <h2 style="font-size:clamp(2rem,4vw,3rem);line-height:1.1;color:var(--black);">Orang-orang di Balik<br><span style="color:var(--navy);">{{ company.name|default:'Zona Komputer' }}</span></h2>
-      <p style="color:#555;max-width:480px;margin:1rem auto 0;font-size:.95rem;line-height:1.7;">Tim teknisi kami sudah menangani ribuan unit dari berbagai merek — laptop, PC, printer, hingga perangkat jaringan.</p>
-    </div>
-    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {% for member in team_members %}
-      <div class="card-brutal p-6 text-center reveal">
-        <div style="width:72px;height:72px;background:var(--navy);border:3px solid var(--black);border-radius:0;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:2rem;color:var(--yellow);font-family:'Archivo Black',sans-serif;">{{ member.name|first }}</div>
-        <h4 style="font-size:1rem;margin-bottom:.25rem;">{{ member.name }}</h4>
-        <p style="color:#777;font-size:.8rem;margin-bottom:.75rem;">{{ member.role }}</p>
-        {% if member.specialty %}<div class="tag" style="font-size:.6rem;">{{ member.specialty }}</div>{% endif %}
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</section>
 {% endif %}
 
-<!-- BRAND MITRA -->
-{% if partner_brands %}
-<section class="section-pad" style="background:var(--navy);">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-10">
-      <div class="tag mb-4">MEREK YANG KAMI TANGANI</div>
-      <h2 style="font-size:clamp(1.8rem,3.5vw,2.6rem);line-height:1.1;color:var(--white);">Spesialis Berbagai Merek<br><span style="color:var(--yellow);">Laptop, PC &amp; Printer</span></h2>
-    </div>
-    <div style="background:var(--yellow);border:var(--border-w) solid var(--black);box-shadow:var(--shadow-lg) var(--shadow-lg) 0 var(--black);padding:.6rem 0;overflow:hidden;">
-      <div class="ticker-wrap">
-        <div class="ticker-inner">
-          <div class="flex gap-6 px-6">
-            {% for brand in partner_brands %}<span class="marquee-item">✦ {{ brand.name|upper }}</span>{% endfor %}
-          </div>
-          <div class="flex gap-6 px-6" aria-hidden="true">
-            {% for brand in partner_brands %}<span class="marquee-item">✦ {{ brand.name|upper }}</span>{% endfor %}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-{% endif %}
-
-<!-- CTA -->
-<section class="section-pad" style="background:var(--yellow);">
+<!-- ══ CTA ══ -->
+<section class="section-pad" style="background:var(--yellow);" aria-label="Ajakan bertemu">
   <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-    <div style="background:var(--navy);border:var(--border-w) solid var(--black);box-shadow:var(--shadow-lg) var(--shadow-lg) 0 var(--black);padding:4rem 2rem;">
-      <h2 style="font-size:clamp(1.8rem,4vw,3rem);line-height:1.1;color:var(--white);margin-bottom:1rem;">Mau Kenal Lebih Dekat?<br><span style="color:var(--yellow);">Kunjungi atau Hubungi Kami</span></h2>
-      <p style="color:rgba(255,255,255,.7);margin-bottom:2rem;font-size:.95rem;line-height:1.7;">Datang langsung ke toko kami, atau mulai dari chat WhatsApp untuk konsultasi tanpa perlu keluar rumah.</p>
+    <div class="card-brutal-navy p-10 sm:p-14 px-0.5">
+      <h2 style="font-size:clamp(1.8rem,4vw,3rem);line-height:1.1;color:var(--white);margin-bottom:1rem;">
+        Mau Kenal Lebih Dekat?<br>
+        <span style="color:var(--yellow);">Kunjungi atau Hubungi Kami</span>
+      </h2>
+      <p class="text-sm leading-relaxed mb-8" style="color:rgba(255,255,255,.75);">
+        Datang langsung ke toko kami, atau mulai dari chat WhatsApp untuk konsultasi tanpa perlu keluar rumah.
+      </p>
       <div class="flex gap-4 justify-center flex-wrap">
-        {% if company.whatsapp %}<a href="https://wa.me/{{ company.whatsapp }}" target="_blank" class="btn-primary">Chat WhatsApp →</a>{% endif %}
+        {% if company.whatsapp %}
+        {% with company.whatsapp|stringformat:"s" as wa_raw %}
+        <a href="https://wa.me/62{% if wa_raw|slice:':1' == '0' %}{{ wa_raw|slice:'1:' }}{% else %}{{ wa_raw }}{% endif %}"
+           target="_blank" rel="noopener noreferrer"
+           class="btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            Chat WhatsApp →
+          </a>
+        {% endwith %}
+        {% endif %}
         <a href="{% url 'global:kontak' %}" class="btn-secondary">Lihat Lokasi Toko</a>
       </div>
     </div>
