@@ -211,6 +211,7 @@ class FinanceService:
         total_cash_bank = accounts.filter(account_type__in=['CASH', 'BANK']).aggregate(
             total=models.Sum('balance')
         )['total'] or Decimal('0')
+        print(f"Total Cash & Bank: {total_cash_bank}")
         
         # Total Hutang & Piutang (Assuming apps.partner is available)
         try:
@@ -223,6 +224,7 @@ class FinanceService:
                 total=models.Sum('current_balance')
             )['total'] or Decimal('0')
             
+            print(f"Total Payable: {total_payable}, Total Receivable: {total_receivable}")
             net_worth = total_cash_bank + total_receivable - abs(total_payable)
         except ImportError:
             total_payable = Decimal('0')

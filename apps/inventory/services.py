@@ -23,13 +23,14 @@ DB_TO_UI_PRODUCT_TYPE = {
 UI_TO_DB_PRODUCT_TYPE = {value: key for key,
                          value in DB_TO_UI_PRODUCT_TYPE.items()}
 
-DEFAULT_CATEGORIES = ["Flashdisk", "Keyboard",
-                      "Speaker", "Mouse", "Monitor",
+DEFAULT_CATEGORIES = ["Flashdisk", "Keyboard", "Aksesoris",
+                      "Speaker", "Mouse", "Monitor", "Webcam",
                       "Printer", "Motherboard", "Casing",
                       "SSD", "RAM", "PSU", "Tinta",
                       "Cartridge", "Laptop", "Switch",
                       "Kabel", "Charger", "Headset",
-                      "Webcam", "Enclosure", "Router", ]
+                      "Webcam", "Enclosure", "Router", 
+                      "USB Wifi", "HDD", "Charger", "Lainnya" ]
 
 
 def product_categories() -> list[str]:
